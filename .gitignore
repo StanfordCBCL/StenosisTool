@@ -1,0 +1,7 @@
+data/**
+!data/data.xlsx
+
+*.npy
+*.vtp
+*.vtu
+*.DS_Store

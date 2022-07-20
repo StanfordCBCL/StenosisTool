@@ -1,0 +1,41 @@
+functions:
+
+    centerlines.py
+        - Contains centerlines class for handling centerlines
+    
+    find_generations.py
+        - Contains function to retrieve generations from a 0D solver file
+
+    project_org.py
+        - Organizes Project of stenosis tool for development purposes
+    
+    solver_io.py
+        - Contains Solver0D class for handling solver io operations
+
+    flow.py
+        - Contrain Inflow class for handling inflow file operations
+
+    utils.py
+        - Contains basic utility functions
+
+centerline_gen_driver.py
+    - Generates centerlines of entire model or tuning model
+
+calculate_rcr_bc.py
+    - Performs automatic tuning (only for healthy models) and splitting of bc of model, if a rcrt.dat file is unavailable
+    - Converts 3d rcrt.dat files to 0D version -> for stenosis models
+
+
+solver_gen_driver.py
+    - generates a full 0d segmentation of model. rcrt.dat files must be in solver directory
+
+artificial_stenosis_driver.py
+    - Constructs artificial stenosis models from healthy pulmonary models
+
+stenosis_detection_driver.py
+    - Takes a control model, computes the average resistances for each generation (by vessel lengths) and iterates over a test model identifying any vessel segments that have larger than r_threshold times the R_poiseuille as the control average (generation-wise).
+    - pulmonary models are scaled by bsa to compare controls and tests of different ages
+
+run_zerod_sim.py
+    - givne a solver file, runs a zero d simulation of it
+    
