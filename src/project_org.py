@@ -3,10 +3,7 @@ from collections import defaultdict
 from os import path
 import os
 
-try:
-    from .misc import *
-except ImportError:
-    from utils import *
+from .misc import *
 
 class ProjectPath():
     ''' Entire Project Manager'''

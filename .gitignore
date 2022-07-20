@@ -1,6 +1,6 @@
 data/**
 !data/data.xlsx
-
+svZeroDSolver
 *.npy
 *.vtp
 *.vtu

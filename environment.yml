@@ -1,0 +1,13 @@
+name: stanford
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy=1.22.3
+  - matplotlib=3.5
+  - scipy=1.7.3
+  - pip=22.1.2
+  - pandas=1.4.3
+  - pip:
+    - tqdm==4.64.0
+    - vtk==9.1.0
