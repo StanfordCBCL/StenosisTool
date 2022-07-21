@@ -51,7 +51,9 @@ class TuneParams():
 ############################
 def compute_total_resistance(cur_node: Solver0D.Node):
     ''' computes total resistance of a tree recursively'''
+    
     if not cur_node.children:
+        #print('OUTLET:', cur_node.vess_id, cur_node.vessel_info['zero_d_element_values']['R_poiseuille'])
         return cur_node.vessel_info['zero_d_element_values']['R_poiseuille']
     
     total_inv_res = 0
@@ -59,7 +61,10 @@ def compute_total_resistance(cur_node: Solver0D.Node):
         total_inv_res += 1/compute_total_resistance(child_node)
     total_child_res = 1/total_inv_res
     
-    return cur_node.vessel_info['zero_d_element_values']['R_poiseuille'] + total_child_res
+    r_p = cur_node.vessel_info['zero_d_element_values']['R_poiseuille'] + total_child_res
+    
+    #print('INTERNAL:',cur_node.vess_id,r_p ,cur_node.vessel_info['zero_d_element_values']['R_poiseuille'] )
+    return r_p
     
         
 
@@ -93,8 +98,11 @@ def compute_lpa_rpa_resistances(dummy_solver: Solver0D ):
         lpa = second_branch
         rpa = first_branch
     
+    print('LPA')
     lpa_res = compute_total_resistance(lpa)
+    print(dummy_solver.tree_to_list(lpa))
     rpa_res = compute_total_resistance(rpa)
+    
     
     return lpa_res, rpa_res
     
@@ -301,6 +309,23 @@ def write_0d_dict(params: TuneParams, inflow: Inflow, centerlines: Centerlines,d
             }
         }]
     solver_data.vessel = [mpa] + lpa + rpa
+    
+    # check that the results are within reasonable bounds
+    #! Something is wrong?
+    tree = dummy_solver.get_vessel_tree()
+    tree_res = compute_total_resistance(tree)
+    all_vessels = dummy_solver.tree_to_list(tree)
+    print('delta_P =', d2m(inflow.mean_inflow * tree_res))
+    
+    # for testing
+    '''
+    head = Solver0D.Node(0, {'zero_d_element_values':{'R_poiseuille': 1}})
+    head.children = [Solver0D.Node(0, {'zero_d_element_values':{'R_poiseuille': 10}}), Solver0D.Node(0, {'zero_d_element_values':{'R_poiseuille': 10}})]
+    #for child_node in head.children:
+    #    child_node.children = [Solver0D.Node(0, ##{'zero_d_element_values':{'R_poiseuille': 100}})]
+    print(compute_total_resistance(head))
+    '''
+    
     
     return solver_data
     

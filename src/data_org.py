@@ -2,6 +2,7 @@
 from collections import defaultdict
 from os import path
 import os
+import shutil
 
 from .misc import *
 from .file_io import check_exists, check_exists_bool, parse_config
@@ -15,7 +16,6 @@ class ModelPath():
     TUNING_DIR = 'tuning_files'
     
     MODEL_CENT = 'model_centerlines.vtp'
-    TUNING_CENT = 'tuning_centerlines.vtp'
     
     MODEL_SOLVER = 'model.in'
     TUNING_SOLVER = 'tuning.in'
@@ -24,8 +24,9 @@ class ModelPath():
     DEV_CONF = 'dev_config.ini'
 
 
-    def __init__(self, root):
+    def __init__(self, root, model_type):
         self.model_root = root
+        self.type = model_type
         self.model_name = path.basename(root)
         
         # config
@@ -63,7 +64,6 @@ class ModelPath():
         self.model_solver = path.join(self.solver_dir, self.info['metadata']['name'] + '_' + self.MODEL_SOLVER)
         self.tune_solver = path.join(self.tuning_dir, self.info['metadata']['name'] + '_' + self.TUNING_SOLVER)
         self.model_centerlines = path.join(self.centerline_dir, self.info['metadata']['name'] + '_' + self.MODEL_CENT)
-        self.tune_centerlines = path.join(self.centerline_dir, self.info['metadata']['name'] + '_' + self.TUNING_CENT)
     
     def check_info(self):
         for data in self.info['metadata']:
@@ -111,13 +111,13 @@ class DataPath():
         for mod in os.listdir(self.healthy):
             model_path = path.join(self.healthy, mod)
             if os.path.isdir(model_path):
-                self.models[self.HEALTHY][mod] = ModelPath(model_path)
+                self.models[self.HEALTHY][mod] = ModelPath(model_path, self.HEALTHY)
                 self.model_names.add(mod)
                 
         for mod in os.listdir(self.stenosis):
             model_path = path.join(self.stenosis, mod)
             if os.path.isdir(model_path):
-                self.models[self.STENOSIS][mod] = ModelPath(model_path)
+                self.models[self.STENOSIS][mod] = ModelPath(model_path, self.STENOSIS)
                 self.model_names.add(mod)
                 
     def __repr__(self):
@@ -145,4 +145,55 @@ class DataPath():
         else:
             print(model_name + ' is an invalid model')
             return None
+    
+    
+class Results():
+    
+    RESULTS_DIR = 'results'
+    
+    def __init__(self, root, model: ModelPath):
+        
+        # convert Model path to an equivalent results path
+        self.root = root
+        
+        self.model = model
+        self.results_dir = check_exists(os.path.join(self.root, self.RESULTS_DIR), mkdir = True)
+        self.type_dir = check_exists(os.path.join(self.results_dir, self.model.type), mkdir = True)
+        
+
+        self.model_dir  = check_exists(os.path.join(self.results_dir, model.info['metadata']['name']), mkdir = True)
+
+        
+
+class StenosisToolResults(Results):
+    
+    BASE_SOLVER_DIR = 'base_solver_dir'
+    ART_STEN_DIR = 'artificial_stenosis_dir'
+    FIXED_STEN_DIR = 'fixed_stenosis_dir'
+    
+    def __init__(self, root, model: ModelPath):
+        super().__init__(root, model)
+        self.base_solver_dir = check_exists(os.path.join(self.model_dir, self.BASE_SOLVER_DIR), mkdir = True)
+
+        self.base_solver = os.path.join(self.base_solver_dir, os.path.basename(model.model_solver))
+        if not os.path.exists(self.base_solver):
+            shutil.copy(model.model_solver, self.base_solver)
+        
+        if self.model.type == 'healthy':
+            self.setup_healthy()
+        elif self.model.type == 'stenosis':
+            self.setup_stenosis()
+            
+        
+        
+    def setup_stenosis(self):
+        ''' if self.type = None, set up like a stenosis model '''
+        self.fixed_stenosis = check_exists(os.path.join(self.model_dir, self.FIXED_STEN_DIR), mkdir = True)
+    
+    def setup_healthy(self):
+        ''' if self.type = healthy'''
+        self.artificial_sten_dir = check_exists(os.path.join(self.model_dir, self.ART_STEN_DIR), mkdir = True)
+        
+        
+        
     

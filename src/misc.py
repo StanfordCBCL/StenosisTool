@@ -29,6 +29,9 @@ def create_parser(desc = '') -> argparse.ArgumentParser:
 
     return parser, dev, tool
 
+def get_basename(fp):
+    return os.path.splitext(os.path.basename(fp))[0]
+
 # Not in use
 '''
 def parse_bsa_chart(bsa_file):

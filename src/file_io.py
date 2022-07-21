@@ -16,13 +16,13 @@ class Solver0D():
     
     class Node():
         
-        def __init__(self, vess_id, vessel_info):
+        def __init__(self, vess_id, vessel_info, generation = 0):
             self.vess_id = vess_id
             self.vessel_info = vessel_info
             self.parent = None
-            self.parent_pointer = None
             self.children = None
-            self.children_pointers = None
+            self.generation = generation
+
         
     
     
@@ -72,8 +72,7 @@ class Solver0D():
 
     def write_solver_file(self, solver_file):
         ''' writes a dict into the solver file'''
-        with open(solver_file, 'w') as sfile:
-            json.dump(self.solver_data, sfile, indent = 4, sort_keys=True)
+        write_json(solver_file, self.solver_data)
         
     
     # Contruct a vessel Map to avoid linear search
@@ -114,7 +113,7 @@ class Solver0D():
     def get_vessel_tree(self):
         ''' get the vessel tree at that snapshot in the class '''
         
-        head_node = self.Node(0, self.get_vessel(0))
+        head_node = self.Node(0, self.get_vessel(0), generation=0)
         head_node.children = [self.junc_mat[0]]
         
         
@@ -123,14 +122,36 @@ class Solver0D():
         
         while bfs_queue:
             cur_node = bfs_queue.popleft()
-            cur_node.children = [self.Node(child_id, self.get_vessel(child_id)) for child_id in self.junc_mat[cur_node.vess_id]]
+            if len(self.junc_mat[cur_node.vess_id]) != 1: # if not an internal junction
+                next_gen = cur_node.generation + 1
+            else:
+                next_gen = cur_node.generation # stays in current generation if it is an internal junction
+                
+            cur_node.children = [self.Node(child_id, self.get_vessel(child_id), generation = next_gen) for child_id in self.junc_mat[cur_node.vess_id]]
             for child_node in cur_node.children:
                 child_node.parent = cur_node.vess_id
                 bfs_queue.append(child_node)
         
         return head_node
-        
-        
+    
+    def tree_bfs_iterator(self, tree):
+        ''' iterates using bfs'''
+        bfs_queue = deque()
+        bfs_queue.append(tree)
+        while bfs_queue:
+            cur_node = bfs_queue.popleft()
+            for child_node in cur_node.children:
+                bfs_queue.append(child_node)
+            yield cur_node
+    
+    def tree_to_list(self, tree):
+        ''' tree to list of vessel ids'''
+
+        vessel_list = []
+        for node in self.tree_bfs_iterator(tree):
+            vessel_list.append(node)
+                
+        return vessel_list      
             
             
         
@@ -263,3 +284,7 @@ def parse_mdl(mdl_file, reverse = False):
             else:
                 face_mappings[face.attrib['name']] = int(face.attrib['id'])
     return face_mappings
+
+def write_json(fp, data):
+    with open(fp, 'w') as sfile:
+            json.dump(data, sfile, indent = 4, sort_keys=True)
