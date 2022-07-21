@@ -1,4 +1,25 @@
-functions:
+data:
+    - contains data for healthy/stenosis models
+
+data_scripts
+    - generates extra data information
+    
+    Blank
+
+docs
+    - contains info about project
+
+    filelog.txt
+        - contains information about what each file does
+    
+    research.txt
+        - contains information about what research was done
+
+    todo.txt
+        - contains information about what needs to be done
+
+src
+    - contains modules for project
 
     centerlines.py
         - Contains centerlines class for handling centerlines
@@ -6,17 +27,34 @@ functions:
     find_generations.py
         - Contains function to retrieve generations from a 0D solver file
 
-    project_org.py
-        - Organizes Project of stenosis tool for development purposes
+    data_org.py
+        - Contains DataPath class for managing relevant data
     
-    solver_io.py
-        - Contains Solver0D class for handling solver io operations
+    file_io.py
+        - Contains Solver0D/SolverResults class for handling solver io operations
+        - Contains other file IO operations
 
     flow.py
-        - Contrain Inflow class for handling inflow file operations
+        - Contains Inflow class for handling inflow file operations
 
-    utils.py
+    run_sim.py
+        - Contains functions to run 0D simulations and visualize results
+
+    misc.py
         - Contains basic utility functions
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 centerline_gen_driver.py
     - Generates centerlines of entire model or tuning model

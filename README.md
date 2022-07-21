@@ -4,12 +4,13 @@ Summer Project for John Lee
 
 To set up project from root
 
+Install a version of Simvascular from June 2022
+
 For python requirements:
 
-    conda env create --name <env_name> --file environment.yml
-    pip install git+https://github.com/JohnDLee/svZeroDSolver.git (Slightly modified version of original svZeroDSolver)
-    pip install -e .[dev] (".[dev]" for Macos)
-
+    1. conda env create --name <env_name> --file environment.yml
+    2. pip install git+https://github.com/JohnDLee/svZeroDSolver.git (Slightly modified version of original svZeroDSolver)
+    3. pip install -e .
 
 For cpp svZeroDSolver:
 

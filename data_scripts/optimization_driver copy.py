@@ -1,10 +1,8 @@
-from argparse import Namespace
-
-from functions.utils import *
-from functions.project_org import ProjectPath
-from functions.flow import Inflow
-from functions.centerlines import Centerlines
-from functions.solver_io import Solver0D
+from src.data_org import DataPath
+from src.flow import Inflow
+from src.centerlines import Centerlines
+from src.file_io import Solver0D, 
+from src.misc import m2d, d2m, create_parser
 
 import numpy as np
 from scipy import optimize
@@ -16,7 +14,7 @@ import json
 from tqdm import tqdm
 from functools import partialmethod
 import re
-
+from argparse import Namespace
 
 
 # disable tqdm
@@ -106,15 +104,10 @@ class BoundaryConditions(object):
                     rcr_file.write('1.0 ' + pressure + newline) 
 
 
-    
-
-
-
 class TuneParams():
     
     def __init__(self):
         ## optimizer params defaults
-
         self.cardiac_cycles = 6
         self.num_timesteps_per_cycle = 1000
         self.rpa_flow_split = .55
@@ -123,7 +116,6 @@ class TuneParams():
         self.viscosity = .04 # cgs
         self.density = 1.06 # cgs
         self.linear_ehr = 1.2e6 # dyne/cm^2
-        
         
         
         ## for termination
@@ -707,14 +699,17 @@ def ingrid_rcrt_map(cvpre_file):
 
 def tool_main(args):
     raise NotImplementedError()
+    # TODO: PARSE A CONFIG FILE for tuning parameters and update Tune Params
 
 def dev_main(args: Namespace):
     
-    org = ProjectPath(args.root)
+    org = DataPath(args.root)
     
     for model_name in args.models:
-        print(f'Running {model_name}...')
-        mod_path = org.find_model(model_name)
+        print(f'Tuning {model_name}...')
+        model = org.find_model(model_name)
+        
+        # perform optimization
         
         
         # ONLY FOR HEALTHY, perform optimization
@@ -827,36 +822,13 @@ def dev_main(args: Namespace):
 
 
 if __name__ == '__main__':
-    parser, subparsers, dev, tool = create_parser(description = 'Tunes a model and outputs an rcr bc file.')
-    
-    ## tool params
-    tool.add_argument('-centerline_file', help = 'centerline file containing tuning centerlines (from centerline_gen_driver.py)')
-    tool.add_argument('-tuning_dir', default = '.', help = 'location of tuning directory where files will be stored')
-    tool.add_argument('-cap_info', help = 'location of cap areas file')
-    
-    inf = tool.add_argument_group('inflow')
-    inf.add_argument('-inflow_file', help = 'inflow file to use')
-    inf.add_argument('-inverse',action = 'store_true', default = False, help = 'inverse - values to + if file was intended for 3D simulations')
-    inf.add_argument('-no_smooth', dest = 'smooth', action = 'store_false', default = True, help = 'flag to not use smoothing')
-    
-    sim = tool.add_argument_group('simulation parameters')
-    sim.add_argument('-cardiac_cycles', dest = 'cc', type = int, default = 6, help = 'number of cardiac cycles for each iteration of the 0D solver')
-    sim.add_argument('-num_tc_per_cycle', dest = 'num_tc', type = int, default = 1000, help = 'number of time steps to utilize for each cycle')
-    
-    opt = tool.add_argument_group('optimization parameters')
-    opt.add_argument('-tol', type = float, default = .01, help = 'percent of error to optimize to')
-    opt.add_argument('-pat', type = int, default = 5, help = 'number of iterations to wait if loss does not change beyond patience tolerance')
-    opt.add_argument('-pat_tol', type = int, default = 1e-6, help = 'patience tolerance' )
-    opt.add_argument('-flow_split', type = float, default = .55, help = 'target flow split for the RPA')
-    opt.add_argument('-mPAP', type = float, default = 15, help = 'target mPAP to reach while simulating')
-    
-    tool.add_argument('-sens_test', action = 'store_true', default = False, help = 'whether to run sensitivity tests or not')
+    parser, dev, tool = create_parser(description = 'Tunes a model and outputs an rcr bc file.')
     
     # dev params
     dev.add_argument('-root', dest = 'root', type = str, default = '.',  help = 'Root to entire project')
     dev.add_argument('-models', dest = 'models', action = 'append', default = [], help = 'Specific models to run')
     dev.add_argument('-sens_test', action = 'store_true', default = False, help = 'whether to run sensitivity tests or not')
-    dev.add_argument('-ingrid', action = 'store_true', default = False, help = 'if mapping from one of ingrids models')
+    #dev.add_argument('-ingrid', action = 'store_true', default = False, help = 'if mapping from one of ingrids models')
     args = parser.parse_args()
     
     if args.mode == 'tool':

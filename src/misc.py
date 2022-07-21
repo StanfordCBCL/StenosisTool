@@ -1,4 +1,5 @@
 import os
+import argparse
 import sys
 
 def m2d(val):
@@ -17,6 +18,16 @@ def enablePrint():
     ''' enable printing'''
     sys.stdout = sys.__stdout__
     
+def create_parser(desc = '') -> argparse.ArgumentParser:
+    ''' creates a parse for scripts '''
+    parser = argparse.ArgumentParser(description=desc)
+    subparsers = parser.add_subparsers(help='Mode for script', dest = 'mode')
+    tool = subparsers.add_parser(name='tool')
+    dev = subparsers.add_parser(name='dev')
+    dev.add_argument('-root', default='.', help='Root of entire project')
+
+
+    return parser, dev, tool
 
 # Not in use
 '''

@@ -1,6 +1,6 @@
 import os
 import configparser
-from collections import defaultdict
+from collections import defaultdict, deque
 import xml.etree.ElementTree as ET
 import json
 import numpy as np
@@ -14,7 +14,20 @@ class Solver0D():
     JUNC = 'junctions'
     DESC = 'description'
     
+    class Node():
+        
+        def __init__(self, vess_id, vessel_info):
+            self.vess_id = vess_id
+            self.vessel_info = vessel_info
+            self.parent = None
+            self.parent_pointer = None
+            self.children = None
+            self.children_pointers = None
+        
+    
+    
     def __init__(self):
+        self.solver_file = None
         self.solver_data = None
         self._vessel = None
         self._bc = None
@@ -38,6 +51,7 @@ class Solver0D():
     
     def read_solver_file(self, solver_file):
         ''' reads the solver file into a dict'''
+        self.solver_file = solver_file
         with open(solver_file, 'r') as sfile:
             self.solver_data = json.load(sfile)
         self.update_solver_data()
@@ -96,6 +110,34 @@ class Solver0D():
                     return vess['vessel_id'], vess['vessel_name']
         print('Error: an inlet bc does not exist.')
         return 
+    
+    def get_vessel_tree(self):
+        ''' get the vessel tree at that snapshot in the class '''
+        
+        head_node = self.Node(0, self.get_vessel(0))
+        head_node.children = [self.junc_mat[0]]
+        
+        
+        bfs_queue = deque()
+        bfs_queue.append(head_node)
+        
+        while bfs_queue:
+            cur_node = bfs_queue.popleft()
+            cur_node.children = [self.Node(child_id, self.get_vessel(child_id)) for child_id in self.junc_mat[cur_node.vess_id]]
+            for child_node in cur_node.children:
+                child_node.parent = cur_node.vess_id
+                bfs_queue.append(child_node)
+        
+        return head_node
+        
+        
+            
+            
+        
+        
+        
+        
+        
     
     def num_vessel_segments(self):
         return len(self.vessel)
