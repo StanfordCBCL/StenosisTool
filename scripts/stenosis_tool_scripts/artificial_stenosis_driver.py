@@ -77,7 +77,7 @@ def create_new_solver(old_solver_file, out_dir, n_vess, occlusions):
                                'capacitance_new': new_c.tolist()}
     write_json(stenosis_file, changes)
      
-    new_solver_file = os.path.join(out_dir, get_basename(old_solver_file) + 'art_sten.in') 
+    new_solver_file = os.path.join(out_dir, get_basename(old_solver_file) + '_art_sten.in') 
     
     copy_solver.write_solver_file(new_solver_file)
 

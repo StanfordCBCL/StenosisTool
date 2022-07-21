@@ -160,8 +160,7 @@ class Results():
         self.results_dir = check_exists(os.path.join(self.root, self.RESULTS_DIR), mkdir = True)
         self.type_dir = check_exists(os.path.join(self.results_dir, self.model.type), mkdir = True)
         
-
-        self.model_dir  = check_exists(os.path.join(self.results_dir, model.info['metadata']['name']), mkdir = True)
+        self.model_dir  = check_exists(os.path.join(self.type_dir, model.info['metadata']['name']), mkdir = True)
 
         
 
