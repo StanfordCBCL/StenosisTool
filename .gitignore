@@ -5,4 +5,5 @@ svZeroDSolver
 *.vtp
 *.vtu
 *.DS_Store
-*egg-info
+*.egg-info
+*.csv

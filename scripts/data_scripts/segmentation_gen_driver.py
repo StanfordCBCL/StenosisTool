@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from src.misc import *
 from src.flow import Inflow
-from src.file_io import parse_mdl
+from src.file_io import parse_mdl, Solver0D
 from src.data_org import DataPath
 
 ##########
@@ -60,7 +60,7 @@ class SimulationParams():
     
 
 
-def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluids: FluidParams, material: MaterialParams, sim: SimulationParams, find_bc = True):
+def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluids: FluidParams, material: MaterialParams, sim: SimulationParams, dummy_bc = True):
     ''' Writes a 0D file '''
     
     ## needed to write 0d file
@@ -124,8 +124,7 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     params.outflow_bc_type = ['rcrt.dat']
     
     rcr_file = os.path.join(files.solver_dir, 'rcrt.dat')
-    print(rcr_file)
-    if not find_bc:
+    if dummy_bc:
         # just write an empty file
         if not os.path.exists(rcr_file):
             with open(rcr_file, 'w') as rfile:
@@ -216,7 +215,13 @@ def dev_main(args):
                       fluids=fluid_params,
                       material=material_params,
                       sim=sim_params,
-                      find_bc=args.no_bc)
+                      dummy_bc=args.dummy_bc)
+        
+        # convert to cpp
+        s = Solver0D()
+        s.read_solver_file(model.model_solver)
+        s.to_cpp()
+        s.write_solver_file(model.model_solver)
 
         print('Done')
            
@@ -228,7 +233,7 @@ if __name__ == '__main__':
     parser, dev, tool = create_parser(desc= 'Constructs a 0d input segmentation of the vasculature valid for a 0d solver for pulmonary vasculature')
 
     dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
-    dev.add_argument('-no_bc', action = 'store_false', default = True, help = 'Generate a solver file without rcr boundary conditions just to get the tree (Mainly used for the tuning itself to model the tree)')
+    dev.add_argument('-no_bc', dest = 'dummy_bc', action = 'store_true', default = False, help = 'Generate a solver file without rcr boundary conditions just to get the tree (Mainly used for the tuning itself to model the tree)')
     
     args = parser.parse_args()
     

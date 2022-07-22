@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 import xml.etree.ElementTree as ET
 import json
 import numpy as np
+import pandas as pd
 
 class Solver0D():
     ''' Solver File modification '''
@@ -15,7 +16,7 @@ class Solver0D():
     DESC = 'description'
     
     class Node():
-        
+        ''' node for vessel tree '''
         def __init__(self, vess_id, vessel_info, generation = 0):
             self.vess_id = vess_id
             self.vessel_info = vessel_info
@@ -23,7 +24,15 @@ class Solver0D():
             self.children = None
             self.generation = generation
 
-        
+    class BranchNode():
+        ''' node for branch tree'''
+        def __init__(self, vess_id, vessel_info, generation):
+            self.branch_id = int(vessel_info['vessel_name'].split('_')[0][6:])
+            self.vess_id = [vess_id]
+            self.vessel_info = [vessel_info]
+            self.parent = None
+            self.children = None
+            self.generation = generation
     
     
     def __init__(self):
@@ -66,9 +75,15 @@ class Solver0D():
             self._description = {}
         self._simulation_params = self.solver_data[self.SIM]
         self._junctions = self.solver_data[self.JUNC]
+        if self._bc:
+            for bc in self._bc:
+                if bc['bc_type'] == 'FLOW':
+                    break
+            self.tc = bc['bc_values']['t'][-1] - bc['bc_values']['t'][0]
+        else:
+            self.tc = 0
         self._construct_vessel_map()
         self._junction_matrix()
-        
 
     def write_solver_file(self, solver_file):
         ''' writes a dict into the solver file'''
@@ -110,7 +125,7 @@ class Solver0D():
         print('Error: an inlet bc does not exist.')
         return 
     
-    def get_vessel_tree(self):
+    def get_vessel_tree(self) -> Node:
         ''' get the vessel tree at that snapshot in the class '''
         
         head_node = self.Node(0, self.get_vessel(0), generation=0)
@@ -134,6 +149,39 @@ class Solver0D():
         
         return head_node
     
+    def get_branch_tree(self) -> BranchNode:
+        ''' get the branch tree at that snapshot in the class '''
+        
+        head_node = self.BranchNode(vess_id=0, 
+                                    vessel_info=self.get_vessel(0), 
+                                    generation=0)
+        
+        
+        bfs_queue = deque()
+        bfs_queue.append(head_node)
+    
+        
+        while bfs_queue:
+            cur_node = bfs_queue.popleft()
+            while True:
+                # junc_mat
+                child_vess = self.junc_mat[cur_node.vess_id[-1]]
+                # internal junction so add to same node
+                if len(child_vess) == 1:
+                    cur_node.vess_id.append(child_vess[0])
+                    cur_node.vessel_info.append(self.get_vessel(child_vess[0]))
+                # otherwise, exit while loop
+                else:
+                    break
+                
+            # determine children
+            cur_node.children = [self.BranchNode(vess_id=child_id, vessel_info=self.get_vessel(child_id), generation=cur_node.generation) for child_id in child_vess]
+            for child_node in cur_node.children:
+                child_node.parent = cur_node
+                bfs_queue.append(child_node)
+        
+        return head_node
+    
     def tree_bfs_iterator(self, tree):
         ''' iterates using bfs'''
         bfs_queue = deque()
@@ -145,7 +193,7 @@ class Solver0D():
             yield cur_node
     
     def tree_to_list(self, tree):
-        ''' tree to list of vessel ids'''
+        ''' tree to list of vessel nodes'''
 
         vessel_list = []
         for node in self.tree_bfs_iterator(tree):
@@ -154,9 +202,10 @@ class Solver0D():
         return vessel_list      
             
             
-        
-        
-        
+    def to_cpp(self):
+        for junc in self.junctions:
+            if junc['junction_type'] == 'BloodVesselJunction':
+                junc['junction_type'] = 'NORMAL_JUNCTION'
         
         
     
@@ -213,12 +262,78 @@ class Solver0D():
         
         
 class SolverResults():
-    ''' 0D solver results file '''
-    def __init__(self, results_file):
-        self.results = np.load(results_file, allow_pickle= True).item()
-        self.pressures = self.results['pressure']
-        self.time = self.results['time']
-        self.flow = self.results['flow']
+    ''' 0D c solver results file '''
+    def __init__(self, df: pd.DataFrame, last_cycle = False, tc = 0):
+        
+        if last_cycle:
+            # only save last cycle
+            df = self.only_last_cycle(df, tc)
+        self.result_df = df
+        
+    @staticmethod
+    def only_last_cycle(df, tc) -> pd.DataFrame:
+        ''' convert to only last cycle '''
+        df = df.copy()
+        df = df[df['time'] >= df['time'].max() - tc].copy()
+        df['time'] -= df['time'].min()
+        return df
+       
+    @classmethod
+    def load_from_csv(cls, fp):
+        df = pd.read_csv(fp)
+        return cls(df, last_cycle=False, tc = 0)
+    
+    def vessel_df(self, vessel_name):
+        ''' retrieves a df isolated by name'''
+        return self.result_df[self.result_df['name'] == vessel_name]
+    
+    def convert_to_branch_results(self, solver: Solver0D, out_file):
+        ''' Convert the c results into branch results (not sorted)'''
+        branch_results = {}
+        
+        # write time
+        branch_results['time'] = np.array(list(self.vessel_df('V0')['time']))
+        
+        #! Not entering them sorted (shouldnt matter)
+        branch_results['distance'] = {}
+        branch_results['flow'] = {}
+        branch_results['pressure'] = {}
+        
+        branch_tree = solver.get_branch_tree()
+
+        for node in solver.tree_bfs_iterator(branch_tree):
+            branch_id = node.branch_id
+            # get initial values for first vessel
+            vess_Q = []
+            vess_P = []
+            vess_D = [0.0]
+            vess_df = self.vessel_df('V' + str(node.vess_id[0]))
+            vess_Q.append(list(vess_df['flow_in']))
+            vess_Q.append(list(vess_df['flow_out']))
+            vess_P.append(list(vess_df['pressure_in']))
+            vess_P.append(list(vess_df['pressure_out']))
+            vess_D.append(node.vessel_info[0]['vessel_length'])
+            
+            # if longer than just 1 vessel segment per branch
+            if len(node.vess_id) > 1:
+                cur_idx = 1
+                for vess_id in node.vess_id[1:]:
+                    vess_df = self.vessel_df('V' + str(vess_id))
+                    vess_Q.append(list(vess_df['flow_out']))
+                    vess_P.append(list(vess_df['pressure_out']))
+                    vess_D.append(vess_D[-1] + node.vessel_info[cur_idx]['vessel_length'])
+                    cur_idx += 1
+        
+            branch_results['distance'][branch_id] = np.array(vess_D)
+            branch_results['flow'][branch_id] = np.array(vess_Q)
+            branch_results['pressure'][branch_id] = np.array(vess_P)
+        
+    
+        np.save(out_file, branch_results, allow_pickle=True)
+        
+    def save_csv(self, out_file):
+        self.result_df.to_csv(out_file, sep = ',', header = True, index = False)
+        
 
 
 

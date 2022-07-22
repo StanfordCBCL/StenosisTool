@@ -1,21 +1,19 @@
+from matplotlib import use
 from src.data_org import DataPath
 from src.flow import Inflow
 from src.centerlines import Centerlines
-from src.file_io import Solver0D, check_exists_bool
-from src.run_sim import get_result_file
+from src.file_io import Solver0D, SolverResults, check_exists_bool
 from src.misc import m2d, d2m, create_parser
-from src.run_sim import run_sim, get_result_file
+from src.run_sim import run_sim
 
 import numpy as np
 from scipy import optimize
 from scipy.interpolate import interp1d
-import svzerodsolver as zerod
 import os
 import matplotlib.pyplot as plt
 import json
 from tqdm import tqdm
 from functools import partialmethod
-import re
 from argparse import Namespace
 
 
@@ -43,7 +41,7 @@ class TuneParams():
         ## for termination
         self.pat = 5
         self.pat_tol  = 1e-6
-        self.tolerance = 0.01
+        self.tolerance = 0.001
 
 
 ############################
@@ -98,9 +96,7 @@ def compute_lpa_rpa_resistances(dummy_solver: Solver0D ):
         lpa = second_branch
         rpa = first_branch
     
-    print('LPA')
     lpa_res = compute_total_resistance(lpa)
-    print(dummy_solver.tree_to_list(lpa))
     rpa_res = compute_total_resistance(rpa)
     
     
@@ -142,7 +138,7 @@ def write_0d_dict(params: TuneParams, inflow: Inflow, centerlines: Centerlines,d
                 0
             ],
             "junction_name": "J0",
-            "junction_type": "BloodVesselJunction",
+            "junction_type": "NORMAL_JUNCTION",
             "outlet_vessels": [
                 1,
                 4
@@ -311,10 +307,8 @@ def write_0d_dict(params: TuneParams, inflow: Inflow, centerlines: Centerlines,d
     solver_data.vessel = [mpa] + lpa + rpa
     
     # check that the results are within reasonable bounds
-    #! Something is wrong?
     tree = dummy_solver.get_vessel_tree()
     tree_res = compute_total_resistance(tree)
-    all_vessels = dummy_solver.tree_to_list(tree)
     print('delta_P =', d2m(inflow.mean_inflow * tree_res))
     
     # for testing
@@ -387,35 +381,26 @@ def termination_closure(params: TuneParams):
                 return False
         return termination_callback
 
-def opt_function(x, tune_params: TuneParams, tune_solver, inflow: Inflow):
+def opt_function(x, tune_params: TuneParams, tune_solver: Solver0D, inflow: Inflow):
     
     # run a simulation
-    run_sim_wrapper(x, tune_solver, last_cycle=True)
+    rez = run_sim_wrapper(x, tune_solver)
     
-    # extract results/compute loss
-    results = np.load(get_result_file(tune_solver), allow_pickle=True).item()
-    
-    mPAP_loss, Q_RPA_loss, flow_mse, _ = loss_function(results, tune_params, inflow, compute_last_cycle=False)
+    mPAP_loss, Q_RPA_loss, flow_mse, _ = loss_function(rez, tune_params, inflow)
 
     return mPAP_loss + Q_RPA_loss + flow_mse
     
-def loss_function(results, tune_params: TuneParams, inflow: Inflow, compute_last_cycle = False):
+def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflow):
     ''' loss function'''
-    
-    if compute_last_cycle:
-        last_cycle = -1 * tune_params.num_timesteps_per_cycle
-        time = results['time'][last_cycle:]
-        time = time - time[0] + results['time'][0]
-    else:
-        last_cycle = 0
-        time = results['time']
 
-    mPAP_sim = np.trapz(results['pressure']['P_BC0_inlet_V0'][last_cycle:], time) / inflow.tc
-    Q_RPA_sim = np.trapz(results['flow']['Q_V6_BC6_outlet'][last_cycle:], time) / inflow.tc
+    mpa = SolverResults.only_last_cycle(results.vessel_df('V0'), inflow.tc)
+    rpa = SolverResults.only_last_cycle(results.vessel_df('V6'), inflow.tc)
+    mPAP_sim = np.trapz(mpa['pressure_in'].to_numpy(), mpa['time'].to_numpy()) / inflow.tc
+    Q_RPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
     mPAP_meas = tune_params.mPAP_meas
     Q_RPA_meas = inflow.mean_inflow * tune_params.rpa_flow_split
     
-    f = interp1d(time, results['flow']['Q_V6_BC6_outlet'][last_cycle:])
+    f = interp1d(mpa['time'].to_numpy(), rpa['flow_out'].to_numpy())
     
     mse_loss = np.square(np.divide(f(inflow.t[:-1]) - (inflow.Q[:-1] * tune_params.rpa_flow_split), (inflow.Q[:-1] * tune_params.rpa_flow_split))).mean()
 
@@ -423,35 +408,39 @@ def loss_function(results, tune_params: TuneParams, inflow: Inflow, compute_last
     Q_RPA_loss =  ((Q_RPA_sim - Q_RPA_meas) / Q_RPA_meas) ** 2
     return  mPAP_loss , Q_RPA_loss, mse_loss, (mPAP_sim, Q_RPA_sim, mPAP_meas, Q_RPA_meas)
 
-def run_sim_wrapper(x, solver_file, last_cycle = True ):
+def run_sim_wrapper(x, solver: Solver0D):
     ''' run simulation:
     last_cycle -> True to only save results for last cycle. False for all cycle results'''
-    # read solver file
-    solver_data = Solver0D()
-    solver_data.read_solver_file(solver_file)
 
-    
     # modify conditions
-    modify_params(solver_data, x)
-    solver_data.write_solver_file(solver_file=solver_file)             
+    modify_params(solver, x)       
     
     # run simulation
-    run_sim(solver_file, save_branches = False, block_print=True, use_steady_soltns=False, last_cycle = last_cycle)
+    rez = run_sim(solver=solver,
+                  use_steady_soltns=True,
+                  save_branch_results=False,
+                  save_csv=False,
+                  debug=False)
+    
+    return rez
 
 
 ###########
 # Results #
 ###########
 
-def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results, opt_results, results_dir):
+def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results: SolverResults, opt_results: optimize.OptimizeResult, results_dir):
 
     
     
     ## save inflow graph
     fig,ax = plt.subplots(1,1 )
     ax.plot(inflow.t, inflow.Q)
-    ax.set_xlabel('time (s)')
-    ax.set_ylabel('flow (ml/s)')
+    ax.set_title( 'Inflow', fontdict={'fontsize': 24})
+    ax.set_xlabel('time (s)', fontdict={'fontsize': 20})
+    ax.set_ylabel('flow (ml/s)', fontdict={'fontsize': 20})
+    ax.tick_params(axis="x", labelsize=16) 
+    ax.tick_params(axis = 'y', labelsize=16)
     fig.savefig(os.path.join(results_dir , 'inflow.png'))
     
     
@@ -464,12 +453,11 @@ def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results, opt_r
                                     'Rp_RPA': x[3],
                                     'C_RPA': x[4],
                                     'Rd_RPA': x[5]}
-    
+    v0 = sim_results.vessel_df('V0')
     results_dict['columns'] = ['Optimized', 'Desired']
-    
-    mPAP_loss, Q_RPA_loss, flow_mse, (mPAP_sim, Q_RPA_sim, mPAP_meas, Q_RPA_meas) = loss_function(sim_results, tune_params, inflow, compute_last_cycle=True)
+    mPAP_loss, Q_RPA_loss, flow_mse, (mPAP_sim, Q_RPA_sim, mPAP_meas, Q_RPA_meas) = loss_function(sim_results, tune_params, inflow)
     results_dict['mPAP'] = [mPAP_sim, mPAP_meas]
-    results_dict['max_pressure'] = [sim_results['pressure']['P_BC0_inlet_V0'].max(), (m2d(18), m2d(25))]
+    results_dict['max_pressure'] = [SolverResults.only_last_cycle(v0, inflow.tc)['pressure_in'].max(), (m2d(18), m2d(25))]
     results_dict['rpa_flow_split'] = [Q_RPA_sim/inflow.mean_inflow, tune_params.rpa_flow_split]
     results_dict['Q_RPA'] = [Q_RPA_sim, Q_RPA_meas]
     
@@ -478,79 +466,84 @@ def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results, opt_r
                               'MSE_loss':flow_mse}
     
     
-    
     with open(os.path.join(results_dir, 'values.json'), 'w') as json_file:
         json.dump(results_dict, json_file, indent = 4)
     
     ## save flow and pressure graphs (last 3 cycles)
     fig, ax = plt.subplots(2, 3, figsize=(30, 20))
     ax = ax.flatten()
-    start = -3 * tune_params.num_timesteps_per_cycle
-    ax[0].plot(sim_results['time'][start:], sim_results['pressure']['P_BC0_inlet_V0'][start:]/1333.22)
-    ax[0].set_title('Inlet Pressure')
-    ax[1].plot(sim_results['time'][start:], sim_results['pressure']['P_V3_BC3_outlet'][start:]/1333.22)
-    ax[1].set_title('LPA Outlet Pressure')
-    ax[2].plot(sim_results['time'][start:], sim_results['pressure']['P_V6_BC6_outlet'][start:]/1333.22)
-    ax[2].set_title('RPA Outlet Pressure')
+    ltc = -3 * tune_params.num_timesteps_per_cycle
+    
+    
+    v3 = sim_results.vessel_df('V3')
+    v6 = sim_results.vessel_df('V6')
+    
+    ax[0].plot(v0['time'].to_numpy()[ltc:], d2m(v0['pressure_in'].to_numpy())[ltc:])
+    ax[0].set_title('Inlet Pressure', fontdict={'fontsize': 24})
+    ax[1].plot(v3['time'].to_numpy()[ltc:], d2m(v3['pressure_out'].to_numpy())[ltc:])
+    ax[1].set_title('LPA Outlet Pressure', fontdict={'fontsize': 24})
+    ax[2].plot(v6['time'].to_numpy()[ltc:], d2m(v6['pressure_out'].to_numpy())[ltc:])
+    ax[2].set_title('RPA Outlet Pressure', fontdict={'fontsize': 24})
     
     for i in range(3):
-        ax[i].set_xlabel('time (s)')
-        ax[i].set_ylabel('pressure (mmHg)')
+        ax[i].tick_params(axis="x", labelsize=16) 
+        ax[i].tick_params(axis = 'y', labelsize=16)
+        ax[i].set_xlabel('time (s)', fontdict={'fontsize': 20})
+        ax[i].set_ylabel('pressure (mmHg)', fontdict={'fontsize': 20})
         
-    ax[3].plot(sim_results['time'][start:], sim_results['flow']['Q_BC0_inlet_V0'][start:])
-    ax[3].set_title('Inlet Flow')
-    ax[4].plot(sim_results['time'][start:], sim_results['flow']['Q_V3_BC3_outlet'][start:])
-    ax[4].set_title('LPA Outlet Flow')
-    ax[5].plot(sim_results['time'][start:], sim_results['flow']['Q_V6_BC6_outlet'][start:])
-    ax[5].set_title('RPA Outlet Flow')
+    ax[3].plot(v0['time'].to_numpy()[ltc:], v0['flow_in'].to_numpy()[ltc:])
+    ax[3].set_title('Inlet Flow', fontdict={'fontsize': 24})
+    ax[4].plot(v3['time'].to_numpy()[ltc:], v3['flow_in'].to_numpy()[ltc:])
+    ax[4].set_title('LPA Outlet Flow', fontdict={'fontsize': 24})
+    ax[5].plot(v6['time'].to_numpy()[ltc:], v6['flow_in'].to_numpy()[ltc:])
+    ax[5].set_title('RPA Outlet Flow', fontdict={'fontsize': 24})
     
     for i in range(3, 6):
-        ax[i].set_xlabel('time (s)')
-        ax[i].set_ylabel('flow (ml/s)')
+        ax[i].tick_params(axis="x", labelsize=16) 
+        ax[i].tick_params(axis = 'y', labelsize=16)
+        ax[i].set_xlabel('time (s)', fontdict={'fontsize': 20})
+        ax[i].set_ylabel('flow (ml/s)', fontdict={'fontsize': 20})
 
     fig.savefig(os.path.join(results_dir, 'waveforms.png'))
 
 ####################
 # Sensitivity Test #
 ####################
-def sens_test(opt_results, tune_params : TuneParams, inflow: Inflow, solver_file, sensitivity_dir):
-    
-    x_opt = opt_results['x']
+def sens_test(x, tune_params : TuneParams, inflow: Inflow, solver: Solver0D, sensitivity_dir):
     mapping = {'Rp_LPA': 0, 'C_LPA': 1, 'Rd_LPA': 2, 'Rp_RPA':3, 'C_RPA':4, 'Rd_RPA':5}
     
     for var_name, index in mapping.items():
+        print(f'\tRunning {var_name} sensitivity test...', end = '\t', flush = True)
         
         fig, ax = plt.subplots(3, 1, figsize = (40, 30))
         ax = ax.flatten()
-        ax[0].set_xlabel(f'pct change {var_name}')
-        ax[1].set_xlabel(f'pct change {var_name}')
-        ax[0].set_ylabel(f'mPAP')
-        ax[1].set_ylabel(f'Q_RPA_avg')
-        ax[0].set_title('mPAP change')
-        ax[1].set_title('Q_RPA change')
-        ax[2].set_xlabel(f'pct_change {var_name}')
-        ax[2].set_ylabel(f'MSE')
-        ax[2].set_title('MSE')
-        #ax[3].set_xlabel(f'time (s)')
-        #ax[3].set_ylabel(f'flow (ml/s)')
-        #ax[4].
+        ax[0].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
+        ax[1].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
+        ax[0].set_ylabel(f'mPAP', fontdict={'fontsize': 20})
+        ax[1].set_ylabel(f'Q_RPA_avg', fontdict={'fontsize': 20})
+        ax[0].set_title('mPAP change', fontdict={'fontsize': 24})
+        ax[1].set_title('Q_RPA change', fontdict={'fontsize': 24})
+        ax[2].set_xlabel(f'pct_change {var_name}', fontdict={'fontsize': 20})
+        ax[2].set_ylabel(f'MSE', fontdict={'fontsize': 20})
+        ax[2].set_title('MSE', fontdict={'fontsize': 24})
         
-        mod = np.linspace(.9, 1.1, 20)
+        for i in range(3):
+            ax[i].tick_params(axis="x", labelsize=16) 
+            ax[i].tick_params(axis = 'y', labelsize=16)
+        
+        mod = np.linspace(.8, 1.2, 40)
         mpap = []
         q_rpa = []
         mses = []
         for pct in mod:
-            x_test = np.copy(x_opt)
+            x_test = np.copy(x)
             x_test[index] *= pct
             
-            run_sim_wrapper(x_test, solver_file , last_cycle = True)
-        
-            # extract results/compute loss
-            results = np.load(get_result_file(solver_file), allow_pickle=True).item()
+            rez = run_sim_wrapper(x_test, solver)
             
-            _, _, mse, (mPAP_sim, Q_RPA_sim, _, _) = loss_function(results,tune_params, inflow, compute_last_cycle = False)
-            mpap.append(mPAP_sim)# - mPAP_opt)
-            q_rpa.append(Q_RPA_sim)# - Q_RPA_opt)
+            _, _, mse, (mPAP_sim, Q_RPA_sim, _, _) = loss_function(rez, tune_params, inflow)
+            mpap.append(mPAP_sim)
+            q_rpa.append(Q_RPA_sim)
             mses.append(mse)
             
 
@@ -560,6 +553,7 @@ def sens_test(opt_results, tune_params : TuneParams, inflow: Inflow, solver_file
         ax[2].plot(mod - 1, mses)
         
         fig.savefig(os.path.join(sensitivity_dir, f'{var_name}_change.png'))
+        print('Done')
 
 ########
 # Misc #
@@ -598,6 +592,7 @@ def dev_main(args: Namespace):
         if 'tune_config' in model.info['files']:
             print('Reading From a config file has not yet been implemented. Running defaults.')
             #! Change this when implementing config
+            #TODO:
             tuning_params = TuneParams()
         else:
             tuning_params = TuneParams()
@@ -619,16 +614,16 @@ def dev_main(args: Namespace):
         dummy_solver.read_solver_file(model.model_solver)
                 
         # set up solver file
-        solver_data = write_0d_dict(tuning_params, inflow, centerlines, dummy_solver, model.info['model']['units'])
-        x0 = get_initial_cond(tuning_params, inflow, solver_data)
-        modify_params(solver_data, x0)
-        solver_data.write_solver_file(model.tune_solver)
+        tuning_data = write_0d_dict(tuning_params, inflow, centerlines, dummy_solver, model.info['model']['units'])
+        x0 = get_initial_cond(tuning_params, inflow, tuning_data)
+        modify_params(tuning_data, x0)
         # run optimizer
         bounds = optimize.Bounds([0,0,0,0,0,0], [ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
         results = optimize.minimize(opt_function,
                             x0,
+                            #! Change this
                             (tuning_params,
-                            model.tune_solver,
+                            tuning_data,
                             inflow),
                             method='trust-constr',
                             bounds=bounds,
@@ -637,36 +632,28 @@ def dev_main(args: Namespace):
                                         }, # to test
                             callback=termination_closure(tuning_params))
         
+        
+        
         # add Pd to results 
         results_dict = convert_to_dict(results)
         results_dict['Pd'] = tuning_params.cap_wedge_pressure
         np.save(results_file, results_dict , allow_pickle=True)
         
-        run_sim_wrapper(results['x'], model.tune_solver, last_cycle=False)
         
         # validate results
-        sim_results = np.load(get_result_file(model.tune_solver), allow_pickle = True).item()
+        sim_results = run_sim_wrapper(results['x'], tuning_data)
+        tuning_data.write_solver_file(model.tune_solver)
         validate_results(tuning_params, inflow, sim_results, results, model.tuning_dir)
-        
+
         if args.sens_test:
-            print('Running sensitivity tests...', end = '\t')
+            print('Running sensitivity tests...')
             sens_dir = os.path.join(model.tuning_dir, 'sens_test')
             if not os.path.exists(sens_dir):
                 os.mkdir(sens_dir)
-            sens_test(results, tuning_params, inflow, model.tune_solver, sens_dir)
-            
-            run_sim_wrapper(results['x'], model.tune_solver, last_cycle=False)
-        print('Done')
+            sens_test(results['x'], tuning_params, inflow, tuning_data, sens_dir)
+            print('Done')
 
-        
-        
-        
-        
-        
-        
 
-        
-        
         
         
 
@@ -679,7 +666,6 @@ if __name__ == '__main__':
     # dev params
     dev.add_argument('-models', dest = 'models', action = 'append', default = [], help = 'Specific models to run')
     dev.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'Whether to run an optimization if one already exists')
-    dev.add_argument('-c', dest = 'c', action = 'store_true', default = False, help = 'Whether to use c solver')
     dev.add_argument('-sens_test', action = 'store_true', default = False, help = 'whether to run sensitivity tests or not')
     #dev.add_argument('-ingrid', action = 'store_true', default = False, help = 'if mapping from one of ingrids models')
     args = parser.parse_args()
@@ -688,8 +674,5 @@ if __name__ == '__main__':
     if args.mode == 'tool':
         tool_main(args)
     elif args.mode == 'dev':
-        if args.c:
-            print('C solver has not been implemented yet.')
-            #! IMPLEMENT C
         dev_main(args)
     
