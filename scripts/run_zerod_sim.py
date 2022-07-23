@@ -1,8 +1,6 @@
-from src.file_io import Solver0D
+from src.solver import Solver0D
 from src.run_sim import run_sim, validate_rez, get_waveform_file
-import os
 import argparse
-import sys
     
 if __name__ == '__main__':
 

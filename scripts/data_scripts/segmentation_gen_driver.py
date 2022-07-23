@@ -11,7 +11,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from src.misc import *
 from src.flow import Inflow
-from src.file_io import parse_mdl, Solver0D
+from src.file_io import parse_mdl
+from src.solver import Solver0D
 from src.data_org import DataPath
 
 ##########

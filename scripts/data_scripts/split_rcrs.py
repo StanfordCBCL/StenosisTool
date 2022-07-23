@@ -175,6 +175,8 @@ def calc_rcrs(results, inlet, area_file, out_dir):
     bcs.write_rcrt_file(out_dir)
     
     return rcrs
+
+
 '''
 def convert_old_rcrt(inlet, mdl_cvpre_file, old_rcrt_file, solver3d, out_dir, ingrid = False):
     

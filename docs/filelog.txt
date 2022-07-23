@@ -1,10 +1,6 @@
 data:
     - contains data for healthy/stenosis models
-
-data_scripts
-    - generates extra data information
-    
-    Blank
+    - summary data found in data/data.xlsx
 
 docs
     - contains info about project
@@ -18,21 +14,29 @@ docs
     todo.txt
         - contains information about what needs to be done
 
+results
+    - contains results of project
+
+scripts
+    - TBW
+
+scratch
+    - where scratch work is done
+
 src
     - contains modules for project
 
     centerlines.py
         - Contains centerlines class for handling centerlines
-    
-    find_generations.py
-        - Contains function to retrieve generations from a 0D solver file
 
     data_org.py
         - Contains DataPath class for managing relevant data
     
     file_io.py
-        - Contains Solver0D/SolverResults class for handling solver io operations
         - Contains other file IO operations
+
+    solver.py
+        - Contains Solver0D and SolverResults classes which handle most solver operations/conversions
 
     flow.py
         - Contains Inflow class for handling inflow file operations

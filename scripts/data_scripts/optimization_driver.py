@@ -1,8 +1,9 @@
-from matplotlib import use
+
 from src.data_org import DataPath
 from src.flow import Inflow
 from src.centerlines import Centerlines
-from src.file_io import Solver0D, SolverResults, check_exists_bool
+from src.file_io import check_exists_bool
+from src.solver import Solver0D, SolverResults
 from src.misc import m2d, d2m, create_parser
 from src.run_sim import run_sim
 
