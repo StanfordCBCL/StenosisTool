@@ -1,12 +1,12 @@
 # Performs comparison of Control and Stenosis generation resistances to determine if a segment contains severe to-be-fixed stenoses
 
 import numpy as np
-import json
+import os
 
-from functions.utils import *
-from functions.project_org import ProjectPath
-from functions.find_generations import *
-from functions.solver_io import Solver0D
+from src.data_org import DataPath, StenosisToolResults
+from src.solver import Solver0D
+from src.file_io import write_json
+from src.misc import create_parser
 
 ########################
 # Assistance Functions #
@@ -21,32 +21,24 @@ def diameter_formula(order, age):
     d = 0.001 + a * order * np.exp(b * order ) * (age ** c)
     return d
 
-def get_control_resistance(vessel_gen, model_age, vessel, viscosity = .04):
+def get_control_resistance(vessel_gen, model_age, branch_len, viscosity = .04):
 
     # we assume vessel_order is approximately 16 - vessel_gen since gen 0 = mpa = order 16 
     vessel_order = 16 - vessel_gen
     rad = diameter_formula(vessel_order, model_age) /2
-    length = vessel['vessel_length']
-    control_resistance = 8 * viscosity * length / (np.pi * (rad ** 4))
+    control_resistance = 8 * viscosity * branch_len / (np.pi * (rad ** 4))
     return control_resistance
-    
-    
-def get_generation_resistance_averages(control_generations):
-    ''' computes average of resistances over a particular generation by the total vessel length of that generation'''
-    resistance_averages = {}
-    for gen, branches in control_generations.items():
-        total_resistance = 0
-        total_length = 0
-        for branch, vessel_segs in branches.items():
-            for vessel in vessel_segs:
-                total_length = vessel['vessel_length']
-                total_resistance += vessel['vessel_length'] * vessel['zero_d_element_values']['R_poiseuille']
+
+def get_avg_resistance(node: Solver0D.BranchNode):
+    res = 0
+    branch_len = node.get_branch_len()
+    for vess in node.vessel_info:
+        res += vess['zero_d_element_values']['R_poiseuille'] * vess['vessel_length'] / branch_len
+    return res
         
-        resistance_averages[gen] = total_resistance / total_length
+    
 
-    return resistance_averages
-
-def find_stenosis_vessels(test_gens, test_age,  r_threshold, plausible_gens = {0,1,2,3}):
+def find_stenosis_vessels(model_solver: Solver0D, age, r_threshold, plausible_gens = {0,1,2,3}):
     ''' finds stenosis vessels in test_gens
     r_threshold is the percent higher the test resistance is than the control,
     This should only hold true for the first 4 generations = orders 16 - 12'''
@@ -54,62 +46,127 @@ def find_stenosis_vessels(test_gens, test_age,  r_threshold, plausible_gens = {0
     sten_len = 0
     stenosis_vessels = []
     control_vessel_radii = []
-    for gen, branches in test_gens.items():
-        for branch, vessel_segs in branches.items():
-            for vessel in vessel_segs:
-                total_len += vessel['vessel_length']
-                if gen in plausible_gens:
-                    # if the r poiseuille values is greater than the average
-                    control_res = get_control_resistance(gen, test_age, vessel, viscosity=.04 )
-                    if vessel['zero_d_element_values']['R_poiseuille'] > ( r_threshold * control_res):
-                        print(vessel['vessel_id'],vessel['zero_d_element_values']['R_poiseuille'],get_control_resistance(gen, test_age, vessel, viscosity=.04 ), vessel['zero_d_element_values']['stenosis_coefficient'])
-                        control_vessel_radii.append(diameter_formula((16 - gen), test_age) / 2)
-                        stenosis_vessels.append(vessel['vessel_id'])
-                        sten_len += vessel['vessel_length']
-    return stenosis_vessels, control_vessel_radii, total_len, sten_len
-                    
+    branch_tree = model_solver.get_branch_tree()
+    viscosity = model_solver.simulation_params['viscosity']
+    
+    for node in model_solver.tree_bfs_iterator(branch_tree):
         
+        branch_len = node.get_branch_len()
+        total_len += branch_len
+        gen = node.generation
+        if gen in plausible_gens:
+            
+            ## first check the entire branch avg 
+            control_res = get_control_resistance(gen, age,branch_len, viscosity)
+            avg_res = get_avg_resistance(node)
+            
+            # if it is a stenosis point, add the entire branch
+            if avg_res > control_res * r_threshold:
+                stenosis_vessels += node.vess_id
+                control_vessel_radii += [diameter_formula(16 - gen, age = age)/2 for i in range(len(node.vess_id))]
+                sten_len += branch_len
+            # if whole branch averaged is not a stenosis point, check individual
+            else: 
+                for vidx in range(len(node.vess_id)):
+                    vess = node.vessel_info[vidx]
+                    control_res = get_control_resistance(gen, age, vess['vessel_length'], viscosity)
+                    res = vess['zero_d_element_values']['R_poiseuille']
+                    if res > control_res * r_threshold:
+                        sten_len += vess['vessel_length']
+                        stenosis_vessels.append(node.vess_id[vidx])
+                        control_vessel_radii.append(diameter_formula(16 - gen, age = age)/2)
+            
+    return stenosis_vessels, control_vessel_radii, total_len, sten_len
+
+
+################
+# Fixed Solver #
+################
+
+def compute_radii(viscosity, length, rp):
+    r = ((8 * viscosity * length) / (rp * np.pi)) ** (1/4)
+    return r
+
+def new_inductance(old_ind, rad_rat):
+    return old_ind / (rad_rat ** 2)
+
+def new_capacitance(old_c, rad_rat):
+    return rad_rat**2 * old_c
+
+def new_sten_coeff(old_sten_coeff, rad_rat):
+    # modifications to a_0 and a_s
+    return old_sten_coeff / (rad_rat**4)
+    
+def new_r_poiseuille(old_r_p, rad_rat):
+    return old_r_p / (rad_rat ** 4)
+
+def construct_fixed_solver(sten_model: Solver0D, stenosis_dict, out_dir):
+    
+    viscosity = sten_model.simulation_params['viscosity']
+    for idx in range(len(stenosis_dict['stenosis_vessel_ids'])):
+        vid = stenosis_dict['stenosis_vessel_ids'][idx]
+        vess = sten_model.get_vessel(vid)
+        old_r = compute_radii(viscosity, vess['vessel_length'], vess['zero_d_element_values']['R_poiseuille'])
+        new_r = stenosis_dict['control_vessel_radii'][idx]
+        r_rat = new_r/old_r
+        ele = vess['zero_d_element_values']
+        
+        
+        ele['C'] = new_capacitance(ele['C'],r_rat)
+        ele["stenosis_coefficient"] = new_sten_coeff(ele["stenosis_coefficient"], r_rat)
+        ele['R_poiseuille'] = new_r_poiseuille(ele['R_poiseuille'], r_rat)
+        ele['L'] = new_inductance(ele['L'], r_rat)
+        
+    out_file = os.path.join(out_dir, os.path.splitext(os.path.basename(sten_model.solver_file))[0]) + '_fixed_stenosis.in'
+    print(out_file)
+    sten_model.write_solver_file(out_file)
+    
 
 ########
 # Main #
 ########
 
 def tool_main(args):
-    raise NotImplemented
+    raise NotImplementedError
+
 
 def dev_main(args):
     
-    org = ProjectPath(args.root)
+    org = DataPath(args.root)
     
     ## go through each specified model
     for model_name in args.models:
-        test_model = org.find_model(model_name)
-        if test_model.type != 'nci_stenosis':
-            print('Model does not belong to nci_stenosis type.')
-        else:
+        model = org.find_model(model_name)
+        if model.type != 'stenosis':
+            print('Model does not belong to stenosis type: skipping.')
+            continue
+        
+        stenosis_results = StenosisToolResults(args.root, model)
+        ## retrieve test model
+        model_age = int(model.info['metadata']['age'])
+        
+        # get test generations
+        sten_solver = Solver0D()
+        sten_solver.read_solver_file(stenosis_results.base_solver)
+        
+    
+        r_threshold = args.r_threshold # 4x  higher
+        plausible_gens  = set(args.gens) # first 4 generations
+        vessel_ids, control_vessel_radii, total_len, sten_len = find_stenosis_vessels( sten_solver, model_age, r_threshold, plausible_gens) 
             
-            ## retrieve test model
-            test_age = int(test_model.params['metadata']['age'])
-            
-            # get test generations
-            test_solver = Solver0D()
-            test_solver.read_solver_file(test_model.model_solver)
-            test_gens = find_generations(test_solver)
-            
-            
-            r_threshold = args.r_threshold # 4x  higher
-            plausible_gens  = {0,1,2,3} # first 4 generations
-            vessel_ids, control_vessel_radii, total_len, sten_len = find_stenosis_vessels( test_gens, test_age, r_threshold, plausible_gens) 
-            
-            print(vessel_ids)
-            with open(test_model.stenosis_vessels_file, 'w') as sten_file:
-                json.dump({
-                           'r_threshold': r_threshold ,
-                           'stenosis_vessel_ids': vessel_ids,
-                           'control_vessel_radii': control_vessel_radii,
-                           'total_tree_len': total_len,
-                           'total_sten_length': sten_len},
-                          sten_file,  indent = 4, sort_keys=True)
+        print(vessel_ids)
+        stenosis_dict = {
+                        'r_threshold': r_threshold ,
+                        'stenosis_vessel_ids': vessel_ids,
+                        'control_vessel_radii': control_vessel_radii,
+                        'total_tree_len': total_len,
+                        'total_sten_length': sten_len}
+        
+        
+        write_json(os.path.join(stenosis_results.base_solver_dir, 'stenosis.txt'), stenosis_dict)
+        
+        # construct a fixed version
+        construct_fixed_solver(sten_solver, stenosis_dict, stenosis_results.fixed_stenosis_dir)
         
             
             
@@ -117,13 +174,13 @@ def dev_main(args):
 
 if __name__ == '__main__':
     
-    parser, _, dev, tool = create_parser(description='Generates artificial stenosis files')
+    parser, dev, tool = create_parser(desc='Generates artificial stenosis files')
     
     
     # dev params
-    dev.add_argument('-root', dest = 'root', type = str, default = '.',  help = 'Root to entire project')
-    dev.add_argument('-models', dest = 'models', action = 'append', default = [], help = 'Specific models to run')
+    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-r_threshold', type = int, default = 4,  help = 'how many x control resistance the stenosis resistance must be to be considered a fixable location')
+    dev.add_argument('-gens', type = int, default = [0,1,2,3], nargs = '*', help = 'generations to identify fixable stenosis in')
     args = parser.parse_args()
     
     

@@ -151,7 +151,7 @@ if __name__ == '__main__':
     
     
     # dev params
-    dev.add_argument('-models', dest = 'models', action = 'append', default = [], help = 'Specific models to run')
+    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-n_versions',type = int, default = 1, help = 'number of stenosis versions')
     dev.add_argument('-occlusion', type = float, default = [.75, .9], nargs = 2, help = 'Occlusion range')
     dev.add_argument('-gens', type = int, default = [0, 1, 2, 3], nargs = '*', help = 'Generations to use')

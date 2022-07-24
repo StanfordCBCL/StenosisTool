@@ -7,13 +7,15 @@ except ImportError as e:
 
 import sys
 import os
+import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.misc import *
 from src.flow import Inflow
-from src.file_io import parse_mdl
-from src.solver import Solver0D
+from src.file_io import parse_mdl, write_json
 from src.data_org import DataPath
+from src.solver import Solver0D
+from src.bc import BoundaryConditions
 
 ##########
 # Params #
@@ -104,7 +106,7 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     
     
     inflow = Inflow(files.inflow_file, inverse = files.inverse_flow, smooth = files.smooth)
-    smooth_flowfile = 'inflow_smoothed.flow'
+    smooth_flowfile = os.path.join(files.solver_dir, 'inflow_smoothed.flow')
     inflow.write_flow(smooth_flowfile)
     
     # simulation params
@@ -218,11 +220,20 @@ def dev_main(args):
                       sim=sim_params,
                       dummy_bc=args.dummy_bc)
         
+
         # convert to cpp
-        s = Solver0D()
-        s.read_solver_file(model.model_solver)
-        s.to_cpp()
-        s.write_solver_file(model.model_solver)
+        #! May be able to remove with updates to C solver
+        solver = Solver0D()
+        solver.read_solver_file(model.model_solver)
+        solver.to_cpp()
+        
+        # add boundary condition maps
+        bc = BoundaryConditions()
+        bc.read_rcrt_file(os.path.join(model.solver_dir, 'rcrt.dat'))
+        solver.write_bc_map(bc)
+        
+        solver.write_solver_file(model.model_solver)
+        
 
         print('Done')
            

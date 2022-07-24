@@ -3,7 +3,8 @@ from src.data_org import DataPath
 from src.flow import Inflow
 from src.centerlines import Centerlines
 from src.file_io import check_exists_bool
-from src.solver import Solver0D, SolverResults
+from src.solver import Solver0D
+from src.solver_results import SolverResults
 from src.misc import m2d, d2m, create_parser
 from src.run_sim import run_sim
 
@@ -665,7 +666,7 @@ if __name__ == '__main__':
     parser, dev, tool = create_parser(desc = 'Tunes a model')
     
     # dev params
-    dev.add_argument('-models', dest = 'models', action = 'append', default = [], help = 'Specific models to run')
+    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'Whether to run an optimization if one already exists')
     dev.add_argument('-sens_test', action = 'store_true', default = False, help = 'whether to run sensitivity tests or not')
     #dev.add_argument('-ingrid', action = 'store_true', default = False, help = 'if mapping from one of ingrids models')

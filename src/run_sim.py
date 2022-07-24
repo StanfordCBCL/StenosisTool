@@ -1,4 +1,6 @@
-from .file_io import Solver0D, SolverResults
+
+from .solver import Solver0D
+from .solver_results import SolverResults
 from .misc import *
 from svzerodsolver.runnercpp import run_from_config
 import matplotlib.pyplot as plt
@@ -23,7 +25,7 @@ def validate_rez(solver: Solver0D, sim_results: SolverResults, out_file):
     
     
     # retrieve time of cardiac cycle and number of points per cycle
-    inflow_tc = solver.tc
+    inflow_tc = solver.inflow.tc
     num_pts = int(solver.simulation_params['number_of_time_pts_per_cardiac_cycle'])
     
     ## save flow and pressure graphs (last 3 cycles)
@@ -70,7 +72,7 @@ def validate_rez(solver: Solver0D, sim_results: SolverResults, out_file):
     fig.savefig(out_file)
     
     
-def run_sim(solver: Solver0D, use_steady_soltns = True, save_branch_results = False, save_csv = False, debug = False):
+def run_sim(solver: Solver0D, use_steady_soltns = True, save_branch_results = False, save_csv = False, save_last = False,  debug = False):
     ''' Takes in solver file and runs a simulation'''
     # Run a c simulation to test
     
@@ -80,20 +82,25 @@ def run_sim(solver: Solver0D, use_steady_soltns = True, save_branch_results = Fa
     if debug:
         print('Running Solver...', end = '\t', flush = True)
     results = run_from_config(solver.solver_data)
-    rez = SolverResults(results, last_cycle=False, tc = solver.tc)
+    rez = SolverResults(results, last_cycle=False, tc = solver.inflow.tc)
     if debug:
         print('Done')
+        
+    if save_last:
+        rez_out = SolverResults(results, last_cycle=True, tc = solver.inflow.tc)
+    else:
+        rez_out = rez
         
     if save_csv:
         if debug:
             print('Saving CSV...', end = '\t', flush = True)
-        rez.save_csv(get_csv_file(solver.solver_file))
+        rez_out.save_csv(get_csv_file(solver.solver_file))
         if debug:
             print('Done')
     if save_branch_results:
         if debug:
             print('Converting to branch results...', end = '\t', flush = True)
-        rez.convert_to_branch_results(solver, get_branch_results_file(solver.solver_file))
+        rez_out.convert_to_branch_results(solver, get_branch_results_file(solver.solver_file))
         if debug:
             print('Done')
     return rez

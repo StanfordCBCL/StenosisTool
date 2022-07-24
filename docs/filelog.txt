@@ -18,8 +18,54 @@ results
     - contains results of project
 
 scripts
-    - TBW
+    (TNI - tool version not implemented, only dev is)
+    [Brackets mean potential implementation/changes]
 
+    data_scripts (all TNI)
+        3d_to_0d_rcrs.py
+            - Converts a 3d rcrt file to usable 0d
+            - [retuning boundary conditions after changing to 0d]
+        
+        centerline_gen_driver.py
+            - given a model vtp & mdl file, generates a centerline file for it
+        
+        optimization_driver.py
+            - optimizes a healthy model for appropriate boundary conditions
+            - [could be modified to include unhealthy models]
+            - [will take an input config file with parameters]
+        
+        segmentation_gen_driver.py
+            - Generates a 0D input file from the centerlines of a 3D model.
+            - no_bc parameter is used for creation of a dummy 3D model to compute tree resistance values
+        
+        split_rcrs.py
+            - Given optimization results, splits rcr bcs into a file according to given approximations
+    
+    stenosis_tool (all TNI)
+        artificial_stenosis_driver.py
+            - From a healthy pulmonary tree, selects n locations from the first g generations and creates a solver file with area reductions in (o1, o2) occlusion range
+            - [changes to how the n is selected]
+        
+        stenosis_detection_driver.py
+            - From a stenosis pulmonary tree, computes control resistances and compares the vessels of the stenosis model in the first g generations. If a certain branch/segment resistance is r_threshold times higher than the control, it is considered a stenosed vessel
+            - Generates a pseuo-fixed version of the input file that replaces stenosis vessels with their control
+            - [changes to how stenosis is considered]
+        
+
+    zerod_junction_stenosis
+        EMPTY
+    
+    viz_script
+        zerod_to_geom.py
+            - Takes in a solver file with a branch_results.npy file in the same directory and maps it back to the centerline geometry
+        
+
+    run_zerod_sim.py
+        - takes an input solver file and runs a 0D simulation, outputting/saving results based on flags
+    
+    to_cpp.py
+        - converts a python 0D input file to a c++ 0D input file
+        
 scratch
     - where scratch work is done
 
@@ -36,7 +82,10 @@ src
         - Contains other file IO operations
 
     solver.py
-        - Contains Solver0D and SolverResults classes which handle most solver operations/conversions
+        - Contains Solver0D class which handle most solver operations/conversions
+
+    solver_results.py
+        - Contains SolverResults class which handles most solver results of 0D simulations
 
     flow.py
         - Contains Inflow class for handling inflow file operations

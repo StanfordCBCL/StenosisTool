@@ -4,7 +4,11 @@ from scipy.interpolate import interp1d
 class Inflow():
     ''' Handles inflow and inflow files'''
     def __init__(self, inflow_file, inverse = False, smooth = True, n_points = 1000):
-        self.inflow = np.loadtxt(inflow_file)
+        if inflow_file is not None:
+            self.inflow = np.loadtxt(inflow_file)
+        else:
+            self.inflow = None
+            return
         
         self.check_valid_flow()
         
@@ -13,6 +17,10 @@ class Inflow():
         if smooth:
             self.smooth_flow(n_points)
         
+        self.compute_vals()
+
+        
+    def compute_vals(self):
         self.t = self.inflow[:, 0]
         self.Q = self.inflow[:, 1]
         # cycle length

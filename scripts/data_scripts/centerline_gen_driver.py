@@ -67,8 +67,7 @@ def dev_main(args):
     
     org = DataPath(args.root)
     # generate centerlines.
-    print(org)
-    
+
     output = {}
     for model_name in args.models:
         model = org.find_model(model_name)

@@ -3,9 +3,11 @@ from collections import defaultdict
 from os import path
 import os
 import shutil
+from tabnanny import check
 
 from .misc import *
 from .file_io import check_exists, check_exists_bool, parse_config
+
 
 class ModelPath():
     ''' Model specific info '''
@@ -77,10 +79,10 @@ class ModelPath():
         file += '[metadata]\nid = \nname = \nage = \ngender = \ncondition = \n\n'
         
         file += '# file information\n'
-        file += '[files]\n# flow files\ninflow = \nrom_inflow = \n\n# model files\nmdl_file = \nvtp_file = \ncap_info = \n'
+        file += '[files]\n# flow files\ninflow = \nrom_inflow = \n\n# model files\nmdl_file = \nvtp_file = \ncap_info = \nsolver3d_file = \nrcrt3d_file = \npre3d_file = \n'
         
         file += '# 3D model info\n'
-        file += '[model]\ninlet = \nlpa = \nrpa = \nunits = \n'
+        file += '[model]\ninlet = \nunits = \n'
     
         with open(dev_config_fp, 'w') as dfile:
             dfile.write(file)
@@ -187,12 +189,29 @@ class StenosisToolResults(Results):
         
     def setup_stenosis(self):
         ''' if self.type = None, set up like a stenosis model '''
-        self.fixed_stenosis = check_exists(os.path.join(self.model_dir, self.FIXED_STEN_DIR), mkdir = True)
+        self.fixed_stenosis_dir = check_exists(os.path.join(self.model_dir, self.FIXED_STEN_DIR), mkdir = True)
     
     def setup_healthy(self):
         ''' if self.type = healthy'''
         self.artificial_sten_dir = check_exists(os.path.join(self.model_dir, self.ART_STEN_DIR), mkdir = True)
         
         
-        
+class JunctionStenosisResults(Results):
     
+    THREE_D_DIR = 'three_d_dir'
+    THREE_D_PARAMS = 'parameters.npy'
+    THREE_D_RERUNS = '3d_reruns'
+    
+    METHOD_DIR_1 = 'method_dir_1'
+    
+    def __init__(self, root, model: ModelPath):
+        super().__init__(root, model)
+        # 3D Directory
+        self.three_d_dir = check_exists(os.path.join(self.results_dir, self.THREE_D_DIR), mkdir = False)
+        self.three_d_parameters = check_exists(os.path.join(self.three_d_dir, self.THREE_D_PARAMS), mkdir = False)
+        self.three_d_reruns = check_exists(os.path.join(self.three_d_dir, self.THREE_D_RERUNS))
+        self.available_3d_models = {model_name.split('.')[0] for model_name in os.listdir(self.three_d_reruns)}
+
+        self.method_dir_1 = check_exists(os.path.join(self.model_dir, self.METHOD_DIR_1, mkdir = 1))
+        
+        
