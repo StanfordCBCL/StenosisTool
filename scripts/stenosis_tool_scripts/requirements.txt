@@ -1,8 +1,0 @@
-configparser
-argparse
-vtk
-matplotlib
-git+https://github.com/SimVascular/svZeroDSolver.git
-scipy
-json
-tqdm
