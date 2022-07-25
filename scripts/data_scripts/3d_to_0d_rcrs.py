@@ -110,7 +110,6 @@ if __name__ == '__main__':
     
     parser, dev, tool = create_parser(desc = 'converts 3d rcrt to 0d')
     
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-prefix', default = '', help = 'prefix to add before bc name')
     
     args = parser.parse_args()

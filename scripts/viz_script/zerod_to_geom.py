@@ -15,42 +15,41 @@ except ImportError:
     print('please run using simvascular --python -- this_script.py')
     exit(1)
     
-
-
-def add_avg_max_mPAP(centerlines: Centerlines, solver: Solver0D):
-    #! SPlit this up into 2 fgunctions more similar to results displayed by sv 0D rom
+def add_summary_PAP(centerlines: Centerlines, solver: Solver0D):
+    ''' adds max, min, and avg'''
     
-    array_num = centerlines.centerlines.GetPointData().GetNumberOfArrays()
-    array_names = [centerlines.centerlines.GetPointData().GetArrayName(i) for i in range(array_num)]
+    array_names = centerlines.get_pointdata_arraynames()
     mpap = {}
     for name in array_names:
         if name.startswith('pressure'):
-            mpap[float(name.split('_')[-1])] = centerlines.get_pointdata(name)
+            time = round(float(name.split('_')[-1]), 5)
+            new_name = 'pressure_' + str(time)
+            centerlines.rename_pointdata(name, new_name)
+            mpap[time] = centerlines.get_pointdata(new_name)
+            # convert to mmHg
+            centerlines.add_pointdata(d2m(mpap[time]), new_name)
     
     t = np.array(list(sorted(mpap.keys())))
     P = np.array([d2m(mpap[tidx]) for tidx in t])
     mPAP = np.trapz(P, t, axis = 0) / (t[-1] - t[0])
     centerlines.add_pointdata(mPAP,'mPAP')
     
-    max_pap = solver.inflow.t[np.where(solver.inflow.Q == solver.inflow.max_inflow)][0] + solver.inflow.tc * (solver.simulation_params['number_of_cardiac_cycles'] - 1)
+    max_pap = round(solver.inflow.t[np.where(solver.inflow.Q == solver.inflow.max_inflow)][0] + solver.inflow.tc * (solver.simulation_params['number_of_cardiac_cycles'] - 1), 5)
+    min_pap = round(solver.inflow.t[np.where(solver.inflow.Q == solver.inflow.min_inflow)][0] + solver.inflow.tc * (solver.simulation_params['number_of_cardiac_cycles'] - 1), 5)
 
     centerlines.add_pointdata(d2m(mpap[max_pap]), 'maxPAP_' + str(max_pap))
+    centerlines.add_pointdata(d2m(mpap[min_pap]), 'minPAP_' + str(min_pap))
     
     return centerlines
 
 def only_summary(centerlines: Centerlines):
     ''' Deletes non-summary values  '''
-    #! MAKE it so it deletes all other values?
-    array_num = centerlines.centerlines.GetPointData().GetNumberOfArrays()
-    array_names = [centerlines.centerlines.GetPointData().GetArrayName(i) for i in range(array_num)]
-    mpap = {}
+
+    array_names = centerlines.get_pointdata_arraynames()
     for name in array_names:
         if name.startswith('pressure_') or name.startswith('flow_'):
             centerlines.centerlines.GetPointData().RemoveArray(name)
-    return centerlines
-            
-
-# TODO: WRITE THESE TO MATCH THE FORMULAS            
+    return centerlines  
 
 
             
@@ -88,17 +87,25 @@ def main(args):
     
     # process
     post = extract_results.Post(params, None)
+    print('Writing each timestep...', end = '\t', flush = True)
     post.process()
+    print('Done')
     # ! can we skip all the extra processing and just get the array.
     
+    print('Adding summary...', end = '\t', flush = True)
     centerlines = Centerlines()
     centerlines_file = os.path.join(solver_dir, params.output_file_name + '.vtp')
     centerlines.load_centerlines(centerlines_file)
-    centerlines = add_avg_max_mPAP(centerlines, solver)
-    if args.summary:
-        centerlines = only_summary(centerlines)
-        
+    centerlines = add_summary_PAP(centerlines, solver)
     centerlines.write_centerlines(centerlines_file)
+    print('Done')
+    
+    if args.summary:
+        print('Writing Summary...', end = '\t', flush = True)
+        centerlines = only_summary(centerlines)
+        print('Done')
+        
+    centerlines.write_centerlines(os.path.join(solver_dir, params.output_file_name + '_summary.vtp'))
     
     
 
@@ -108,7 +115,7 @@ if __name__ == '__main__':
     
     parser.add_argument('-f', dest = 'solver_file', help = 'solver file path')
     parser.add_argument('-c', dest = 'centerlines_file', help = 'centerlines_file')
-    parser.add_argument('-s', dest = 'summary', action = 'store_true', default = False, help = 'save summary only')
+    parser.add_argument('-s', dest = 'summary', action = 'store_true', default = False, help = 'save summary only file')
     args = parser.parse_args()
     
     main(args)

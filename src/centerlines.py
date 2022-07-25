@@ -1,4 +1,5 @@
 
+
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
@@ -65,6 +66,11 @@ class Centerlines():
     def get_celldata(self, array_name):
         ''' retrieves array data from Cell Data'''
         return v2n(self.centerlines.GetCellData().GetArray(array_name))
+
+    def get_pointdata_arraynames(self):
+        array_num = self.centerlines.GetPointData().GetNumberOfArrays()
+        array_names = [self.centerlines.GetPointData().GetArrayName(i) for i in range(array_num)]
+        return array_names
     
     def add_pointdata(self, array: np.array, array_name):
         ''' Use this to overwrite old arrays or add new arrays. To overwrite, simply provide the old array's array name'''
@@ -72,6 +78,12 @@ class Centerlines():
         new_celldata.SetName(array_name)
         self.centerlines.GetPointData().AddArray(new_celldata)
     
+    def rename_pointdata(self, old_name, new_name):
+        tmp = self.centerlines.GetPointData().GetArray(old_name)
+        tmp.SetName(new_name)
+    
+    def remove_pointdata(self, array_name):
+        self.centerlines.GetPointData().RemoveArray(array_name)
     
     def generate_centerlines(self, mdl, vtp, inlet, use_entire_tree = True, outlet_names = []):
         ''' Generates centerlines '''

@@ -30,7 +30,11 @@ def compute_stenosis_vessels(solver: Solver0D, plausible_gens = {0,1,2,3}, occlu
     return n_vessels, occlusions
 
 
-def create_new_solver(old_solver: Solver0D, out_dir, n_vess, occlusions):
+def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, occlusions):
+    
+    
+    new_solver = Solver0D()
+    new_solver.read_solver_file(old_solver.solver_file )
     
     vessels = []
     old_sc = []
@@ -75,8 +79,6 @@ def create_new_solver(old_solver: Solver0D, out_dir, n_vess, occlusions):
                                'capacitance_old': old_c,
                                'capacitance_new': new_c.tolist()}
     write_json(stenosis_file, changes)
-     
-    new_solver_file = os.path.join(out_dir, get_basename(old_solver.solver_file) + '_art_sten.in') 
     
     old_solver.write_solver_file(new_solver_file)
 
@@ -132,10 +134,25 @@ def dev_main(args):
         # load in base solver file
         main_solver = Solver0D()
         main_solver.read_solver_file(model_results.base_solver)
+
         
-        
+        # create the proximal test
+
+        n_vessels, occlusions = compute_stenosis_vessels(solver = main_solver,
+                                    plausible_gens={0,1},
+                                    occlusion_range=occlusion_range)
+        version_dir = check_exists(os.path.join(model_results.artificial_sten_dir, 'proximal'), mkdir = True)
+        proximal_solver_file = os.path.join(version_dir, get_basename(main_solver.solver_file) + '_proximal_sten.in') 
+        if not os.path.exists(proximal_solver_file):
+            # only if one does not already exist
+            create_new_solver(main_solver, proximal_solver_file,  version_dir,  n_vessels, occlusions)
+       
        
         for i in range(args.n_versions):
+            # reload in base solver file
+            main_solver = Solver0D()
+            main_solver.read_solver_file(model_results.base_solver)
+            
             # compute which vessels
             n_vessels, occlusions = compute_stenosis_vessels(solver = main_solver,
                                     plausible_gens=plausible_gens,
@@ -143,15 +160,14 @@ def dev_main(args):
             
             version_dir = check_exists(os.path.join(model_results.artificial_sten_dir, str(i)), mkdir = True)
             
-            
-            create_new_solver(main_solver,version_dir,  n_vessels, occlusions)
+            new_solver_file = os.path.join(version_dir, get_basename(main_solver.solver_file) + '_art_sten.in') 
+            create_new_solver(main_solver, new_solver_file, version_dir,  n_vessels, occlusions)
 if __name__ == '__main__':
     
     parser, dev, tool = create_parser(desc = 'Generates artificial stenosis files')
     
     
     # dev params
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-n_versions',type = int, default = 1, help = 'number of stenosis versions')
     dev.add_argument('-occlusion', type = float, default = [.75, .9], nargs = 2, help = 'Occlusion range')
     dev.add_argument('-gens', type = int, default = [0, 1, 2, 3], nargs = '*', help = 'Generations to use')

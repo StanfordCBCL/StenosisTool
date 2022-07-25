@@ -92,7 +92,9 @@ class Solver0D():
             self.inflow.inflow = np.array(list(zip(bc['bc_values']['t'], bc['bc_values']['Q'])))
             self.inflow.compute_vals()
         else:
-            self.inflow = None
+            self.inflow = Inflow(inflow_file = None)
+            self.inflow.inflow = np.array([(0,0),(0,0)])
+            self.inflow.compute_vals()
         self._construct_vessel_map()
         self._junction_matrix()
 

@@ -189,7 +189,7 @@ class StenosisToolResults(Results):
         
     def setup_stenosis(self):
         ''' if self.type = None, set up like a stenosis model '''
-        self.fixed_stenosis_dir = check_exists(os.path.join(self.model_dir, self.FIXED_STEN_DIR), mkdir = True)
+        pass
     
     def setup_healthy(self):
         ''' if self.type = healthy'''
@@ -200,7 +200,7 @@ class JunctionStenosisResults(Results):
     
     THREE_D_DIR = 'three_d_dir'
     THREE_D_PARAMS = 'parameters.npy'
-    THREE_D_RERUNS = '3d_reruns'
+    THREE_D_RERUNS = '3d_rerun'
     
     METHOD_DIR_1 = 'method_dir_1'
     
@@ -212,6 +212,7 @@ class JunctionStenosisResults(Results):
         self.three_d_reruns = check_exists(os.path.join(self.three_d_dir, self.THREE_D_RERUNS))
         self.available_3d_models = {model_name.split('.')[0] for model_name in os.listdir(self.three_d_reruns)}
 
-        self.method_dir_1 = check_exists(os.path.join(self.model_dir, self.METHOD_DIR_1, mkdir = 1))
+        self.method_dir_1 = check_exists(os.path.join(self.model_dir, self.METHOD_DIR_1), mkdir = True)
+        self.model_three_d_dir = check_exists(os.path.join(self.model_dir, self.THREE_D_DIR), mkdir = True)
         
         

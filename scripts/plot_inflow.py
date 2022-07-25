@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from functions.flow import Inflow
+from src.flow import Inflow
 import sys
 import os
 

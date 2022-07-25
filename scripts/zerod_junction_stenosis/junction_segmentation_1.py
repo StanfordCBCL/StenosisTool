@@ -1,18 +1,18 @@
-from functions.comparisons_org import ComparisonPath
-from functions.solver_io import Solver0D
+from src.data_org import DataPath, JunctionStenosisResults
+from src.solver import Solver0D
+from src.misc import create_parser
 
 import os
 
-if __name__ == '__main__':
+
+def dev_main(args):
     
-    ''' For Comparing a new technique of stenosis junction handling '''
+    org = DataPath(args.root)
     
-    root = '.'
-    
-    comporg = ComparisonPath(root)
-    
-    for model in comporg.models:
-        model_name = model.params['metadata']['name']
+    for model_name in args.models:
+        model = org.find_model(model_name)
+        model_results = JunctionStenosisResults(args.root, model)
+        
         solver_file=model.model_solver
         solver = Solver0D()
         solver.read_solver_file(solver_file = solver_file)
@@ -21,7 +21,6 @@ if __name__ == '__main__':
         # for each junction, compute a stenosis coefficient to add to the outlet branches downstream
         for junc in solver.junctions:
             if junc['junction_type'] != 'internal_junction':
-                print(junc['junction_name'])
                 
                 inlet = junc['inlet_vessels']
                 outlets = junc['outlet_vessels']
@@ -40,8 +39,21 @@ if __name__ == '__main__':
                     out_vess['stenosis_coefficient_junction'] = 1.52 * density * ( (S0/S1 - 1) **2) / (2 * S0**2)
                     out_vess['zero_d_element_values']['stenosis_coefficient'] += out_vess['stenosis_coefficient_junction']
                     
-            new_solver_file = os.path.join(os.path.join(comporg.dir_names[model_name], comporg.NEW_0D), model_name + '_new_model.in' )
+            new_solver_file = os.path.join(os.path.join(model_results.method_dir_1, os.path.basename(solver_file).split('.')[0] + '_method_1.in' ))
             solver.write_solver_file(new_solver_file)
                 
         
         
+
+if __name__ == '__main__':
+    
+    parser, dev, tool = create_parser(desc = 'Implementing a new method of stenosis junction handling')
+    
+    args = parser.parse_args()
+    
+    if args.mode == 'tool':
+        pass
+    if args.mode == 'dev':
+        dev_main(args)
+    
+    

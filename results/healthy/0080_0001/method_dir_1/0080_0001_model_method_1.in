@@ -5969,22 +5969,23 @@
             "vessel_name": "branch0_seg0",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "C": 1.3607197944639942e-06,
-                "L": 1.8558708129955115,
-                "R_poiseuille": 2.232201116138594,
+                "C": 1.010376999535209e-05,
+                "L": 0.24993840441465603,
+                "R_poiseuille": 0.04048590236868942,
                 "stenosis_coefficient": 0.0
             }
         },
         {
+            "stenosis_coefficient_junction": 0.03052735647435768,
             "vessel_id": 1,
             "vessel_length": 0.4700096249069316,
             "vessel_name": "branch1_seg0",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "C": 3.6876158584000263e-07,
-                "L": 0.7937499435511367,
-                "R_poiseuille": 1.1993578548311428,
-                "stenosis_coefficient": 8.945264643141764e-05
+                "C": 1.5047830399804309e-06,
+                "L": 0.194516073192941,
+                "R_poiseuille": 0.07202650740965344,
+                "stenosis_coefficient": 0.030532728483783435
             }
         },
         {
@@ -5993,10 +5994,10 @@
             "vessel_name": "branch1_seg1",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "C": 3.6876158584000263e-07,
-                "L": 0.7937499435511367,
-                "R_poiseuille": 1.1993578548311428,
-                "stenosis_coefficient": 8.945264643141764e-05
+                "C": 3.7435616329025257e-06,
+                "L": 0.5409455340167746,
+                "R_poiseuille": 0.21177947887351442,
+                "stenosis_coefficient": 0.0009669016709319668
             }
         },
         {
@@ -6005,13 +6006,14 @@
             "vessel_name": "branch1_seg2",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "C": 3.6876158584000263e-07,
-                "L": 0.7937499435511367,
-                "R_poiseuille": 1.1993578548311428,
-                "stenosis_coefficient": 8.945264643141764e-05
+                "C": 8.851935261975415e-08,
+                "L": 0.01098409585941941,
+                "R_poiseuille": 0.003984954955498705,
+                "stenosis_coefficient": 1.413533219981969e-10
             }
         },
         {
+            "stenosis_coefficient_junction": 7.350056590416175,
             "vessel_id": 4,
             "vessel_length": 0.18246360279341386,
             "vessel_name": "branch2_seg0",
@@ -6020,10 +6022,11 @@
                 "C": 6.671179681997048e-08,
                 "L": 0.6612500713376357,
                 "R_poiseuille": 2.1440916149689095,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 7.350056590416175
             }
         },
         {
+            "stenosis_coefficient_junction": 0.001872855073980737,
             "vessel_id": 5,
             "vessel_length": 1.2720532346178934,
             "vessel_name": "branch3_seg0",
@@ -6032,13 +6035,14 @@
                 "C": 4.401376388795646e-07,
                 "L": 4.87122222144608,
                 "R_poiseuille": 16.69009152468139,
-                "stenosis_coefficient": 0.002558663281110435
+                "stenosis_coefficient": 0.004431518355091172
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_0"
             },
+            "stenosis_coefficient_junction": 69.96425921323724,
             "vessel_id": 6,
             "vessel_length": 1.1945502040546236,
             "vessel_name": "branch4_seg0",
@@ -6047,10 +6051,11 @@
                 "C": 1.0834265527621326e-07,
                 "L": 17.451196824915797,
                 "R_poiseuille": 228.10465451437094,
-                "stenosis_coefficient": 0.2477553486737846
+                "stenosis_coefficient": 70.21201456191102
             }
         },
         {
+            "stenosis_coefficient_junction": 1.3927283139008155,
             "vessel_id": 7,
             "vessel_length": 0.012598812486980249,
             "vessel_name": "branch5_seg0",
@@ -6059,10 +6064,11 @@
                 "C": 9.247627316030016e-09,
                 "L": 0.022742844582869418,
                 "R_poiseuille": 0.036732296002307256,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 1.3927283139008155
             }
         },
         {
+            "stenosis_coefficient_junction": 20.87462447693417,
             "vessel_id": 8,
             "vessel_length": 0.9157006267989956,
             "vessel_name": "branch6_seg0",
@@ -6071,10 +6077,11 @@
                 "C": 1.644325144062884e-07,
                 "L": 6.756708819150725,
                 "R_poiseuille": 44.607205382267445,
-                "stenosis_coefficient": 1.3370892732284973e-06
+                "stenosis_coefficient": 20.874625814023442
             }
         },
         {
+            "stenosis_coefficient_junction": 3.3995828351397956,
             "vessel_id": 9,
             "vessel_length": 0.9763193461215273,
             "vessel_name": "branch7_seg0",
@@ -6083,7 +6090,7 @@
                 "C": 2.4699693236805335e-07,
                 "L": 5.113380477344549,
                 "R_poiseuille": 23.961414028043425,
-                "stenosis_coefficient": 0.0892338618024752
+                "stenosis_coefficient": 3.488816696942271
             }
         },
         {
@@ -6114,6 +6121,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 1.9071091557367092,
             "vessel_id": 12,
             "vessel_length": 2.032819460778153,
             "vessel_name": "branch8_seg0",
@@ -6122,10 +6130,11 @@
                 "C": 4.477681668775971e-07,
                 "L": 12.228136627795637,
                 "R_poiseuille": 65.8127253949982,
-                "stenosis_coefficient": 0.3137111686911445
+                "stenosis_coefficient": 2.2208203244278537
             }
         },
         {
+            "stenosis_coefficient_junction": 1.8855902688697694,
             "vessel_id": 13,
             "vessel_length": 0.23451239270361057,
             "vessel_name": "branch9_seg0",
@@ -6134,7 +6143,7 @@
                 "C": 3.596377255977987e-08,
                 "L": 2.026199628201061,
                 "R_poiseuille": 15.663426928169446,
-                "stenosis_coefficient": 1.739272545920704e-07
+                "stenosis_coefficient": 1.885590442797024
             }
         },
         {
@@ -6162,6 +6171,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 4.537720343537603,
             "vessel_id": 16,
             "vessel_length": 0.8920212348651329,
             "vessel_name": "branch10_seg0",
@@ -6170,7 +6180,7 @@
                 "C": 1.8343296243641903e-07,
                 "L": 5.747631077686538,
                 "R_poiseuille": 33.13528391900015,
-                "stenosis_coefficient": 0.22574183274564846
+                "stenosis_coefficient": 4.763462176283252
             }
         },
         {
@@ -6201,18 +6211,20 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 0.034317749910164924,
             "vessel_id": 19,
             "vessel_length": 1.6221170932907283,
             "vessel_name": "branch11_seg0",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "C": 7.737828809592809e-07,
-                "L": 4.505688489691292,
-                "R_poiseuille": 11.197684963050767,
-                "stenosis_coefficient": 1.042875512028882e-05
+                "C": 4.670470898335906e-06,
+                "L": 0.7464824631496186,
+                "R_poiseuille": 0.30735843672521673,
+                "stenosis_coefficient": 0.03431803616271457
             }
         },
         {
+            "stenosis_coefficient_junction": 0.9927033007032575,
             "vessel_id": 20,
             "vessel_length": 0.03377137318889544,
             "vessel_name": "branch12_seg0",
@@ -6221,10 +6233,11 @@
                 "C": 2.6106741801444264e-08,
                 "L": 0.05788428115053908,
                 "R_poiseuille": 0.08876886950197835,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.9927033007032575
             }
         },
         {
+            "stenosis_coefficient_junction": 1.8659540710214315,
             "vessel_id": 21,
             "vessel_length": 1.3376670796129662,
             "vessel_name": "branch13_seg0",
@@ -6233,10 +6246,11 @@
                 "C": 5.283524304294337e-07,
                 "L": 4.487332459347941,
                 "R_poiseuille": 13.468417650469744,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 1.8659540710214315
             }
         },
         {
+            "stenosis_coefficient_junction": 0.9280892429620331,
             "vessel_id": 22,
             "vessel_length": 0.5268498788608416,
             "vessel_name": "branch14_seg0",
@@ -6245,10 +6259,11 @@
                 "C": 1.6973987996455093e-07,
                 "L": 2.1667347900834457,
                 "R_poiseuille": 7.972834501314958,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.9280892429620331
             }
         },
         {
+            "stenosis_coefficient_junction": 0.42900480293426,
             "vessel_id": 23,
             "vessel_length": 0.4920255197904023,
             "vessel_name": "branch15_seg0",
@@ -6257,10 +6272,11 @@
                 "C": 1.4304617348088087e-07,
                 "L": 2.2424093267235747,
                 "R_poiseuille": 9.143874860658368,
-                "stenosis_coefficient": 0.01624232123516527
+                "stenosis_coefficient": 0.4452471241694253
             }
         },
         {
+            "stenosis_coefficient_junction": 8.833591007768538,
             "vessel_id": 24,
             "vessel_length": 0.566556332257165,
             "vessel_name": "branch16_seg0",
@@ -6269,10 +6285,11 @@
                 "C": 8.965555809305441e-08,
                 "L": 4.743783451841165,
                 "R_poiseuille": 35.53814329137276,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 8.833591007768538
             }
         },
         {
+            "stenosis_coefficient_junction": 0.692149586952814,
             "vessel_id": 25,
             "vessel_length": 0.031139405875391275,
             "vessel_name": "branch17_seg0",
@@ -6281,13 +6298,14 @@
                 "C": 4.268892531907404e-09,
                 "L": 0.30096867820113493,
                 "R_poiseuille": 2.602677754868325,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.692149586952814
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_3"
             },
+            "stenosis_coefficient_junction": 1.415090992096077,
             "vessel_id": 26,
             "vessel_length": 1.0517739141509332,
             "vessel_name": "branch18_seg0",
@@ -6296,13 +6314,14 @@
                 "C": 1.2175771718079267e-07,
                 "L": 12.038272559107403,
                 "R_poiseuille": 123.28040972731674,
-                "stenosis_coefficient": 0.5519408447574098
+                "stenosis_coefficient": 1.967031836853487
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_4"
             },
+            "stenosis_coefficient_junction": 0.0031816403071551623,
             "vessel_id": 27,
             "vessel_length": 2.0045402443387177,
             "vessel_name": "branch19_seg0",
@@ -6311,10 +6330,11 @@
                 "C": 3.6393620787741853e-07,
                 "L": 14.629186360314524,
                 "R_poiseuille": 95.5242607556671,
-                "stenosis_coefficient": 2.11513130496297
+                "stenosis_coefficient": 2.118312945270125
             }
         },
         {
+            "stenosis_coefficient_junction": 10.44071010101631,
             "vessel_id": 28,
             "vessel_length": 1.5105530562452263,
             "vessel_name": "branch20_seg0",
@@ -6323,10 +6343,11 @@
                 "C": 4.5220568373664534e-07,
                 "L": 6.685776115997156,
                 "R_poiseuille": 26.476208681020186,
-                "stenosis_coefficient": 1.5653168353762343
+                "stenosis_coefficient": 12.006026936392544
             }
         },
         {
+            "stenosis_coefficient_junction": 6.375974207372862,
             "vessel_id": 29,
             "vessel_length": 0.0525308327091072,
             "vessel_name": "branch21_seg0",
@@ -6335,13 +6356,14 @@
                 "C": 8.978035614270711e-09,
                 "L": 0.4072519053568802,
                 "R_poiseuille": 2.8248805277750337,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 6.375974207372862
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_5"
             },
+            "stenosis_coefficient_junction": 0.025271398061087153,
             "vessel_id": 30,
             "vessel_length": 0.9960644801709702,
             "vessel_name": "branch22_seg0",
@@ -6350,10 +6372,11 @@
                 "C": 1.5879742500008496e-07,
                 "L": 8.278417578065248,
                 "R_poiseuille": 61.55953427282545,
-                "stenosis_coefficient": 0.0673975832658421
+                "stenosis_coefficient": 0.09266898132692925
             }
         },
         {
+            "stenosis_coefficient_junction": 12.812693677568422,
             "vessel_id": 31,
             "vessel_length": 1.3933087944952214,
             "vessel_name": "branch23_seg0",
@@ -6362,13 +6385,14 @@
                 "C": 4.0808905805226047e-07,
                 "L": 6.303121585911486,
                 "R_poiseuille": 25.5124467603222,
-                "stenosis_coefficient": 7.826112848720517
+                "stenosis_coefficient": 20.63880652628894
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_6"
             },
+            "stenosis_coefficient_junction": 13.450150462634056,
             "vessel_id": 32,
             "vessel_length": 1.8514224613548453,
             "vessel_name": "branch24_seg0",
@@ -6377,10 +6401,11 @@
                 "C": 3.144297640203167e-07,
                 "L": 14.444525669964149,
                 "R_poiseuille": 100.82985955966326,
-                "stenosis_coefficient": 0.10762863430850901
+                "stenosis_coefficient": 13.557779096942566
             }
         },
         {
+            "stenosis_coefficient_junction": 35.97325940146897,
             "vessel_id": 33,
             "vessel_length": 0.3780642267581488,
             "vessel_name": "branch25_seg0",
@@ -6389,10 +6414,11 @@
                 "C": 4.9428886940954934e-08,
                 "L": 3.8314769587183664,
                 "R_poiseuille": 34.74201243766531,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 35.97325940146897
             }
         },
         {
+            "stenosis_coefficient_junction": 14.483930328937792,
             "vessel_id": 34,
             "vessel_length": 0.42533483343073947,
             "vessel_name": "branch26_seg0",
@@ -6401,7 +6427,7 @@
                 "C": 4.08908436916472e-08,
                 "L": 5.8620795772581475,
                 "R_poiseuille": 72.28706442620819,
-                "stenosis_coefficient": 0.016947425598004107
+                "stenosis_coefficient": 14.500877754535797
             }
         },
         {
@@ -6435,6 +6461,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_8"
             },
+            "stenosis_coefficient_junction": 3.7643585328239926,
             "vessel_id": 37,
             "vessel_length": 0.8916502618658464,
             "vessel_name": "branch27_seg0",
@@ -6443,10 +6470,11 @@
                 "C": 1.4533216230964128e-07,
                 "L": 7.24841792984397,
                 "R_poiseuille": 52.720561975892096,
-                "stenosis_coefficient": 0.015561637769942963
+                "stenosis_coefficient": 3.7799201705939356
             }
         },
         {
+            "stenosis_coefficient_junction": 43.294587854019326,
             "vessel_id": 38,
             "vessel_length": 0.493275322440774,
             "vessel_name": "branch28_seg0",
@@ -6455,13 +6483,14 @@
                 "C": 5.747556173100046e-08,
                 "L": 5.609335702535616,
                 "R_poiseuille": 57.07180333626785,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 43.294587854019326
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_9"
             },
+            "stenosis_coefficient_junction": 8.136584701223065,
             "vessel_id": 39,
             "vessel_length": 1.4286105395948658,
             "vessel_name": "branch29_seg0",
@@ -6470,13 +6499,14 @@
                 "C": 1.2476521984318365e-07,
                 "L": 21.67454761221882,
                 "R_poiseuille": 294.2214653343044,
-                "stenosis_coefficient": 4.020179928966394
+                "stenosis_coefficient": 12.156764630189459
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_10"
             },
+            "stenosis_coefficient_junction": 36.601964603905664,
             "vessel_id": 40,
             "vessel_length": 1.9747651599405993,
             "vessel_name": "branch30_seg0",
@@ -6485,13 +6515,14 @@
                 "C": 2.740024355684947e-07,
                 "L": 18.857858300390923,
                 "R_poiseuille": 161.12294827904603,
-                "stenosis_coefficient": 2.451451694163235
+                "stenosis_coefficient": 39.053416298068896
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_11"
             },
+            "stenosis_coefficient_junction": 17.812840630977004,
             "vessel_id": 41,
             "vessel_length": 2.741554166069138,
             "vessel_name": "branch31_seg0",
@@ -6500,10 +6531,11 @@
                 "C": 4.2207314067633064e-07,
                 "L": 23.595100091698672,
                 "R_poiseuille": 181.69163690589986,
-                "stenosis_coefficient": 0.3489574200450564
+                "stenosis_coefficient": 18.16179805102206
             }
         },
         {
+            "stenosis_coefficient_junction": 13.305479070639601,
             "vessel_id": 42,
             "vessel_length": 0.5345864070370504,
             "vessel_name": "branch32_seg0",
@@ -6512,10 +6544,11 @@
                 "C": 1.3740451281411413e-07,
                 "L": 2.7558190955664257,
                 "R_poiseuille": 12.710762938020617,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 13.305479070639601
             }
         },
         {
+            "stenosis_coefficient_junction": 0.7900932031582992,
             "vessel_id": 43,
             "vessel_length": 0.28031060209411607,
             "vessel_name": "branch33_seg0",
@@ -6524,13 +6557,14 @@
                 "C": 5.1767223773147293e-08,
                 "L": 2.0111295718245388,
                 "R_poiseuille": 12.91007306425636,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.7900932031582992
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_12"
             },
+            "stenosis_coefficient_junction": 3.456234330692033,
             "vessel_id": 44,
             "vessel_length": 1.8429878931971733,
             "vessel_name": "branch34_seg0",
@@ -6539,13 +6573,14 @@
                 "C": 1.992661747648349e-07,
                 "L": 22.585372562532687,
                 "R_poiseuille": 247.63963550976513,
-                "stenosis_coefficient": 2.7481477140841433
+                "stenosis_coefficient": 6.204382044776176
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_13"
             },
+            "stenosis_coefficient_junction": 2.4888362840814175,
             "vessel_id": 45,
             "vessel_length": 0.6101758693529614,
             "vessel_name": "branch35_seg0",
@@ -6554,10 +6589,11 @@
                 "C": 6.105278538524665e-08,
                 "L": 8.080169163101944,
                 "R_poiseuille": 95.7357178451754,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 2.4888362840814175
             }
         },
         {
+            "stenosis_coefficient_junction": 15.919104334721078,
             "vessel_id": 46,
             "vessel_length": 0.7139818673389967,
             "vessel_name": "branch36_seg0",
@@ -6566,10 +6602,11 @@
                 "C": 1.5436961144708934e-07,
                 "L": 4.375507493320846,
                 "R_poiseuille": 23.991522106345567,
-                "stenosis_coefficient": 3.2667278901429024
+                "stenosis_coefficient": 19.18583222486398
             }
         },
         {
+            "stenosis_coefficient_junction": 1.1380525810778377,
             "vessel_id": 47,
             "vessel_length": 1.2098135849553884,
             "vessel_name": "branch37_seg0",
@@ -6578,10 +6615,11 @@
                 "C": 2.5945164470011613e-07,
                 "L": 7.4747447002909215,
                 "R_poiseuille": 41.32019776686181,
-                "stenosis_coefficient": 0.2765326900025144
+                "stenosis_coefficient": 1.4145852710803521
             }
         },
         {
+            "stenosis_coefficient_junction": 4.561095471721443,
             "vessel_id": 48,
             "vessel_length": 0.21966625688935024,
             "vessel_name": "branch38_seg0",
@@ -6590,7 +6628,7 @@
                 "C": 3.27475555490314e-08,
                 "L": 1.9523770333079695,
                 "R_poiseuille": 15.525734357494068,
-                "stenosis_coefficient": 0.00491785462983731
+                "stenosis_coefficient": 4.56601332635128
             }
         },
         {
@@ -6621,6 +6659,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 9.106335569678508,
             "vessel_id": 51,
             "vessel_length": 1.5510344538742333,
             "vessel_name": "branch39_seg0",
@@ -6629,13 +6668,14 @@
                 "C": 3.5382072231661123e-07,
                 "L": 9.008977530467261,
                 "R_poiseuille": 46.818520207964525,
-                "stenosis_coefficient": 0.10378041857842221
+                "stenosis_coefficient": 9.21011598825693
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_15"
             },
+            "stenosis_coefficient_junction": 7.982677029399204,
             "vessel_id": 52,
             "vessel_length": 0.6994048703533935,
             "vessel_name": "branch40_seg0",
@@ -6644,10 +6684,11 @@
                 "C": 9.630338774326483e-08,
                 "L": 6.730256525564875,
                 "R_poiseuille": 57.945898832393766,
-                "stenosis_coefficient": 1.2970448172629092
+                "stenosis_coefficient": 9.279721846662113
             }
         },
         {
+            "stenosis_coefficient_junction": 26.765665747232905,
             "vessel_id": 53,
             "vessel_length": 0.5165824403623721,
             "vessel_name": "branch41_seg0",
@@ -6656,10 +6697,11 @@
                 "C": 9.780985673857227e-08,
                 "L": 3.615035234999944,
                 "R_poiseuille": 22.634637845317634,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 26.765665747232905
             }
         },
         {
+            "stenosis_coefficient_junction": 0.760621838877995,
             "vessel_id": 54,
             "vessel_length": 0.7120827001719353,
             "vessel_name": "branch42_seg0",
@@ -6668,7 +6710,7 @@
                 "C": 1.1087987296315378e-07,
                 "L": 6.059321947183034,
                 "R_poiseuille": 46.13236740927615,
-                "stenosis_coefficient": 0.002301070787898273
+                "stenosis_coefficient": 0.7629229096658933
             }
         },
         {
@@ -6699,6 +6741,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 6.751074746809825,
             "vessel_id": 57,
             "vessel_length": 0.6835632147915793,
             "vessel_name": "branch43_seg0",
@@ -6707,7 +6750,7 @@
                 "C": 1.0045236222541576e-07,
                 "L": 6.163296932004039,
                 "R_poiseuille": 49.720515160413875,
-                "stenosis_coefficient": 1.3521118708458714e-05
+                "stenosis_coefficient": 6.751088267928533
             }
         },
         {
@@ -6738,6 +6781,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 11.171918959913702,
             "vessel_id": 60,
             "vessel_length": 1.422373662231766,
             "vessel_name": "branch44_seg0",
@@ -6746,10 +6790,11 @@
                 "C": 2.1826457156762588e-07,
                 "L": 12.281743835638892,
                 "R_poiseuille": 94.88432848443618,
-                "stenosis_coefficient": 0.6303420059712472
+                "stenosis_coefficient": 11.80226096588495
             }
         },
         {
+            "stenosis_coefficient_junction": 0.02209820581534019,
             "vessel_id": 61,
             "vessel_length": 0.0321936092555048,
             "vessel_name": "branch45_seg0",
@@ -6758,13 +6803,14 @@
                 "C": 4.971900529525925e-09,
                 "L": 0.2762057936863647,
                 "R_poiseuille": 2.12023510103226,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.02209820581534019
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_18"
             },
+            "stenosis_coefficient_junction": 4.112726751870616,
             "vessel_id": 62,
             "vessel_length": 1.1480030859456651,
             "vessel_name": "branch46_seg0",
@@ -6773,13 +6819,14 @@
                 "C": 1.4061297799058808e-07,
                 "L": 12.41871278903861,
                 "R_poiseuille": 120.19827396837798,
-                "stenosis_coefficient": 0.5073634213440981
+                "stenosis_coefficient": 4.620090173214714
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_19"
             },
+            "stenosis_coefficient_junction": 3.6098832906618417,
             "vessel_id": 63,
             "vessel_length": 0.7711519337457966,
             "vessel_name": "branch47_seg0",
@@ -6788,10 +6835,11 @@
                 "C": 1.4187921172081466e-07,
                 "L": 5.553630933398018,
                 "R_poiseuille": 35.78509703435937,
-                "stenosis_coefficient": 0.14428258292081445
+                "stenosis_coefficient": 3.754165873582656
             }
         },
         {
+            "stenosis_coefficient_junction": 52.88524334953056,
             "vessel_id": 64,
             "vessel_length": 0.3284897109005369,
             "vessel_name": "branch48_seg0",
@@ -6800,7 +6848,7 @@
                 "C": 4.891245343366912e-08,
                 "L": 2.9230750950951974,
                 "R_poiseuille": 23.272674479638912,
-                "stenosis_coefficient": 0.009410896105389744
+                "stenosis_coefficient": 52.89465424563595
             }
         },
         {
@@ -6831,6 +6879,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 9.645178263382107,
             "vessel_id": 67,
             "vessel_length": 0.6006926738529617,
             "vessel_name": "branch49_seg0",
@@ -6839,7 +6888,7 @@
                 "C": 6.992727678782872e-08,
                 "L": 6.8371315046053525,
                 "R_poiseuille": 69.62795685459845,
-                "stenosis_coefficient": 0.00241260169681166
+                "stenosis_coefficient": 9.647590865078918
             }
         },
         {
@@ -6870,6 +6919,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 3.689220084605309,
             "vessel_id": 70,
             "vessel_length": 0.2739303327477179,
             "vessel_name": "branch50_seg0",
@@ -6878,10 +6928,11 @@
                 "C": 1.1293383367463444e-07,
                 "L": 0.8803838301061006,
                 "R_poiseuille": 2.5315826469630185,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 3.689220084605309
             }
         },
         {
+            "stenosis_coefficient_junction": 3.5499834702965476,
             "vessel_id": 71,
             "vessel_length": 0.7814774469262069,
             "vessel_name": "branch51_seg0",
@@ -6890,13 +6941,14 @@
                 "C": 1.6648467949062332e-07,
                 "L": 4.860427863679346,
                 "R_poiseuille": 27.047098042867734,
-                "stenosis_coefficient": 0.011044579883746382
+                "stenosis_coefficient": 3.561028050180294
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_22"
             },
+            "stenosis_coefficient_junction": 0.40100606642191367,
             "vessel_id": 72,
             "vessel_length": 2.546928970164378,
             "vessel_name": "branch52_seg0",
@@ -6905,10 +6957,11 @@
                 "C": 3.914469853566668e-07,
                 "L": 21.957181518275124,
                 "R_poiseuille": 169.3653139410767,
-                "stenosis_coefficient": 0.1795753526564604
+                "stenosis_coefficient": 0.580581419078374
             }
         },
         {
+            "stenosis_coefficient_junction": 25.47204827716804,
             "vessel_id": 73,
             "vessel_length": 0.16948463710753808,
             "vessel_name": "branch53_seg0",
@@ -6917,10 +6970,11 @@
                 "C": 3.120120665266158e-08,
                 "L": 1.2198464424534097,
                 "R_poiseuille": 7.855396494840468,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 25.47204827716804
             }
         },
         {
+            "stenosis_coefficient_junction": 8.51302064684744,
             "vessel_id": 74,
             "vessel_length": 0.611214345422349,
             "vessel_name": "branch54_seg0",
@@ -6929,7 +6983,7 @@
                 "C": 7.146275501955116e-08,
                 "L": 6.926649317269106,
                 "R_poiseuille": 70.23296175164583,
-                "stenosis_coefficient": 0.0579132738133086
+                "stenosis_coefficient": 8.57093392066075
             }
         },
         {
@@ -6960,6 +7014,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 12.565977404384894,
             "vessel_id": 77,
             "vessel_length": 0.6884367082077173,
             "vessel_name": "branch55_seg0",
@@ -6968,13 +7023,14 @@
                 "C": 1.523874298259974e-07,
                 "L": 4.1209255895810415,
                 "R_poiseuille": 22.070574927678877,
-                "stenosis_coefficient": 0.021808503772213973
+                "stenosis_coefficient": 12.587785908157107
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_24"
             },
+            "stenosis_coefficient_junction": 13.126105449193057,
             "vessel_id": 78,
             "vessel_length": 1.9310746610389045,
             "vessel_name": "branch56_seg0",
@@ -6983,10 +7039,11 @@
                 "C": 2.8550314274873866e-07,
                 "L": 17.306255673933272,
                 "R_poiseuille": 138.76990348158904,
-                "stenosis_coefficient": 5.063610295407175
+                "stenosis_coefficient": 18.18971574460023
             }
         },
         {
+            "stenosis_coefficient_junction": 15.39461541500193,
             "vessel_id": 79,
             "vessel_length": 0.767092376484422,
             "vessel_name": "branch57_seg0",
@@ -6995,13 +7052,14 @@
                 "C": 1.4704202437122374e-07,
                 "L": 5.302366445675572,
                 "R_poiseuille": 32.79290800856351,
-                "stenosis_coefficient": 0.13388923353978638
+                "stenosis_coefficient": 15.528504648541716
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_25"
             },
+            "stenosis_coefficient_junction": 1.1412294672932979,
             "vessel_id": 80,
             "vessel_length": 3.07178293095195,
             "vessel_name": "branch58_seg0",
@@ -7010,10 +7068,11 @@
                 "C": 5.62887726535331e-07,
                 "L": 22.211359667906216,
                 "R_poiseuille": 143.69706144464314,
-                "stenosis_coefficient": 3.388544273273353
+                "stenosis_coefficient": 4.52977374056665
             }
         },
         {
+            "stenosis_coefficient_junction": 31.926264848623607,
             "vessel_id": 81,
             "vessel_length": 1.2040510161756994,
             "vessel_name": "branch59_seg0",
@@ -7022,13 +7081,14 @@
                 "C": 1.9908575806018604e-07,
                 "L": 9.648625769995991,
                 "R_poiseuille": 69.17898033496422,
-                "stenosis_coefficient": 9.916903622365965
+                "stenosis_coefficient": 41.84316847098957
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_26"
             },
+            "stenosis_coefficient_junction": 10.946060687409961,
             "vessel_id": 82,
             "vessel_length": 0.9179726046458172,
             "vessel_name": "branch60_seg0",
@@ -7037,10 +7097,11 @@
                 "C": 1.1213109551058138e-07,
                 "L": 9.957475678197893,
                 "R_poiseuille": 96.6399971478094,
-                "stenosis_coefficient": 0.5547267515052856
+                "stenosis_coefficient": 11.500787438915246
             }
         },
         {
+            "stenosis_coefficient_junction": 12.78197581357658,
             "vessel_id": 83,
             "vessel_length": 0.12287946335761797,
             "vessel_name": "branch61_seg0",
@@ -7049,13 +7110,14 @@
                 "C": 3.4696763104719534e-08,
                 "L": 0.5766144603191554,
                 "R_poiseuille": 2.420916850406388,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 12.78197581357658
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_27"
             },
+            "stenosis_coefficient_junction": 3.8965710877888635,
             "vessel_id": 84,
             "vessel_length": 2.2756488074671433,
             "vessel_name": "branch62_seg0",
@@ -7064,10 +7126,11 @@
                 "C": 4.271284916413028e-07,
                 "L": 16.064522304309506,
                 "R_poiseuille": 101.4655263036925,
-                "stenosis_coefficient": 0.7540404411223149
+                "stenosis_coefficient": 4.6506115289111785
             }
         },
         {
+            "stenosis_coefficient_junction": 0.009525715148178947,
             "vessel_id": 85,
             "vessel_length": 0.0186622778417643,
             "vessel_name": "branch63_seg0",
@@ -7076,7 +7139,7 @@
                 "C": 3.627774739184284e-09,
                 "L": 0.12720520072203056,
                 "R_poiseuille": 0.7757703999958656,
-                "stenosis_coefficient": 0.002344894229576884
+                "stenosis_coefficient": 0.01187060937775583
             }
         },
         {
@@ -7107,6 +7170,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 0.9771156389080644,
             "vessel_id": 88,
             "vessel_length": 1.01285639512377,
             "vessel_name": "branch64_seg0",
@@ -7115,13 +7179,14 @@
                 "C": 2.8017849398046673e-07,
                 "L": 4.851508882439056,
                 "R_poiseuille": 20.79188706895776,
-                "stenosis_coefficient": 0.055254430744030913
+                "stenosis_coefficient": 1.0323700696520954
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_29"
             },
+            "stenosis_coefficient_junction": 13.8188032383468,
             "vessel_id": 89,
             "vessel_length": 2.209355069611248,
             "vessel_name": "branch65_seg0",
@@ -7130,10 +7195,11 @@
                 "C": 3.243041816617336e-07,
                 "L": 19.943177985409164,
                 "R_poiseuille": 161.06876661912756,
-                "stenosis_coefficient": 0.7136964476512887
+                "stenosis_coefficient": 14.532499685998088
             }
         },
         {
+            "stenosis_coefficient_junction": 4.097573876192893,
             "vessel_id": 90,
             "vessel_length": 0.4766301227608254,
             "vessel_name": "branch66_seg0",
@@ -7142,13 +7208,14 @@
                 "C": 6.169376820610604e-08,
                 "L": 4.879075661943153,
                 "R_poiseuille": 44.68705561212275,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 4.097573876192893
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_30"
             },
+            "stenosis_coefficient_junction": 37.02478778751868,
             "vessel_id": 91,
             "vessel_length": 0.7112296941340819,
             "vessel_name": "branch67_seg0",
@@ -7157,13 +7224,14 @@
                 "C": 5.676534123500416e-08,
                 "L": 11.807348613199611,
                 "R_poiseuille": 175.38118986775663,
-                "stenosis_coefficient": 1.9479804349082512
+                "stenosis_coefficient": 38.972768222426936
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_31"
             },
+            "stenosis_coefficient_junction": 0.1314874232112143,
             "vessel_id": 92,
             "vessel_length": 1.5620657959551922,
             "vessel_name": "branch68_seg0",
@@ -7172,13 +7240,14 @@
                 "C": 2.55595794656518e-07,
                 "L": 12.649134776564482,
                 "R_poiseuille": 91.6453507277266,
-                "stenosis_coefficient": 0.7636853577269839
+                "stenosis_coefficient": 0.8951727809381982
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_32"
             },
+            "stenosis_coefficient_junction": 3.60125295258072,
             "vessel_id": 93,
             "vessel_length": 1.9977889411535166,
             "vessel_name": "branch69_seg0",
@@ -7187,10 +7256,11 @@
                 "C": 4.33340168099361e-07,
                 "L": 12.203548747726982,
                 "R_poiseuille": 66.69769053305806,
-                "stenosis_coefficient": 2.3215271159764943
+                "stenosis_coefficient": 5.9227800685572145
             }
         },
         {
+            "stenosis_coefficient_junction": 54.15627292366416,
             "vessel_id": 94,
             "vessel_length": 0.04959465207359494,
             "vessel_name": "branch70_seg0",
@@ -7199,13 +7269,14 @@
                 "C": 7.126555405361812e-09,
                 "L": 0.45730495605166505,
                 "R_poiseuille": 3.7728113400535332,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 54.15627292366416
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_33"
             },
+            "stenosis_coefficient_junction": 5.14462811109618,
             "vessel_id": 95,
             "vessel_length": 2.190636927574853,
             "vessel_name": "branch71_seg0",
@@ -7214,10 +7285,11 @@
                 "C": 2.2855656906912638e-07,
                 "L": 27.82037494087169,
                 "R_poiseuille": 316.113958879169,
-                "stenosis_coefficient": 1.2069003390778905
+                "stenosis_coefficient": 6.3515284501740705
             }
         },
         {
+            "stenosis_coefficient_junction": 1.2374846473056107,
             "vessel_id": 96,
             "vessel_length": 0.6289952402012521,
             "vessel_name": "branch72_seg0",
@@ -7226,10 +7298,11 @@
                 "C": 4.395147510007686e-07,
                 "L": 1.19271626257331,
                 "R_poiseuille": 2.0235551408000165,
-                "stenosis_coefficient": 0.0001494555626601382
+                "stenosis_coefficient": 1.237634102868271
             }
         },
         {
+            "stenosis_coefficient_junction": 5.521859713804374,
             "vessel_id": 97,
             "vessel_length": 0.6109827240923978,
             "vessel_name": "branch73_seg0",
@@ -7238,13 +7311,14 @@
                 "C": 1.443739634220198e-07,
                 "L": 3.4259802902537895,
                 "R_poiseuille": 17.18814110216153,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 5.521859713804374
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_34"
             },
+            "stenosis_coefficient_junction": 1.0871418312406156,
             "vessel_id": 98,
             "vessel_length": 3.3888546756436506,
             "vessel_name": "branch74_seg0",
@@ -7253,10 +7327,11 @@
                 "C": 4.98172098071946e-07,
                 "L": 30.54515753818789,
                 "R_poiseuille": 246.331478684153,
-                "stenosis_coefficient": 0.7106372870434863
+                "stenosis_coefficient": 1.7977791182841019
             }
         },
         {
+            "stenosis_coefficient_junction": 5.448038909612346,
             "vessel_id": 99,
             "vessel_length": 1.7564678632179243,
             "vessel_name": "branch75_seg0",
@@ -7265,10 +7340,11 @@
                 "C": 3.168909308947993e-07,
                 "L": 12.899904182150783,
                 "R_poiseuille": 84.76584216357968,
-                "stenosis_coefficient": 0.0027960230894753272
+                "stenosis_coefficient": 5.450834932701821
             }
         },
         {
+            "stenosis_coefficient_junction": 0.2278462055229336,
             "vessel_id": 100,
             "vessel_length": 0.25216348604826844,
             "vessel_name": "branch76_seg0",
@@ -7277,13 +7353,14 @@
                 "C": 3.7860389093206167e-08,
                 "L": 2.225334007788599,
                 "R_poiseuille": 17.570994003409407,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.2278462055229336
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_35"
             },
+            "stenosis_coefficient_junction": 1.4443474340253244,
             "vessel_id": 101,
             "vessel_length": 1.3860209873354536,
             "vessel_name": "branch77_seg0",
@@ -7292,13 +7369,14 @@
                 "C": 1.6739209657164004e-07,
                 "L": 15.206194540246026,
                 "R_poiseuille": 149.26548576827892,
-                "stenosis_coefficient": 0.23281018089144137
+                "stenosis_coefficient": 1.6771576149167657
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_36"
             },
+            "stenosis_coefficient_junction": 17.317109510971658,
             "vessel_id": 102,
             "vessel_length": 1.4502060836797022,
             "vessel_name": "branch78_seg0",
@@ -7307,10 +7385,11 @@
                 "C": 3.2666316026184744e-07,
                 "L": 8.530513298710979,
                 "R_poiseuille": 44.89611135424075,
-                "stenosis_coefficient": 0.025393935410427084
+                "stenosis_coefficient": 17.342503446382086
             }
         },
         {
+            "stenosis_coefficient_junction": 1.6143033113061003,
             "vessel_id": 103,
             "vessel_length": 1.9137134015067134,
             "vessel_name": "branch79_seg0",
@@ -7319,7 +7398,7 @@
                 "C": 2.8666779840001763e-07,
                 "L": 16.927419751013357,
                 "R_poiseuille": 133.96543217310094,
-                "stenosis_coefficient": 0.29823691001927893
+                "stenosis_coefficient": 1.9125402213253793
             }
         },
         {
@@ -7353,6 +7432,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_38"
             },
+            "stenosis_coefficient_junction": 2.0910916737475866,
             "vessel_id": 106,
             "vessel_length": 0.693357974494855,
             "vessel_name": "branch80_seg0",
@@ -7361,13 +7441,14 @@
                 "C": 1.1228906385017307e-07,
                 "L": 5.6727474182535795,
                 "R_poiseuille": 41.525751364057115,
-                "stenosis_coefficient": 0.0429012409836316
+                "stenosis_coefficient": 2.1339929147312184
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_39"
             },
+            "stenosis_coefficient_junction": 1.141105001348879,
             "vessel_id": 107,
             "vessel_length": 1.831647199279749,
             "vessel_name": "branch81_seg0",
@@ -7376,13 +7457,14 @@
                 "C": 2.2228453713381683e-07,
                 "L": 19.998171016762157,
                 "R_poiseuille": 195.3560431360239,
-                "stenosis_coefficient": 1.5428959151869455
+                "stenosis_coefficient": 2.6840009165358243
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_40"
             },
+            "stenosis_coefficient_junction": 26.800551927560967,
             "vessel_id": 108,
             "vessel_length": 3.9779415762156565,
             "vessel_name": "branch82_seg0",
@@ -7391,10 +7473,11 @@
                 "C": 6.073402483276038e-07,
                 "L": 34.522371070006216,
                 "R_poiseuille": 268.05934544423036,
-                "stenosis_coefficient": 0.09320736185386778
+                "stenosis_coefficient": 26.893759289414835
             }
         },
         {
+            "stenosis_coefficient_junction": 18.587909409971687,
             "vessel_id": 109,
             "vessel_length": 0.5617562776124612,
             "vessel_name": "branch83_seg0",
@@ -7403,7 +7486,7 @@
                 "C": 1.0661842513518253e-07,
                 "L": 3.9217461937173113,
                 "R_poiseuille": 24.496224501232703,
-                "stenosis_coefficient": 0.013464117939801694
+                "stenosis_coefficient": 18.601373527911488
             }
         },
         {
@@ -7434,6 +7517,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 2.1439712495707006,
             "vessel_id": 112,
             "vessel_length": 0.4984856764486456,
             "vessel_name": "branch84_seg0",
@@ -7442,10 +7526,11 @@
                 "C": 9.151113091628522e-08,
                 "L": 3.597885376956063,
                 "R_poiseuille": 23.23432624931456,
-                "stenosis_coefficient": 1.9041191420780363e-05
+                "stenosis_coefficient": 2.1439902907621216
             }
         },
         {
+            "stenosis_coefficient_junction": 0.05777656861413912,
             "vessel_id": 113,
             "vessel_length": 0.45502042163584117,
             "vessel_name": "branch85_seg0",
@@ -7454,7 +7539,7 @@
                 "C": 8.658991676360229e-08,
                 "L": 3.168183539071288,
                 "R_poiseuille": 19.73685262707844,
-                "stenosis_coefficient": 0.06633279066883398
+                "stenosis_coefficient": 0.12410935928297309
             }
         },
         {
@@ -7488,6 +7573,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_43"
             },
+            "stenosis_coefficient_junction": 1.118660121727017,
             "vessel_id": 116,
             "vessel_length": 0.843109508708837,
             "vessel_name": "branch86_seg0",
@@ -7496,10 +7582,11 @@
                 "C": 1.199696013491061e-07,
                 "L": 7.85077692413898,
                 "R_poiseuille": 65.40777979580193,
-                "stenosis_coefficient": 0.12469336954457576
+                "stenosis_coefficient": 1.2433534912715927
             }
         },
         {
+            "stenosis_coefficient_junction": 3.3016516548414794,
             "vessel_id": 117,
             "vessel_length": 0.6602430182165941,
             "vessel_name": "branch87_seg0",
@@ -7508,7 +7595,7 @@
                 "C": 1.5225469413326812e-07,
                 "L": 3.7936112275586833,
                 "R_poiseuille": 19.502484751150337,
-                "stenosis_coefficient": 0.003040353771813079
+                "stenosis_coefficient": 3.3046920086132925
             }
         },
         {
@@ -7542,6 +7629,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_45"
             },
+            "stenosis_coefficient_junction": 27.68342213600367,
             "vessel_id": 120,
             "vessel_length": 1.5314877042581692,
             "vessel_name": "branch88_seg0",
@@ -7550,13 +7638,14 @@
                 "C": 1.7387467640603726e-07,
                 "L": 17.87337520175875,
                 "R_poiseuille": 186.63270499951824,
-                "stenosis_coefficient": 1.5855682531252582
+                "stenosis_coefficient": 29.26899038912893
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_46"
             },
+            "stenosis_coefficient_junction": 34.529522002756316,
             "vessel_id": 121,
             "vessel_length": 1.8491184142546093,
             "vessel_name": "branch89_seg0",
@@ -7565,10 +7654,11 @@
                 "C": 3.372163420687576e-07,
                 "L": 13.434970345359945,
                 "R_poiseuille": 87.33670867800384,
-                "stenosis_coefficient": 0.18186544530091583
+                "stenosis_coefficient": 34.71138744805723
             }
         },
         {
+            "stenosis_coefficient_junction": 7.015245182900951,
             "vessel_id": 122,
             "vessel_length": 1.0163561467182263,
             "vessel_name": "branch90_seg0",
@@ -7577,13 +7667,14 @@
                 "C": 1.9150180602097463e-07,
                 "L": 7.147181981865413,
                 "R_poiseuille": 44.96886051973054,
-                "stenosis_coefficient": 0.027382662684861454
+                "stenosis_coefficient": 7.0426278455858125
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_47"
             },
+            "stenosis_coefficient_junction": 0.701882112573519,
             "vessel_id": 123,
             "vessel_length": 2.022718739860449,
             "vessel_name": "branch91_seg0",
@@ -7592,13 +7683,14 @@
                 "C": 2.8494029262564464e-07,
                 "L": 19.025365483828743,
                 "R_poiseuille": 160.11006702910692,
-                "stenosis_coefficient": 4.92708508854086
+                "stenosis_coefficient": 5.628967201114379
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_48"
             },
+            "stenosis_coefficient_junction": 11.030254549662773,
             "vessel_id": 124,
             "vessel_length": 1.9462368644775894,
             "vessel_name": "branch92_seg0",
@@ -7607,10 +7699,11 @@
                 "C": 2.743429963964594e-07,
                 "L": 18.294198600610194,
                 "R_poiseuille": 153.85768901513774,
-                "stenosis_coefficient": 0.009958330313908718
+                "stenosis_coefficient": 11.040212879976682
             }
         },
         {
+            "stenosis_coefficient_junction": 0.1582589515889875,
             "vessel_id": 125,
             "vessel_length": 0.703040201355741,
             "vessel_name": "branch93_seg0",
@@ -7619,10 +7712,11 @@
                 "C": 1.2215233783508954e-07,
                 "L": 5.3613531420186025,
                 "R_poiseuille": 36.581102428494276,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 0.1582589515889875
             }
         },
         {
+            "stenosis_coefficient_junction": 0.11155093972977582,
             "vessel_id": 126,
             "vessel_length": 0.08933625535225823,
             "vessel_name": "branch94_seg0",
@@ -7631,7 +7725,7 @@
                 "C": 1.3652366265585883e-08,
                 "L": 0.7745749296324158,
                 "R_poiseuille": 6.008793075148816,
-                "stenosis_coefficient": 1.9278307560877668e-06
+                "stenosis_coefficient": 0.11155286756053191
             }
         },
         {
@@ -7662,6 +7756,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_49"
             },
+            "stenosis_coefficient_junction": 3.059364215468886,
             "vessel_id": 129,
             "vessel_length": 1.1423383551685218,
             "vessel_name": "branch95_seg0",
@@ -7670,10 +7765,11 @@
                 "C": 1.5782513318025357e-07,
                 "L": 10.955425039707299,
                 "R_poiseuille": 94.00518854725561,
-                "stenosis_coefficient": 1.2952242997518089
+                "stenosis_coefficient": 4.354588515220694
             }
         },
         {
+            "stenosis_coefficient_junction": 9.887202510523643,
             "vessel_id": 130,
             "vessel_length": 0.7484344961809235,
             "vessel_name": "branch96_seg0",
@@ -7682,7 +7778,7 @@
                 "C": 1.1484691878390299e-07,
                 "L": 6.46255307788491,
                 "R_poiseuille": 49.92781612610083,
-                "stenosis_coefficient": 0.0023848811286055903
+                "stenosis_coefficient": 9.889587391652249
             }
         },
         {
@@ -7713,6 +7809,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_50"
             },
+            "stenosis_coefficient_junction": 0.0215458973712167,
             "vessel_id": 133,
             "vessel_length": 2.2372038393788993,
             "vessel_name": "branch97_seg0",
@@ -7721,10 +7818,11 @@
                 "C": 3.437065943116237e-07,
                 "L": 19.294748660166192,
                 "R_poiseuille": 148.88838388371224,
-                "stenosis_coefficient": 0.1339447587450155
+                "stenosis_coefficient": 0.1554906561162322
             }
         },
         {
+            "stenosis_coefficient_junction": 7.961415793477453,
             "vessel_id": 134,
             "vessel_length": 0.1133163787610899,
             "vessel_name": "branch98_seg0",
@@ -7733,7 +7831,7 @@
                 "C": 1.184502234869842e-08,
                 "L": 1.4363668337394515,
                 "R_poiseuille": 16.290190768477277,
-                "stenosis_coefficient": 0.009707247347680057
+                "stenosis_coefficient": 7.971123040825133
             }
         },
         {
@@ -7764,6 +7862,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 11.237663060719239,
             "vessel_id": 137,
             "vessel_length": 0.22776071817940843,
             "vessel_name": "branch99_seg0",
@@ -7772,7 +7871,7 @@
                 "C": 2.411240765193992e-08,
                 "L": 2.8505781247601787,
                 "R_poiseuille": 31.92090480514982,
-                "stenosis_coefficient": 0.021315426192696215
+                "stenosis_coefficient": 11.258978486911936
             }
         },
         {
@@ -7806,6 +7905,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_53"
             },
+            "stenosis_coefficient_junction": 0.495038539774835,
             "vessel_id": 140,
             "vessel_length": 0.8204456954795754,
             "vessel_name": "branch100_seg0",
@@ -7814,10 +7914,11 @@
                 "C": 1.242694933153989e-07,
                 "L": 7.1771336285838645,
                 "R_poiseuille": 56.17464599791657,
-                "stenosis_coefficient": 0.004387334444214222
+                "stenosis_coefficient": 0.4994258742190492
             }
         },
         {
+            "stenosis_coefficient_junction": 14.399214887189073,
             "vessel_id": 141,
             "vessel_length": 2.2416747602530096,
             "vessel_name": "branch101_seg0",
@@ -7826,13 +7927,14 @@
                 "C": 5.05203598704078e-07,
                 "L": 13.179369882420326,
                 "R_poiseuille": 69.32738386457868,
-                "stenosis_coefficient": 0.21897665948104564
+                "stenosis_coefficient": 14.618191546670118
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_54"
             },
+            "stenosis_coefficient_junction": 1.638689669097868,
             "vessel_id": 142,
             "vessel_length": 1.3192362301447014,
             "vessel_name": "branch102_seg0",
@@ -7841,10 +7943,11 @@
                 "C": 1.919608475578832e-07,
                 "L": 12.012913754624565,
                 "R_poiseuille": 97.87285766154213,
-                "stenosis_coefficient": 0.012532812270525545
+                "stenosis_coefficient": 1.6512224813683936
             }
         },
         {
+            "stenosis_coefficient_junction": 9.272250788038077,
             "vessel_id": 143,
             "vessel_length": 1.7693205145222453,
             "vessel_name": "branch103_seg0",
@@ -7853,7 +7956,7 @@
                 "C": 2.1210329470476075e-07,
                 "L": 19.556065788103346,
                 "R_poiseuille": 193.39470830231897,
-                "stenosis_coefficient": 0.12013253327449076
+                "stenosis_coefficient": 9.392383321312568
             }
         },
         {
@@ -7884,6 +7987,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 4.817911508224233,
             "vessel_id": 146,
             "vessel_length": 1.8549457029011562,
             "vessel_name": "branch104_seg0",
@@ -7892,7 +7996,7 @@
                 "C": 3.472826744558467e-07,
                 "L": 13.127897108850243,
                 "R_poiseuille": 83.12798381918617,
-                "stenosis_coefficient": 0.17147062597187304
+                "stenosis_coefficient": 4.989382134196106
             }
         },
         {
@@ -7926,6 +8030,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_57"
             },
+            "stenosis_coefficient_junction": 5.189154174087707,
             "vessel_id": 149,
             "vessel_length": 1.4800327576573449,
             "vessel_name": "branch105_seg0",
@@ -7934,10 +8039,11 @@
                 "C": 2.2260848139869685e-07,
                 "L": 13.038175628877488,
                 "R_poiseuille": 102.76623515090004,
-                "stenosis_coefficient": 3.2184742098181993
+                "stenosis_coefficient": 8.407628383905907
             }
         },
         {
+            "stenosis_coefficient_junction": 6.779082112175812,
             "vessel_id": 150,
             "vessel_length": 1.5854845802238893,
             "vessel_name": "branch106_seg0",
@@ -7946,7 +8052,7 @@
                 "C": 2.2306230112324742e-07,
                 "L": 14.931854362871114,
                 "R_poiseuille": 125.82113214790705,
-                "stenosis_coefficient": 0.017599870432060374
+                "stenosis_coefficient": 6.796681982607872
             }
         },
         {
@@ -7980,6 +8086,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_59"
             },
+            "stenosis_coefficient_junction": 4.219039267322717,
             "vessel_id": 153,
             "vessel_length": 2.5445957509884853,
             "vessel_name": "branch107_seg0",
@@ -7988,10 +8095,11 @@
                 "C": 3.119224619492456e-07,
                 "L": 27.50469437666836,
                 "R_poiseuille": 266.0008166590174,
-                "stenosis_coefficient": 1.31381250395569
+                "stenosis_coefficient": 5.532851771278407
             }
         },
         {
+            "stenosis_coefficient_junction": 2.258442356888678,
             "vessel_id": 154,
             "vessel_length": 0.751353956435578,
             "vessel_name": "branch108_seg0",
@@ -8000,7 +8108,7 @@
                 "C": 9.410906280552354e-08,
                 "L": 7.948287817389651,
                 "R_poiseuille": 75.22993957337903,
-                "stenosis_coefficient": 0.07621185150531513
+                "stenosis_coefficient": 2.3346542083939927
             }
         },
         {
@@ -8031,6 +8139,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 1.9906939737798506,
             "vessel_id": 157,
             "vessel_length": 0.7581169080643847,
             "vessel_name": "branch109_seg0",
@@ -8039,7 +8148,7 @@
                 "C": 1.5600473908502546e-07,
                 "L": 4.881468061834404,
                 "R_poiseuille": 28.12242985188752,
-                "stenosis_coefficient": 0.016189880484875477
+                "stenosis_coefficient": 2.0068838542647263
             }
         },
         {
@@ -8070,6 +8179,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 34.0526930489136,
             "vessel_id": 160,
             "vessel_length": 0.016413990044595976,
             "vessel_name": "branch110_seg0",
@@ -8078,10 +8188,11 @@
                 "C": 1.7128976303057648e-09,
                 "L": 0.2084072394946354,
                 "R_poiseuille": 2.3675521663826142,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 34.0526930489136
             }
         },
         {
+            "stenosis_coefficient_junction": 0.0014657490292549944,
             "vessel_id": 161,
             "vessel_length": 0.7189379658116499,
             "vessel_name": "branch111_seg0",
@@ -8090,7 +8201,7 @@
                 "C": 7.723199955900455e-08,
                 "L": 8.867504883580322,
                 "R_poiseuille": 97.8587298586811,
-                "stenosis_coefficient": 0.15175073969863032
+                "stenosis_coefficient": 0.15321648872788532
             }
         },
         {
@@ -8121,6 +8232,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 15.788646435625829,
             "vessel_id": 164,
             "vessel_length": 0.2908085645766913,
             "vessel_name": "branch112_seg0",
@@ -8129,7 +8241,7 @@
                 "C": 4.5889098274717295e-08,
                 "L": 2.4418598827211655,
                 "R_poiseuille": 18.34519817300713,
-                "stenosis_coefficient": 0.29965198294559753
+                "stenosis_coefficient": 16.088298418571426
             }
         },
         {
@@ -8160,6 +8272,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 22.931888733113414,
             "vessel_id": 167,
             "vessel_length": 0.44242318643784484,
             "vessel_name": "branch113_seg0",
@@ -8168,10 +8281,11 @@
                 "C": 6.054956267755242e-08,
                 "L": 4.283321036449968,
                 "R_poiseuille": 37.10321077203303,
-                "stenosis_coefficient": 0.0
+                "stenosis_coefficient": 22.931888733113414
             }
         },
         {
+            "stenosis_coefficient_junction": 7.846484790217629,
             "vessel_id": 168,
             "vessel_length": 1.262636440146434,
             "vessel_name": "branch114_seg0",
@@ -8180,7 +8294,7 @@
                 "C": 1.2082563784145805e-07,
                 "L": 17.482897845346134,
                 "R_poiseuille": 216.58912226203083,
-                "stenosis_coefficient": 0.16543985529662678
+                "stenosis_coefficient": 8.011924645514256
             }
         },
         {
@@ -8214,6 +8328,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_65"
             },
+            "stenosis_coefficient_junction": 0.0340068158266552,
             "vessel_id": 171,
             "vessel_length": 0.5547240690479907,
             "vessel_name": "branch115_seg0",
@@ -8222,13 +8337,14 @@
                 "C": 9.33735315843055e-08,
                 "L": 4.366627174928113,
                 "R_poiseuille": 30.754122285842445,
-                "stenosis_coefficient": 1.408987414640851
+                "stenosis_coefficient": 1.442994230467506
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_66"
             },
+            "stenosis_coefficient_junction": 42.0303286826489,
             "vessel_id": 172,
             "vessel_length": 2.2649380500474936,
             "vessel_name": "branch116_seg0",
@@ -8237,13 +8353,14 @@
                 "C": 2.502862490637729e-07,
                 "L": 27.1576098024096,
                 "R_poiseuille": 291.34990508172365,
-                "stenosis_coefficient": 0.8812125754701938
+                "stenosis_coefficient": 42.911541258119094
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_67"
             },
+            "stenosis_coefficient_junction": 2.878563475295102,
             "vessel_id": 173,
             "vessel_length": 0.3473633681374321,
             "vessel_name": "branch117_seg0",
@@ -8252,13 +8369,14 @@
                 "C": 4.2232729187709543e-08,
                 "L": 3.785600367156401,
                 "R_poiseuille": 36.91251474407566,
-                "stenosis_coefficient": 0.07078962404068542
+                "stenosis_coefficient": 2.9493530993357875
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_68"
             },
+            "stenosis_coefficient_junction": 8.708082680402345,
             "vessel_id": 174,
             "vessel_length": 2.1841735530418993,
             "vessel_name": "branch118_seg0",
@@ -8267,13 +8385,14 @@
                 "C": 4.0243110453506295e-07,
                 "L": 15.707194658320525,
                 "R_poiseuille": 101.0644060998911,
-                "stenosis_coefficient": 4.545026238306065
+                "stenosis_coefficient": 13.25310891870841
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_69"
             },
+            "stenosis_coefficient_junction": 18.09584488578516,
             "vessel_id": 175,
             "vessel_length": 1.295691750912049,
             "vessel_name": "branch119_seg0",
@@ -8282,13 +8401,14 @@
                 "C": 1.5587586916865764e-07,
                 "L": 14.270539032720281,
                 "R_poiseuille": 140.62650463461947,
-                "stenosis_coefficient": 6.874075499202754
+                "stenosis_coefficient": 24.969920384987912
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_70"
             },
+            "stenosis_coefficient_junction": 0.05614737422475101,
             "vessel_id": 176,
             "vessel_length": 2.572315971304913,
             "vessel_name": "branch120_seg0",
@@ -8297,13 +8417,14 @@
                 "C": 3.709611342559748e-07,
                 "L": 23.63393822128953,
                 "R_poiseuille": 194.28353556889638,
-                "stenosis_coefficient": 0.32775321517219863
+                "stenosis_coefficient": 0.38390058939694965
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_71"
             },
+            "stenosis_coefficient_junction": 1.5222184123770441,
             "vessel_id": 177,
             "vessel_length": 1.6816152207477064,
             "vessel_name": "branch121_seg0",
@@ -8312,13 +8433,14 @@
                 "C": 1.8740858305965013e-07,
                 "L": 19.993078003365163,
                 "R_poiseuille": 212.6771401028843,
-                "stenosis_coefficient": 0.24332151284765507
+                "stenosis_coefficient": 1.7655399252246993
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_72"
             },
+            "stenosis_coefficient_junction": 11.691271717319962,
             "vessel_id": 178,
             "vessel_length": 2.0704474220346873,
             "vessel_name": "branch122_seg0",
@@ -8327,13 +8449,14 @@
                 "C": 2.5943308467563795e-07,
                 "L": 21.89368833169386,
                 "R_poiseuille": 207.1389531012712,
-                "stenosis_coefficient": 0.8202676261062234
+                "stenosis_coefficient": 12.511539343426186
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_73"
             },
+            "stenosis_coefficient_junction": 6.864504017117201,
             "vessel_id": 179,
             "vessel_length": 2.577567673705488,
             "vessel_name": "branch123_seg0",
@@ -8342,10 +8465,11 @@
                 "C": 3.1190277019587814e-07,
                 "L": 28.2238853427811,
                 "R_poiseuille": 276.5105094548218,
-                "stenosis_coefficient": 2.2341330256864746
+                "stenosis_coefficient": 9.098637042803675
             }
         },
         {
+            "stenosis_coefficient_junction": 13.04748088935525,
             "vessel_id": 180,
             "vessel_length": 0.2760137505564742,
             "vessel_name": "branch124_seg0",
@@ -8354,7 +8478,7 @@
                 "C": 7.828690212413241e-08,
                 "L": 1.2894016070207608,
                 "R_poiseuille": 5.389318076587364,
-                "stenosis_coefficient": 0.02660556709891885
+                "stenosis_coefficient": 13.074086456454168
             }
         },
         {
@@ -8385,6 +8509,7 @@
             }
         },
         {
+            "stenosis_coefficient_junction": 23.143126454289582,
             "vessel_id": 183,
             "vessel_length": 0.96520618026765,
             "vessel_name": "branch125_seg0",
@@ -8393,10 +8518,11 @@
                 "C": 2.0362992300859724e-07,
                 "L": 6.061979583243682,
                 "R_poiseuille": 34.06410361255557,
-                "stenosis_coefficient": 0.5383764849020631
+                "stenosis_coefficient": 23.681502939191645
             }
         },
         {
+            "stenosis_coefficient_junction": 3.40429994581171,
             "vessel_id": 184,
             "vessel_length": 0.6703950785660061,
             "vessel_name": "branch126_seg0",
@@ -8405,7 +8531,7 @@
                 "C": 1.1159474649336148e-07,
                 "L": 5.336220454111974,
                 "R_poiseuille": 38.00360796979356,
-                "stenosis_coefficient": 0.010538301894495844
+                "stenosis_coefficient": 3.414838247706206
             }
         },
         {
@@ -8439,6 +8565,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_76"
             },
+            "stenosis_coefficient_junction": 29.59545397077533,
             "vessel_id": 187,
             "vessel_length": 1.8964600844526125,
             "vessel_name": "branch127_seg0",
@@ -8447,13 +8574,14 @@
                 "C": 3.4271105566637653e-07,
                 "L": 13.905133931353946,
                 "R_poiseuille": 91.22098693329401,
-                "stenosis_coefficient": 5.309091855967948
+                "stenosis_coefficient": 34.90454582674328
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_77"
             },
+            "stenosis_coefficient_junction": 23.568309962886932,
             "vessel_id": 188,
             "vessel_length": 1.6470438692325127,
             "vessel_name": "branch128_seg0",
@@ -8462,13 +8590,14 @@
                 "C": 1.690901872540082e-07,
                 "L": 21.25728556683904,
                 "R_poiseuille": 245.47008178687676,
-                "stenosis_coefficient": 6.775341028194146
+                "stenosis_coefficient": 30.343650991081077
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_78"
             },
+            "stenosis_coefficient_junction": 0.0040944936489510815,
             "vessel_id": 189,
             "vessel_length": 1.3856830790186532,
             "vessel_name": "branch129_seg0",
@@ -8477,13 +8606,14 @@
                 "C": 2.378700594245172e-07,
                 "L": 10.69556975839785,
                 "R_poiseuille": 73.8638696267492,
-                "stenosis_coefficient": 0.004604783440078051
+                "stenosis_coefficient": 0.008699277089029133
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_79"
             },
+            "stenosis_coefficient_junction": 0.6583003907188004,
             "vessel_id": 190,
             "vessel_length": 2.062189019309676,
             "vessel_name": "branch130_seg0",
@@ -8492,10 +8622,11 @@
                 "C": 4.521656541533045e-07,
                 "L": 12.46164133387149,
                 "R_poiseuille": 67.3767634754387,
-                "stenosis_coefficient": 0.21629812857145697
+                "stenosis_coefficient": 0.8745985192902574
             }
         },
         {
+            "stenosis_coefficient_junction": 6.70923047480654,
             "vessel_id": 191,
             "vessel_length": 0.24582786567907236,
             "vessel_name": "branch131_seg0",
@@ -8504,7 +8635,7 @@
                 "C": 3.908902932365837e-08,
                 "L": 2.048439838023093,
                 "R_poiseuille": 15.272264490963101,
-                "stenosis_coefficient": 0.00010959247425948428
+                "stenosis_coefficient": 6.709340067280799
             }
         },
         {
@@ -8538,6 +8669,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_81"
             },
+            "stenosis_coefficient_junction": 9.657860595711837,
             "vessel_id": 194,
             "vessel_length": 1.3874296295510535,
             "vessel_name": "branch132_seg0",
@@ -8546,13 +8678,14 @@
                 "C": 1.9115465946089276e-07,
                 "L": 13.342982596711105,
                 "R_poiseuille": 114.8108665102219,
-                "stenosis_coefficient": 1.713395811085768
+                "stenosis_coefficient": 11.371256406797604
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_82"
             },
+            "stenosis_coefficient_junction": 7.41584408905353,
             "vessel_id": 195,
             "vessel_length": 0.926581286933064,
             "vessel_name": "branch133_seg0",
@@ -8561,13 +8694,14 @@
                 "C": 8.683751068680368e-08,
                 "L": 13.100128719928055,
                 "R_poiseuille": 165.7126725261481,
-                "stenosis_coefficient": 3.894818315604722
+                "stenosis_coefficient": 11.310662404658252
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_83"
             },
+            "stenosis_coefficient_junction": 0.000114264718114459,
             "vessel_id": 196,
             "vessel_length": 1.8509017198379139,
             "vessel_name": "branch134_seg0",
@@ -8576,13 +8710,14 @@
                 "C": 3.4536149711107587e-07,
                 "L": 13.14342883277804,
                 "R_poiseuille": 83.50685299876812,
-                "stenosis_coefficient": 0.028885649218216753
+                "stenosis_coefficient": 0.028999913936331213
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_84"
             },
+            "stenosis_coefficient_junction": 33.86880569991814,
             "vessel_id": 197,
             "vessel_length": 0.8879559682870087,
             "vessel_name": "branch135_seg0",
@@ -8591,13 +8726,14 @@
                 "C": 1.0558898197215442e-07,
                 "L": 9.894187514918908,
                 "R_poiseuille": 98.64088579758534,
-                "stenosis_coefficient": 7.927800997899659
+                "stenosis_coefficient": 41.7966066978178
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_85"
             },
+            "stenosis_coefficient_junction": 35.53495308300341,
             "vessel_id": 198,
             "vessel_length": 0.7885756149364074,
             "vessel_name": "branch136_seg0",
@@ -8606,10 +8742,11 @@
                 "C": 6.930107340657317e-08,
                 "L": 11.889472956528401,
                 "R_poiseuille": 160.38730278499128,
-                "stenosis_coefficient": 1.0107947648839837
+                "stenosis_coefficient": 36.54574784788739
             }
         },
         {
+            "stenosis_coefficient_junction": 3.6708211185413315,
             "vessel_id": 199,
             "vessel_length": 1.6212067636049716,
             "vessel_name": "branch137_seg0",
@@ -8618,7 +8755,7 @@
                 "C": 2.2667557121572756e-07,
                 "L": 15.363422476658092,
                 "R_poiseuille": 130.26437502977763,
-                "stenosis_coefficient": 0.061087716419886154
+                "stenosis_coefficient": 3.7319088349612177
             }
         },
         {
@@ -8652,6 +8789,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_87"
             },
+            "stenosis_coefficient_junction": 0.0013177075959821879,
             "vessel_id": 202,
             "vessel_length": 1.6684049591136723,
             "vessel_name": "branch138_seg0",
@@ -8660,13 +8798,14 @@
                 "C": 2.695956222929998e-07,
                 "L": 13.68062651089742,
                 "R_poiseuille": 100.36877452251237,
-                "stenosis_coefficient": 0.008181633356239539
+                "stenosis_coefficient": 0.009499340952221727
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_88"
             },
+            "stenosis_coefficient_junction": 4.6971070031227775,
             "vessel_id": 203,
             "vessel_length": 1.8223285969227923,
             "vessel_name": "branch139_seg0",
@@ -8675,13 +8814,14 @@
                 "C": 4.124911365741728e-07,
                 "L": 10.667303167129292,
                 "R_poiseuille": 55.86897531623295,
-                "stenosis_coefficient": 0.16581058837200138
+                "stenosis_coefficient": 4.862917591494779
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_89"
             },
+            "stenosis_coefficient_junction": 7.58989031046452,
             "vessel_id": 204,
             "vessel_length": 1.6268724719976426,
             "vessel_name": "branch140_seg0",
@@ -8690,10 +8830,11 @@
                 "C": 2.1274023766351836e-07,
                 "L": 16.484404368942787,
                 "R_poiseuille": 149.4449102922912,
-                "stenosis_coefficient": 1.6811246262425907
+                "stenosis_coefficient": 9.271014936707111
             }
         },
         {
+            "stenosis_coefficient_junction": 1.6006058744085963,
             "vessel_id": 205,
             "vessel_length": 0.7221439726843699,
             "vessel_name": "branch141_seg0",
@@ -8702,7 +8843,7 @@
                 "C": 1.3988338165915592e-07,
                 "L": 4.9396631837614375,
                 "R_poiseuille": 30.231451810695848,
-                "stenosis_coefficient": 4.378276867150765e-06
+                "stenosis_coefficient": 1.6006102526854633
             }
         },
         {
@@ -8736,6 +8877,7 @@
             "boundary_conditions": {
                 "outlet": "RCR_91"
             },
+            "stenosis_coefficient_junction": 0.5655644455451788,
             "vessel_id": 208,
             "vessel_length": 2.1364480183130805,
             "vessel_name": "branch142_seg0",
@@ -8744,13 +8886,14 @@
                 "C": 3.4831038959335077e-07,
                 "L": 17.36337361591397,
                 "R_poiseuille": 126.2594841153294,
-                "stenosis_coefficient": 0.11530206061893337
+                "stenosis_coefficient": 0.6808665061641122
             }
         },
         {
             "boundary_conditions": {
                 "outlet": "RCR_92"
             },
+            "stenosis_coefficient_junction": 10.340979008359266,
             "vessel_id": 209,
             "vessel_length": 2.0603411078869778,
             "vessel_name": "branch143_seg0",
@@ -8759,10 +8902,11 @@
                 "C": 2.8436572221029334e-07,
                 "L": 19.779571948426792,
                 "R_poiseuille": 169.89584989632638,
-                "stenosis_coefficient": 1.8606756465620606
+                "stenosis_coefficient": 12.201654654921327
             }
         },
         {
+            "stenosis_coefficient_junction": 2.5184157458227165,
             "vessel_id": 210,
             "vessel_length": 0.06402900125534544,
             "vessel_name": "branch144_seg0",
@@ -8771,7 +8915,7 @@
                 "C": 7.470367383957606e-09,
                 "L": 0.7271556334690285,
                 "R_poiseuille": 7.388667769441023,
-                "stenosis_coefficient": 0.000396865381321876
+                "stenosis_coefficient": 2.5188126112040385
             }
         },
         {

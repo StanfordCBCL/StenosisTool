@@ -128,8 +128,6 @@ if __name__ == '__main__':
     
     parser, dev, tool = create_parser(desc = 'Splits optimized results in rcrt.dat')
     
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
-    
     args = parser.parse_args()
     
     if args.mode == 'tool':

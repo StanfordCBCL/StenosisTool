@@ -5,7 +5,7 @@ import os
 
 from src.data_org import DataPath, StenosisToolResults
 from src.solver import Solver0D
-from src.file_io import write_json
+from src.file_io import write_json, check_exists
 from src.misc import create_parser
 
 ########################
@@ -141,13 +141,21 @@ def dev_main(args):
             print('Model does not belong to stenosis type: skipping.')
             continue
         
+        print(model_name)
+        if args.base_solver is None:
+            base_solver = stenosis_results.base_solver
+        else:
+            base_solver = args.base_solver
+        base_solver_dir = os.path.dirname(base_solver)
+        
+        
         stenosis_results = StenosisToolResults(args.root, model)
         ## retrieve test model
         model_age = int(model.info['metadata']['age'])
         
         # get test generations
         sten_solver = Solver0D()
-        sten_solver.read_solver_file(stenosis_results.base_solver)
+        sten_solver.read_solver_file(base_solver)
         
     
         r_threshold = args.r_threshold # 4x  higher
@@ -163,10 +171,11 @@ def dev_main(args):
                         'total_sten_length': sten_len}
         
         
-        write_json(os.path.join(stenosis_results.base_solver_dir, 'stenosis.txt'), stenosis_dict)
+        write_json(os.path.join(base_solver_dir, 'stenosis.txt'), stenosis_dict)
         
         # construct a fixed version
-        construct_fixed_solver(sten_solver, stenosis_dict, stenosis_results.fixed_stenosis_dir)
+        fixed_stenosis_dir = check_exists(os.path.join(base_solver_dir, 'fixed_stenosis'), mkdir = True)
+        construct_fixed_solver(sten_solver, stenosis_dict, fixed_stenosis_dir)
         
             
             
@@ -176,9 +185,8 @@ if __name__ == '__main__':
     
     parser, dev, tool = create_parser(desc='Generates artificial stenosis files')
     
-    
     # dev params
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
+    dev.add_argument('-base_solver', default = None, help = 'the base solver to detect stenosis from.')
     dev.add_argument('-r_threshold', type = int, default = 4,  help = 'how many x control resistance the stenosis resistance must be to be considered a fixable location')
     dev.add_argument('-gens', type = int, default = [0,1,2,3], nargs = '*', help = 'generations to identify fixable stenosis in')
     args = parser.parse_args()

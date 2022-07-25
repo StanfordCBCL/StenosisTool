@@ -25,6 +25,8 @@ def create_parser(desc = '') -> argparse.ArgumentParser:
     tool = subparsers.add_parser(name='tool')
     dev = subparsers.add_parser(name='dev')
     dev.add_argument('-root', default='.', help='Root of entire project')
+    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
+    
 
 
     return parser, dev, tool

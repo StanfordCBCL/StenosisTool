@@ -244,7 +244,6 @@ if __name__ == '__main__':
     
     parser, dev, tool = create_parser(desc= 'Constructs a 0d input segmentation of the vasculature valid for a 0d solver for pulmonary vasculature')
 
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-no_bc', dest = 'dummy_bc', action = 'store_true', default = False, help = 'Generate a solver file without rcr boundary conditions just to get the tree (Mainly used for the tuning itself to model the tree)')
     
     args = parser.parse_args()

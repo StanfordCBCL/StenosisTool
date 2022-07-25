@@ -33,18 +33,17 @@ class TuneParams():
         self.cardiac_cycles = 6
         self.num_timesteps_per_cycle = 1000
         self.rpa_flow_split = .55
-        self.mPAP_meas = [m2d(12), m2d(16)] # mmHg -> cgs
+        self.mPAP_meas = m2d(15) # mmHg -> cgs
         self.cap_wedge_pressure = m2d(7) # mmHg -> cgs
         self.viscosity = .04 # cgs
         self.density = 1.06 # cgs
         self.linear_ehr = 1.2e6 # dyne/cm^2
-        self.maxPAP_meas = [m2d(18), m2d(25)]
         
         
         ## for termination
         self.pat = 5
         self.pat_tol  = 1e-6
-        self.tolerance = 0.0001
+        self.tolerance = 0.001
 
 
 ############################
@@ -342,13 +341,13 @@ def modify_params(solver_data: Solver0D, x ):
     
 def get_initial_cond(params: TuneParams, inflow: Inflow, solver_data: Solver0D):
     ''' initial cond with numpy array in form of [Rp_LPA, C_LPA, Rd_LPA, Rp_RPA, C_RPA, Rd_RPA]'''
-    PVR = ((params.mPAP_meas[0] + params.mPAP_meas[1])/2 - params.cap_wedge_pressure)/ inflow.mean_inflow
+    PVR = (params.mPAP_meas - params.cap_wedge_pressure)/ inflow.mean_inflow
     mpa_cap = solver_data.vessel[0]['zero_d_element_values']['C']
     x0 = np.array([.4 * PVR,
-                    10 * mpa_cap,
+                    mpa_cap,
                     1.6 * PVR,
                     .4 * PVR,
-                    10 * mpa_cap,
+                    mpa_cap,
                     1.6 * PVR]
                     )
     return x0
@@ -389,18 +388,9 @@ def opt_function(x, tune_params: TuneParams, tune_solver: Solver0D, inflow: Infl
     # run a simulation
     rez = run_sim_wrapper(x, tune_solver)
     
-    mPAP_loss, Q_RPA_loss, flow_mse, maxPAP_loss, _ = loss_function(rez, tune_params, inflow)
+    mPAP_loss, Q_RPA_loss, flow_mse, _ = loss_function(rez, tune_params, inflow)
 
-    return mPAP_loss + Q_RPA_loss + flow_mse + maxPAP_loss
-
-def range_loss(lower, upper, sim):
-    if sim > lower and sim < upper:
-        return 0
-    if sim < lower:
-        return ((sim - lower)/lower)**2
-    if sim > upper:
-        return ((sim - upper)/upper) ** 2
-        
+    return mPAP_loss + Q_RPA_loss + flow_mse
     
 def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflow):
     ''' loss function'''
@@ -409,20 +399,16 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     rpa = SolverResults.only_last_cycle(results.vessel_df('V6'), inflow.tc)
     mPAP_sim = np.trapz(mpa['pressure_in'].to_numpy(), mpa['time'].to_numpy()) / inflow.tc
     Q_RPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
-    maxPAP_sim = mpa['pressure_in'].to_numpy().max()
-    maxPAP_meas = tune_params.maxPAP_meas
     mPAP_meas = tune_params.mPAP_meas
-
     Q_RPA_meas = inflow.mean_inflow * tune_params.rpa_flow_split
     
     f = interp1d(mpa['time'].to_numpy(), rpa['flow_out'].to_numpy())
     
     mse_loss = np.square(np.divide(f(inflow.t[:-1]) - (inflow.Q[:-1] * tune_params.rpa_flow_split), (inflow.Q[:-1] * tune_params.rpa_flow_split))).mean()
 
-    mPAP_loss = range_loss(mPAP_meas[0], mPAP_meas[1], mPAP_sim)
+    mPAP_loss = ((mPAP_sim - mPAP_meas) / mPAP_meas)**2
     Q_RPA_loss =  ((Q_RPA_sim - Q_RPA_meas) / Q_RPA_meas) ** 2
-    maxPAP_loss = range_loss(maxPAP_meas[0], maxPAP_meas[1], maxPAP_sim)
-    return  mPAP_loss , Q_RPA_loss, mse_loss,  maxPAP_loss, (mPAP_sim, Q_RPA_sim, maxPAP_sim ,mPAP_meas, Q_RPA_meas, maxPAP_meas)
+    return  mPAP_loss , Q_RPA_loss, mse_loss, (mPAP_sim, Q_RPA_sim, mPAP_meas, Q_RPA_meas)
 
 def run_sim_wrapper(x, solver: Solver0D):
     ''' run simulation:
@@ -452,11 +438,11 @@ def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results: Solve
     ## save inflow graph
     fig,ax = plt.subplots(1,1 )
     ax.plot(inflow.t, inflow.Q)
-    ax.set_title( 'Inflow', fontdict={'fontsize': 20})
-    ax.set_xlabel('time (s)', fontdict={'fontsize': 16})
-    ax.set_ylabel('flow (ml/s)', fontdict={'fontsize': 16})
-    ax.tick_params(axis="x", labelsize=14) 
-    ax.tick_params(axis = 'y', labelsize=14)
+    ax.set_title( 'Inflow', fontdict={'fontsize': 24})
+    ax.set_xlabel('time (s)', fontdict={'fontsize': 20})
+    ax.set_ylabel('flow (ml/s)', fontdict={'fontsize': 20})
+    ax.tick_params(axis="x", labelsize=16) 
+    ax.tick_params(axis = 'y', labelsize=16)
     fig.savefig(os.path.join(results_dir , 'inflow.png'))
     
     
@@ -471,16 +457,15 @@ def validate_results(tune_params: TuneParams, inflow: Inflow, sim_results: Solve
                                     'Rd_RPA': x[5]}
     v0 = sim_results.vessel_df('V0')
     results_dict['columns'] = ['Optimized', 'Desired']
-    mPAP_loss, Q_RPA_loss, flow_mse, maxPAP_loss, (mPAP_sim, Q_RPA_sim, maxPAP_sim, mPAP_meas, Q_RPA_meas, maxPAP_meas) = loss_function(sim_results, tune_params, inflow)
-    results_dict['mPAP'] = [d2m(mPAP_sim), [d2m(mPAP_meas[0]), d2m(mPAP_meas[1])]]
-    results_dict['max_pressure'] = [d2m(maxPAP_sim), [d2m(maxPAP_meas[0]), d2m(maxPAP_meas[1])]]
+    mPAP_loss, Q_RPA_loss, flow_mse, (mPAP_sim, Q_RPA_sim, mPAP_meas, Q_RPA_meas) = loss_function(sim_results, tune_params, inflow)
+    results_dict['mPAP'] = [mPAP_sim, mPAP_meas]
+    results_dict['max_pressure'] = [SolverResults.only_last_cycle(v0, inflow.tc)['pressure_in'].max(), (m2d(18), m2d(25))]
     results_dict['rpa_flow_split'] = [Q_RPA_sim/inflow.mean_inflow, tune_params.rpa_flow_split]
     results_dict['Q_RPA'] = [Q_RPA_sim, Q_RPA_meas]
     
     results_dict['losses'] = {'mPAP_loss': mPAP_loss,
                               'Q_RPA_loss': Q_RPA_loss,
-                              'MSE_loss':flow_mse,
-                              'maxPAP_loss': maxPAP_loss}
+                              'MSE_loss':flow_mse}
     
     
     with open(os.path.join(results_dir, 'values.json'), 'w') as json_file:
@@ -532,7 +517,7 @@ def sens_test(x, tune_params : TuneParams, inflow: Inflow, solver: Solver0D, sen
     for var_name, index in mapping.items():
         print(f'\tRunning {var_name} sensitivity test...', end = '\t', flush = True)
         
-        fig, ax = plt.subplots(2, 2, figsize = (40, 30))
+        fig, ax = plt.subplots(3, 1, figsize = (40, 30))
         ax = ax.flatten()
         ax[0].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
         ax[1].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
@@ -543,9 +528,6 @@ def sens_test(x, tune_params : TuneParams, inflow: Inflow, solver: Solver0D, sen
         ax[2].set_xlabel(f'pct_change {var_name}', fontdict={'fontsize': 20})
         ax[2].set_ylabel(f'MSE', fontdict={'fontsize': 20})
         ax[2].set_title('MSE', fontdict={'fontsize': 24})
-        ax[3].set_xlabel(f'pct_change {var_name}', fontdict = {'fontsize':20})
-        ax[3].set_ylabel(f'maxPAP', fontdict={'fontsize': 20})
-        ax[3].set_title('maxPAP', fontdict={'fontsize': 24})
         
         for i in range(3):
             ax[i].tick_params(axis="x", labelsize=16) 
@@ -555,25 +537,22 @@ def sens_test(x, tune_params : TuneParams, inflow: Inflow, solver: Solver0D, sen
         mpap = []
         q_rpa = []
         mses = []
-        maxpap = []
         for pct in mod:
             x_test = np.copy(x)
             x_test[index] *= pct
             
             rez = run_sim_wrapper(x_test, solver)
             
-            _, _, mse, _ , (mPAP_sim, Q_RPA_sim, maxPAP_sim, _, _,_) = loss_function(rez, tune_params, inflow)
+            _, _, mse, (mPAP_sim, Q_RPA_sim, _, _) = loss_function(rez, tune_params, inflow)
             mpap.append(mPAP_sim)
             q_rpa.append(Q_RPA_sim)
             mses.append(mse)
-            maxpap.append(maxPAP_sim)
             
 
         
         ax[0].plot(mod - 1, mpap)
         ax[1].plot(mod - 1, q_rpa)
         ax[2].plot(mod - 1, mses)
-        ax[3].plot(mod - 1, maxpap)
         
         fig.savefig(os.path.join(sensitivity_dir, f'{var_name}_change.png'))
         print('Done')

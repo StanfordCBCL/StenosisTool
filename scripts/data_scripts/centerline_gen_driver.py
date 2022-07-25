@@ -90,7 +90,6 @@ if __name__ == '__main__':
     parser, dev, tool = create_parser(desc='Constructs centerlines for a model')
     
     # dev params
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
     dev.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'whether to force overwriting existing centerlines')
 
     args = parser.parse_args()
