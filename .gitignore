@@ -8,3 +8,5 @@ svZeroDSolver
 *.egg-info
 *.csv
 pptx
+scratch/*
+*.icloud

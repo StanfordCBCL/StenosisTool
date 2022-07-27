@@ -16,6 +16,7 @@ class Solver0D():
     SIM = 'simulation_parameters'
     JUNC = 'junctions'
     DESC = 'description'
+    BC_MAP = 'bc_map'
     
     class Node():
         ''' node for vessel tree '''
@@ -25,6 +26,7 @@ class Solver0D():
             self.parent = None
             self.children = None
             self.generation = generation
+            self.side = None
 
     class BranchNode():
         ''' node for branch tree'''
@@ -35,6 +37,7 @@ class Solver0D():
             self.parent = None
             self.children = None
             self.generation = generation
+            self.side = None
         
         def get_branch_len(self):
             length = 0
@@ -49,6 +52,7 @@ class Solver0D():
         self.solver_data = None
         self._vessel = None
         self._bc = None
+        self.bc_map = None
         self._description = None
         self._simulation_params = None
         self._junctions = None
@@ -84,6 +88,8 @@ class Solver0D():
             self._description = {}
         self._simulation_params = self.solver_data[self.SIM]
         self._junctions = self.solver_data[self.JUNC]
+        if self.BC_MAP in self.solver_data:
+            self.bc_map = self.solver_data[self.BC_MAP]
         if self._bc:
             for bc in self._bc:
                 if bc['bc_type'] == 'FLOW':
@@ -159,6 +165,7 @@ class Solver0D():
             for child_node in cur_node.children:
                 child_node.parent = cur_node.vess_id
                 bfs_queue.append(child_node)
+        self._det_lpa_rpa(head_node)
         
         return head_node
     
@@ -193,7 +200,41 @@ class Solver0D():
                 child_node.parent = cur_node
                 bfs_queue.append(child_node)
         
+        self._det_lpa_rpa(head_node)
+        
         return head_node
+    
+    def _det_lpa_rpa(self, head_node):
+        
+        if self.bc_map is None:
+            return
+        
+        head_node.side = 'mpa'
+        side1 = head_node.children[0]
+        side2 = head_node.children[1]
+        
+        cur_branch = side1
+        while cur_branch.children:
+            cur_branch = cur_branch.children[0]
+    
+        if type(head_node) == self.BranchNode:
+            rcr_name = self.bc_map[cur_branch.vessel_info[-1]['boundary_conditions']['outlet']]
+        elif type(head_node) == self.Node:
+            rcr_name = self.bc_map[cur_branch.vessel_info['boundary_conditions']['outlet']]
+        if 'lpa' in rcr_name.lower():
+            for node in self.tree_bfs_iterator(side1):
+                node.side = 'lpa'
+            for node in self.tree_bfs_iterator(side2):
+                node.side = 'rpa'
+        elif 'rpa' in rcr_name.lower():
+            for node in self.tree_bfs_iterator(side1):
+                node.side = 'rpa'
+            for node in self.tree_bfs_iterator(side2):
+                node.side = 'lpa'
+        else:
+            raise ValueError(rcr_name + ' is an invalid rcr name')
+
+        
     
     def tree_bfs_iterator(self, tree):
         ''' iterates using bfs'''

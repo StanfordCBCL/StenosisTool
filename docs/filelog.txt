@@ -53,7 +53,11 @@ scripts
         
 
     zerod_junction_stenosis
-        EMPTY
+        summarize_3d.py
+            - Takes a pre-run 3D file (already in results) and converts it to have the summary information we need
+        
+        junction_segmentation_1.py
+            - Implements Method 1 (adding stenosis coefficient of junction to downstream vessel)
     
     viz_script
         zerod_to_geom.py
@@ -108,25 +112,3 @@ src
 
 
 
-
-centerline_gen_driver.py
-    - Generates centerlines of entire model or tuning model
-
-calculate_rcr_bc.py
-    - Performs automatic tuning (only for healthy models) and splitting of bc of model, if a rcrt.dat file is unavailable
-    - Converts 3d rcrt.dat files to 0D version -> for stenosis models
-
-
-solver_gen_driver.py
-    - generates a full 0d segmentation of model. rcrt.dat files must be in solver directory
-
-artificial_stenosis_driver.py
-    - Constructs artificial stenosis models from healthy pulmonary models
-
-stenosis_detection_driver.py
-    - Takes a control model, computes the average resistances for each generation (by vessel lengths) and iterates over a test model identifying any vessel segments that have larger than r_threshold times the R_poiseuille as the control average (generation-wise).
-    - pulmonary models are scaled by bsa to compare controls and tests of different ages
-
-run_zerod_sim.py
-    - givne a solver file, runs a zero d simulation of it
-    

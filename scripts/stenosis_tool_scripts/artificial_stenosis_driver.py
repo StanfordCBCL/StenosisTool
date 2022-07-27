@@ -41,11 +41,13 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     old_rp = []
     old_l = []
     old_c = []
+    side = []
     exp_occlusions = []
     
     for idx in range(len(n_vess)):
         for vidx in range(len(n_vess[idx].vess_id)):
             v = n_vess[idx].vessel_info[vidx]
+            side.append(n_vess[idx].side)
             vessels.append(n_vess[idx].vess_id[vidx])
             old_sc.append(v['zero_d_element_values']['stenosis_coefficient'])
             old_rp.append(v['zero_d_element_values']['R_poiseuille'])
@@ -69,6 +71,7 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     stenosis_file = os.path.join(out_dir, 'stenosis_vessels.dat')
     print('Changed vessels:', vessels)
     changes = {'all_changed_vessels':vessels,
+                'lpa/rpa': side,
                 'occlusions': exp_occlusions.tolist(),
                                'r_poiseuille_old': old_rp,
                                'r_poiseuille_new': new_rp.tolist(),

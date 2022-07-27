@@ -28,6 +28,10 @@ class SolverResults():
         ''' retrieves a df isolated by name'''
         return self.result_df[self.result_df['name'] == vessel_name]
     
+    def get_vessel_list(self):
+        tmp = self.result_df.groupby('name').max()
+        return list(tmp.index)
+    
     def convert_to_branch_results(self, solver: Solver0D, out_file):
         ''' Convert the c results into branch results (not sorted)'''
         branch_results = {}

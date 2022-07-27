@@ -103,6 +103,7 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
 
     # change Units
     params.set_units(model.units)
+    print(model.units)
     
     
     inflow = Inflow(files.inflow_file, inverse = files.inverse_flow, smooth = files.smooth)
@@ -252,3 +253,4 @@ if __name__ == '__main__':
         tool_main(args)
     elif args.mode == 'dev':
         dev_main(args)
+        

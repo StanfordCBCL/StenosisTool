@@ -4,3 +4,25 @@ TODO:
 - Write file script to be able to manually adjust 3 D solutions to needed data only
 - Write file script to increase stenosis according to junctions
 - Write script to analytically compare error values according to error terms
+
+
+
+
+- Run healthy results
+
+
+- Create a scatter plot of node
+
+- Run a steady state of everything?
+- Can you train with steady simulations? -> compare with steady and unsteady
+
+
+- Compare the resistance  R = P1 - P2 / Ql -> to  (More clinical) to parallel computation
+
+A more quantitative measure of accuracy for M1 solver
+
+
+
+
+Can figure out flow after treated stenosis point, but pressure upstream changes
+For now , local pressure/flow after

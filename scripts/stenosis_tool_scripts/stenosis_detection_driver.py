@@ -46,6 +46,7 @@ def find_stenosis_vessels(model_solver: Solver0D, age, r_threshold, plausible_ge
     sten_len = 0
     stenosis_vessels = []
     control_vessel_radii = []
+    vessel_side = []
     branch_tree = model_solver.get_branch_tree()
     viscosity = model_solver.simulation_params['viscosity']
     
@@ -63,6 +64,7 @@ def find_stenosis_vessels(model_solver: Solver0D, age, r_threshold, plausible_ge
             # if it is a stenosis point, add the entire branch
             if avg_res > control_res * r_threshold:
                 stenosis_vessels += node.vess_id
+                vessel_side += [node.side for i in range(len(node.vess_id))]
                 control_vessel_radii += [diameter_formula(16 - gen, age = age)/2 for i in range(len(node.vess_id))]
                 sten_len += branch_len
             # if whole branch averaged is not a stenosis point, check individual
@@ -74,6 +76,7 @@ def find_stenosis_vessels(model_solver: Solver0D, age, r_threshold, plausible_ge
                     if res > control_res * r_threshold:
                         sten_len += vess['vessel_length']
                         stenosis_vessels.append(node.vess_id[vidx])
+                        vessel_side.append(node.side)
                         control_vessel_radii.append(diameter_formula(16 - gen, age = age)/2)
             
     return stenosis_vessels, control_vessel_radii, total_len, sten_len
