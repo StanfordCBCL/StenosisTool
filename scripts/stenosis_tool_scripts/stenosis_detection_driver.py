@@ -3,10 +3,9 @@
 import numpy as np
 import os
 
-from src.data_org import DataPath, StenosisToolResults
 from src.solver import Solver0D
 from src.file_io import write_json, check_exists
-from src.misc import create_parser
+from src.misc import create_tool_parser, get_solver_path
 
 ########################
 # Assistance Functions #
@@ -121,7 +120,6 @@ def construct_fixed_solver(sten_model: Solver0D, stenosis_dict, out_dir):
         ele['L'] = new_inductance(ele['L'], r_rat)
         
     out_file = os.path.join(out_dir, os.path.splitext(os.path.basename(sten_model.solver_file))[0]) + '_fixed_stenosis.in'
-    print(out_file)
     sten_model.write_solver_file(out_file)
     
 
@@ -129,43 +127,24 @@ def construct_fixed_solver(sten_model: Solver0D, stenosis_dict, out_dir):
 # Main #
 ########
 
-def tool_main(args):
-    raise NotImplementedError
 
+def main(args):
+    
+    for solver_dir in args.solver_dirs:
+        base_solver_file = get_solver_path(solver_dir)
+        print(f'Identifying stenosis for {base_solver_file}...', end = '\t', flush = True)
 
-def dev_main(args):
-    
-    org = DataPath(args.root)
-    
-    ## go through each specified model
-    for model_name in args.models:
-        model = org.find_model(model_name)
-        if model.type != 'stenosis':
-            print('Model does not belong to stenosis type: skipping.')
-            continue
-        
-        print(model_name)
-        if args.base_solver is None:
-            base_solver = stenosis_results.base_solver
-        else:
-            base_solver = args.base_solver
-        base_solver_dir = os.path.dirname(base_solver)
-        
-        
-        stenosis_results = StenosisToolResults(args.root, model)
-        ## retrieve test model
-        model_age = int(model.info['metadata']['age'])
-        
         # get test generations
         sten_solver = Solver0D()
-        sten_solver.read_solver_file(base_solver)
+        sten_solver.read_solver_file(base_solver_file)
         
+        ## retrieve test model
+        model_age = sten_solver.simulation_params['age']
     
         r_threshold = args.r_threshold # 4x  higher
         plausible_gens  = set(args.gens) # first 4 generations
         vessel_ids, control_vessel_radii, total_len, sten_len = find_stenosis_vessels( sten_solver, model_age, r_threshold, plausible_gens) 
             
-        print(vessel_ids)
         stenosis_dict = {
                         'r_threshold': r_threshold ,
                         'stenosis_vessel_ids': vessel_ids,
@@ -174,29 +153,29 @@ def dev_main(args):
                         'total_sten_length': sten_len}
         
         
-        write_json(os.path.join(base_solver_dir, 'stenosis.txt'), stenosis_dict)
+        write_json(os.path.join(solver_dir, 'stenosis.txt'), stenosis_dict)
         
         # construct a fixed version
-        fixed_stenosis_dir = check_exists(os.path.join(base_solver_dir, 'fixed_stenosis'), mkdir = True)
-        construct_fixed_solver(sten_solver, stenosis_dict, fixed_stenosis_dir)
-        
+        fixed_stenosis_dir = os.path.join(solver_dir, 'fixed_stenosis')
+        if args.force or not os.path.exists(fixed_stenosis_dir):
+            if not os.path.exists(fixed_stenosis_dir):
+                os.mkdir(fixed_stenosis_dir)
+            construct_fixed_solver(sten_solver, stenosis_dict, fixed_stenosis_dir)
+        print('Done')
             
             
             
 
 if __name__ == '__main__':
     
-    parser, dev, tool = create_parser(desc='Generates artificial stenosis files')
+    parser = create_tool_parser(desc='Generates artificial stenosis files')
     
     # dev params
-    dev.add_argument('-base_solver', default = None, help = 'the base solver to detect stenosis from.')
-    dev.add_argument('-r_threshold', type = int, default = 4,  help = 'how many x control resistance the stenosis resistance must be to be considered a fixable location')
-    dev.add_argument('-gens', type = int, default = [0,1,2,3], nargs = '*', help = 'generations to identify fixable stenosis in')
+    parser.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'force a new iteration over the old')
+    parser.add_argument('-r_threshold', type = int, default = 4,  help = 'how many x control resistance the stenosis resistance must be to be considered a fixable location')
+    parser.add_argument('-gens', type = int, default = [0,1,2,3], nargs = '*', help = 'generations to identify fixable stenosis in')
     args = parser.parse_args()
     
     
         
-    if args.mode == 'tool':
-        tool_main(args)
-    elif args.mode == 'dev':
-        dev_main(args)
+    main(args)

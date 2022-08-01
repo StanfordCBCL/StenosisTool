@@ -8,6 +8,7 @@ from src.centerlines import Centerlines
 
 import numpy as np
 import shutil
+np.testing.suppress_warnings(forwarding_rule='always')
 
 try:
     import sv_rom_extract_results as extract_results
@@ -51,13 +52,32 @@ def only_summary(centerlines: Centerlines):
             centerlines.centerlines.GetPointData().RemoveArray(name)
     return centerlines  
 
-
+def mm_to_cm(centerline_file):
+    c = Centerlines()
+    c.load_centerlines(centerline_file)
+    print(centerline_file)
+    path = c.get_pointdata(c.PointDataFields.PATH)
+    path*= .1
+    c.add_pointdata(path, c.PointDataFields.PATH)
+    c.write_centerlines(centerline_file)
+    
+    
             
 
 def main(args):
     
     solver_dir = os.path.dirname(args.solver_file)
     solver_filename = os.path.basename(args.solver_file)
+    # copy over centerliines
+    shutil.copy(args.centerlines_file, solver_dir )
+    centerline_file_name = os.path.basename(args.centerlines_file)
+    centerline_file_path = os.path.join(solver_dir, centerline_file_name)
+
+    
+    if not args.cm:
+        print('Converting to mm...', end = '\t', flush = True)
+        mm_to_cm(centerline_file_path)
+        print('Done')
     
     solver = Solver0D()
     solver.read_solver_file(args.solver_file)
@@ -78,12 +98,8 @@ def main(args):
     params.oned_model = None
     params.centerlines_file = os.path.basename(args.centerlines_file)
     
-    
-    params.output_file_name = os.path.splitext(solver_filename)[0] + '_centerline_results'
-    
-    # if centerlines not in the same dir as the solver
-    if os.path.dirname(args.centerlines_file) != solver_dir:
-        shutil.copy(args.centerlines_file, solver_dir )
+    output_file_name = os.path.splitext(solver_filename)[0] + '_centerline_results'
+    params.output_file_name = output_file_name
     
     # process
     post = extract_results.Post(params, None)
@@ -94,10 +110,10 @@ def main(args):
     
     print('Adding summary...', end = '\t', flush = True)
     centerlines = Centerlines()
-    centerlines_file = os.path.join(solver_dir, params.output_file_name + '.vtp')
-    centerlines.load_centerlines(centerlines_file)
+    new_centerlines_file = os.path.join(solver_dir, output_file_name + '.vtp')
+    centerlines.load_centerlines(new_centerlines_file)
     centerlines = add_summary_PAP(centerlines, solver)
-    centerlines.write_centerlines(centerlines_file)
+    centerlines.write_centerlines(new_centerlines_file)
     print('Done')
     
     if args.summary:
@@ -116,6 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', dest = 'solver_file', help = 'solver file path')
     parser.add_argument('-c', dest = 'centerlines_file', help = 'centerlines_file')
     parser.add_argument('-s', dest = 'summary', action = 'store_true', default = False, help = 'save summary only file')
+    parser.add_argument('-mm', dest = 'cm', action = 'store_false', default = True, help = 'use flag if model is a mm based model.')
     args = parser.parse_args()
     
     main(args)

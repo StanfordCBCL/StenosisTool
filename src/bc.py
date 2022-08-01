@@ -1,6 +1,3 @@
-###########
-# Classes #
-###########
 import os
 
 class BoundaryConditions(object):
@@ -57,7 +54,7 @@ class BoundaryConditions(object):
                         continue
                     res_file.write(bc['faceID'] + ' ' + str(bc['resistance']) + newline) 
 
-        def write_rcrt_file(self, path=None):
+        def write_rcrt_file(self, path=None, three_d = False):
             '''Write RCR boundary conditions to a file.
             '''
             num_bcs = sum([bc['type'] == self.BC_TYPE_RCR for bc in self.bc_list])
@@ -76,19 +73,27 @@ class BoundaryConditions(object):
                     if bc['type'] != self.BC_TYPE_RCR:
                         continue
                     rcr_file.write('2' + newline)
-                    for pname in ['faceID', 'Rp', 'C', 'Rd']:
+                    if not three_d:
+                        rcr_file.write(str(bc['faceID']) + newline) 
+                    for pname in ['Rp', 'C', 'Rd']:
                         rcr_file.write(str(bc[pname]) + newline) 
                     pressure = str(bc['Pd'])
                     rcr_file.write('0.0 ' + pressure + newline) 
                     rcr_file.write('1.0 ' + pressure + newline) 
 
-        def read_rcrt_file(self, rcrt_file):
+        def read_rcrt_file(self, rcrt_file, three_d = False):
+            ''' Read rcr BC from file
+            '''
             with open(rcrt_file, 'r') as rfile:
                 keyword = rfile.readline()
                 while True:
                     tmp = rfile.readline()
+                    
                     if tmp == keyword:
-                        face_name = rfile.readline().rstrip()
+                        if three_d:
+                            face_name = ''
+                        else:
+                            face_name = rfile.readline().rstrip()
                         Rp = float(rfile.readline())
                         C = float(rfile.readline())
                         Rd = float(rfile.readline())
@@ -101,7 +106,10 @@ class BoundaryConditions(object):
                     if len(tmp) == 0:
                         break
             return
-                
                     
-                    
+        def get_bc_map(self):
+            bc_map = {}
+            for bc in self.bc_list:
+                bc_map[bc['faceID']] = bc
+            return bc_map
             

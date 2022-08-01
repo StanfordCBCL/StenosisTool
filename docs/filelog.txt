@@ -1,3 +1,6 @@
+broken_data:
+    - contains data that currently doesn't work
+
 data:
     - contains data for healthy/stenosis models
     - summary data found in data/data.xlsx
@@ -14,67 +17,81 @@ docs
     todo.txt
         - contains information about what needs to be done
 
-results
-    - contains results of project
+results (Disabled)
+    - Contains pictures/images of graphs
+
+notebooks
+    - Contains ipynb notebooks for the project
 
 scripts
-    (TNI - tool version not implemented, only dev is)
-    [Brackets mean potential implementation/changes]
+    - scripts beginning w/ sv must be run with simvascular
 
-    data_scripts (all TNI)
-        3d_to_0d_rcrs.py
-            - Converts a 3d rcrt file to usable 0d
-            - [retuning boundary conditions after changing to 0d]
+    dev_scripts (scripts used to configure isolated solver directories)
+
+        sv_dev_centerlines_gen.py 
+            - generates a centerline file for a model
         
-        centerline_gen_driver.py
-            - given a model vtp & mdl file, generates a centerline file for it
+        sv_dev_segmentation_gen.py
+            - generates a 0D segmentation for a model
+
+        dev_configure_base_solver.py
+            - copies all relevant files into a base_solver_dir
         
-        optimization_driver.py
-            - optimizes a healthy model for appropriate boundary conditions
-            - [could be modified to include unhealthy models]
-            - [will take an input config file with parameters]
-        
-        segmentation_gen_driver.py
-            - Generates a 0D input file from the centerlines of a 3D model.
-            - no_bc parameter is used for creation of a dummy 3D model to compute tree resistance values
-        
-        split_rcrs.py
-            - Given optimization results, splits rcr bcs into a file according to given approximations
-    
-    stenosis_tool (all TNI)
+    stenosis_tool_scripts (scripts for stenosis tool)
+
         artificial_stenosis_driver.py
             - From a healthy pulmonary tree, selects n locations from the first g generations and creates a solver file with area reductions in (o1, o2) occlusion range
-            - [changes to how the n is selected]
+            - [changes to how the n is selected, make it more similar to a true stenosis]
         
         stenosis_detection_driver.py
             - From a stenosis pulmonary tree, computes control resistances and compares the vessels of the stenosis model in the first g generations. If a certain branch/segment resistance is r_threshold times higher than the control, it is considered a stenosed vessel
             - Generates a pseuo-fixed version of the input file that replaces stenosis vessels with their control
             - [changes to how stenosis is considered]
         
+    
+    three_d
 
-    zerod_junction_stenosis
+        correct_healthy_3D.py
+            - given a Simulation files in the model directory, copies over files and replaces parameters/bc with 0D tuned versions
+            - only for healthy models
+        
+        extract_3D_centerlines.py
+            - Given 3D vtu file and centerlines, map 3D to 1D centerlines 
+            - Will take hours, so this should be performed on cluster
+            - stand alone/Does not utilize src operations
+
         summarize_3d.py
-            - Takes a pre-run 3D file (already in results) and converts it to have the summary information we need
+            - given 3D centerlines from extract_3D_centerlines.py, summarize information to match 0D solver
         
-        junction_segmentation_1.py
-            - Implements Method 1 (adding stenosis coefficient of junction to downstream vessel)
-    
     viz_script
-        zerod_to_geom.py
-            - Takes in a solver file with a branch_results.npy file in the same directory and maps it back to the centerline geometry
-        
 
-    run_zerod_sim.py
-        - takes an input solver file and runs a 0D simulation, outputting/saving results based on flags
+        zerod_to_geom.py(yet to be fixed)
+            - Takes in a solver file with a branch_results.npy file in the same directory and maps it back to the centerline geometry
+
+
+    add_solver_rcrs.py
+        - For a solver directory, add the rcrt.dat file to the input file
+
+    jc_model_construction.py
+        - Constructs a default JC model directory
     
-    to_cpp.py
-        - converts a python 0D input file to a c++ 0D input file
-        
+    optimization_driver.py
+        - Optimizes a healthy model's bc
+    
+    run_zerod_sim.py
+        - Runs a zerod simulation of a solver directory, with the option to recursively solve every single solver file excluding tuning solvers
+
+    vessel_sanity_check.py
+        - given a results file, sanity checks the inputs and output results of each vessel segment
+
 scratch
     - where scratch work is done
 
 src
     - contains modules for project
+
+    bc.py
+        - Contains BoundaryConditions class
 
     centerlines.py
         - Contains centerlines class for handling centerlines

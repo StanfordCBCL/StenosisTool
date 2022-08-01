@@ -8,22 +8,22 @@ import numpy as np
 import os
 
 
-def get_branch_results_file(solver_file):
-    ''' Finds the result file name given the solver file.'''
-    return os.path.join(os.path.dirname(solver_file),os.path.splitext(os.path.basename(solver_file))[0]) + '_branch_results.npy'
-
-def get_csv_file(solver_file):
-    ''' finds the csv file name given the solver file'''
-    return os.path.join(os.path.dirname(solver_file),os.path.splitext(os.path.basename(solver_file))[0]) + '_branch_results.csv'
-
+def get_branch_results_file(solver_file, cpp = False):
+    ''' Finds the branch result file name given the solver file. (cpp or python)
+    '''
+    if cpp:
+        return os.path.join(os.path.dirname(solver_file),os.path.splitext(os.path.basename(solver_file))[0]) + '_branch_results.csv'
+    else:
+        return os.path.join(os.path.dirname(solver_file),os.path.splitext(os.path.basename(solver_file))[0]) + '_branch_results.npy'
+    
 def get_waveform_file(solver_file):
+    ''' finds waveform file name given the solver file
+    '''
     return os.path.join(os.path.dirname(solver_file),os.path.splitext(os.path.basename(solver_file))[0]) + '_inlet_pressures.png'
-
+    
 
 def validate_rez(solver: Solver0D, sim_results: SolverResults, out_file):
     ''' saves inlet waveforms as solver_file_inlet_pressure.png'''
-    
-    
     # retrieve time of cardiac cycle and number of points per cycle
     inflow_tc = solver.inflow.tc
     num_pts = int(solver.simulation_params['number_of_time_pts_per_cardiac_cycle'])
@@ -76,31 +76,34 @@ def run_sim(solver: Solver0D, use_steady_soltns = True, save_branch_results = Fa
     ''' Takes in solver file and runs a simulation'''
     # Run a c simulation to test
     
+    # disable steady solutions if requested
     if not use_steady_soltns:
         solver.simulation_params['steady_initial'] = use_steady_soltns
     
+    # run cpp
     if debug:
         print('Running Solver...', end = '\t', flush = True)
     results = run_from_config(solver.solver_data)
-    rez = SolverResults(results, last_cycle=False, tc = solver.inflow.tc)
+    rez = SolverResults(results)
     if debug:
         print('Done')
         
     if save_last:
         rez_out = SolverResults(results, last_cycle=True, tc = solver.inflow.tc)
+        rez_out.result_df = SolverResults.only_last_cycle(rez_out.result_df, tc = solver.inflow.tc)
     else:
         rez_out = rez
         
     if save_csv:
         if debug:
             print('Saving CSV...', end = '\t', flush = True)
-        rez_out.save_csv(get_csv_file(solver.solver_file))
+        rez_out.save_csv(get_branch_results_file(solver.solver_file, cpp = True))
         if debug:
             print('Done')
     if save_branch_results:
         if debug:
             print('Converting to branch results...', end = '\t', flush = True)
-        rez_out.convert_to_branch_results(solver, get_branch_results_file(solver.solver_file))
+        rez_out.convert_to_python(solver, get_branch_results_file(solver.solver_file, cpp = False))
         if debug:
             print('Done')
     return rez

@@ -1,12 +1,21 @@
+# ignore data
 data/**
+broken_data/**
 !data/data.xlsx
+#ignore the zero D solver
 svZeroDSolver
+# ignore expensive files
 *.npy
 *.vtp
 *.vtu
+*.csv
+
+#ignore irrelevant dirs
+pptx
+scratch
+results
+
+# ignore misc files
+*.icloud
 *.DS_Store
 *.egg-info
-*.csv
-pptx
-scratch/*
-*.icloud

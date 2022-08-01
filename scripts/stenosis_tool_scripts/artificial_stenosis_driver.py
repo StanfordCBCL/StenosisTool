@@ -1,7 +1,7 @@
 
-from src.data_org import StenosisToolResults, DataPath
-from src.misc import create_parser, get_basename
-from src.file_io import write_json, check_exists
+
+from src.misc import create_tool_parser, get_basename, get_solver_path
+from src.file_io import copy_rel_files, write_json, check_exists
 from src.solver import Solver0D
 import numpy as np
 import os
@@ -23,8 +23,12 @@ def compute_stenosis_vessels(solver: Solver0D, plausible_gens = {0,1,2,3}, occlu
             all_stenosable_vessels.append(node)
 
     print('Total number of stenosable branch:', len(all_stenosable_vessels))
-    n = min(np.random.poisson(lam = 2 * len(plausible_gens)), len(all_stenosable_vessels) )
+    if plausible_gens == {0, 1}:
+        n = len(all_stenosable_vessels)
+    else:
+        n = min(np.random.poisson(lam = 2 * len(plausible_gens)), len(all_stenosable_vessels) )
     n_vessels = np.random.choice(all_stenosable_vessels, n, replace = False)
+
     occlusions = np.random.uniform(occlusion_range[0], occlusion_range[1], size = n)
     
     return n_vessels, occlusions
@@ -116,69 +120,67 @@ def tool_main(args):
     raise NotImplementedError
     # TODO: CREATE A MODEL/RESULTS CORRESPONDING and run for healthy
 
-def dev_main(args):
+def main(args):
     
-    org = DataPath(args.root)
-    
+
     plausible_gens = set(args.gens)
     occlusion_range = (args.occlusion[0], args.occlusion[1])
     print('Plausible generations:', plausible_gens)
     print(f'Occlusion Range: {occlusion_range[0]} - {occlusion_range[1]}')
     
-    for model_name in args.models:
-        model = org.find_model(model_name)
+    for solver_dir in args.solver_dirs:
         
-        if model.type != 'healthy':
-            print(model_name + ' is not a healthy model, therefore no artificial stenosis is needed: skipping.')
-            continue
-        
-        model_results = StenosisToolResults(args.root, model)
-        
-        # load in base solver file
-        main_solver = Solver0D()
-        main_solver.read_solver_file(model_results.base_solver)
-
+        base_solver_file = get_solver_path(solver_dir)
         
         # create the proximal test
-
-        n_vessels, occlusions = compute_stenosis_vessels(solver = main_solver,
+        # load in base solver file
+        proximal_solver = Solver0D()
+        proximal_solver.read_solver_file(base_solver_file)
+        
+        n_vessels, occlusions = compute_stenosis_vessels(solver = proximal_solver,
                                     plausible_gens={0,1},
-                                    occlusion_range=occlusion_range)
-        version_dir = check_exists(os.path.join(model_results.artificial_sten_dir, 'proximal'), mkdir = True)
-        proximal_solver_file = os.path.join(version_dir, get_basename(main_solver.solver_file) + '_proximal_sten.in') 
-        if not os.path.exists(proximal_solver_file):
+                                    occlusion_range=(.75, .75))
+        artificial_sten_dir = check_exists(os.path.join(solver_dir, 'artificial_stenosis'), mkdir = True)
+        join_art = lambda file: os.path.join(artificial_sten_dir, file)
+        version_dir = join_art('proximal')
+        proximal_solver_file = os.path.join(version_dir, get_basename(base_solver_file) + '_proximal_sten.in') 
+        
+        if args.force or not os.path.exists(version_dir):
+            if not os.path.exists(version_dir):
+                os.mkdir(version_dir)
             # only if one does not already exist
-            create_new_solver(main_solver, proximal_solver_file,  version_dir,  n_vessels, occlusions)
-       
-       
+            copy_rel_files(solver_dir, version_dir, exclude_solver = True)
+            create_new_solver(proximal_solver, proximal_solver_file,  version_dir,  n_vessels, occlusions)
+            
+        
         for i in range(args.n_versions):
             # reload in base solver file
-            main_solver = Solver0D()
-            main_solver.read_solver_file(model_results.base_solver)
+            tmp_solver = Solver0D()
+            tmp_solver.read_solver_file(base_solver_file)
             
             # compute which vessels
-            n_vessels, occlusions = compute_stenosis_vessels(solver = main_solver,
+            n_vessels, occlusions = compute_stenosis_vessels(solver = tmp_solver,
                                     plausible_gens=plausible_gens,
                                     occlusion_range=occlusion_range)
             
-            version_dir = check_exists(os.path.join(model_results.artificial_sten_dir, str(i)), mkdir = True)
-            
-            new_solver_file = os.path.join(version_dir, get_basename(main_solver.solver_file) + '_art_sten.in') 
-            create_new_solver(main_solver, new_solver_file, version_dir,  n_vessels, occlusions)
+            version_dir = join_art(str(i))
+            if args.force or not os.path.exists(version_dir):
+                if not os.path.exists(version_dir):
+                    os.mkdir(version_dir)
+                copy_rel_files(solver_dir, version_dir, exclude_solver = True)
+                new_solver_file = os.path.join(version_dir, get_basename(base_solver_file) + '_art_sten.in') 
+                create_new_solver(tmp_solver, new_solver_file, version_dir,  n_vessels, occlusions)
+    
+
 if __name__ == '__main__':
     
-    parser, dev, tool = create_parser(desc = 'Generates artificial stenosis files')
-    
+    parser = create_tool_parser(desc = 'Generates artificial stenosis files')
     
     # dev params
-    dev.add_argument('-n_versions',type = int, default = 1, help = 'number of stenosis versions')
-    dev.add_argument('-occlusion', type = float, default = [.75, .9], nargs = 2, help = 'Occlusion range')
-    dev.add_argument('-gens', type = int, default = [0, 1, 2, 3], nargs = '*', help = 'Generations to use')
+    parser.add_argument('-n_versions',type = int, default = 1, help = 'number of stenosis versions')
+    parser.add_argument('-occlusion', type = float, default = [.75, .9], nargs = 2, help = 'Occlusion range')
+    parser.add_argument('-gens', type = int, default = [0, 1, 2, 3], nargs = '*', help = 'Generations to use')
+    parser.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'force saving a new proximal version')
     args = parser.parse_args()
     
-    
-        
-    if args.mode == 'tool':
-        tool_main(args)
-    elif args.mode == 'dev':
-        dev_main(args)
+    main(args)

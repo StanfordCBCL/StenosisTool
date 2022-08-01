@@ -1,25 +1,26 @@
 TODO:
-
-- Make commented changes to zero D conversion (according to the paper)
-- Write file script to be able to manually adjust 3 D solutions to needed data only
-- Write file script to increase stenosis according to junctions
-- Write script to analytically compare error values according to error terms
-
-
-
-
-- Run healthy results
-
-
-- Create a scatter plot of node
-
 - Run a steady state of everything?
 - Can you train with steady simulations? -> compare with steady and unsteady
 
 
-- Compare the resistance  R = P1 - P2 / Ql -> to  (More clinical) to parallel computation
 
-A more quantitative measure of accuracy for M1 solver
+- Add stenosis coefficients to the tuning framework
+Done
+- Tuning with stenosis coefficients (have to rerun 3D model with new bc given )
+- Compare the resistance  R = P1 - P2 / Ql -> to  (More clinical) to parallel computation
+    - Not very effective
+
+
+Order
+- Run healthy results
+- Create a more accurate stenosis (Tuning stenosis coefficients using 3D solver and pressure drops and flow splits)
+    - Need quantitative (can use Martins, but also include pressure drops)
+
+#- Get more healthy data
+- A more quantitative measure of accuracy for M1 solver
+
+- Run/Setup Neural Network
+
 
 
 

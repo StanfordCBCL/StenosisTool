@@ -3,11 +3,12 @@ import configparser
 from collections import defaultdict
 import xml.etree.ElementTree as ET
 import json
+import shutil
 
 class NotFound(Exception):
     pass
 
-def check_exists(file, err = None, mkdir = False):
+def check_exists(file, err = None, mkdir = False, ignore = False):
     ''' check if file/path exists'''
     if err == None:
         err = file + ' does not exist'
@@ -15,6 +16,9 @@ def check_exists(file, err = None, mkdir = False):
         if mkdir:
             print(err + ': making directory')
             os.mkdir(file)
+        elif ignore:
+            print(err)
+            return None
         else:
             raise NotFound(err)
     return file
@@ -29,6 +33,15 @@ def check_exists_bool(file, err = None, ignore = False):
             return False
         else:
             raise NotFound(err)
+    return True
+
+def check_many(files):
+    ''' checks many files for if they all exist'''
+    rez = []
+    for f in files:
+        rez.append(check_exists(f, mkdir = False, ignore = True))
+    if None in rez:
+        return False
     return True
 
 
@@ -67,6 +80,32 @@ def parse_mdl(mdl_file, reverse = False):
                 face_mappings[face.attrib['name']] = int(face.attrib['id'])
     return face_mappings
 
+def parse_face_names(datfile):
+    names = []
+    with open(datfile, 'r') as dfile:
+        for line in dfile:
+            names.append(line.rstrip())
+            
+    return names
+
+def read_json(fp):
+    with open(fp, 'r') as sfile:
+        return json.load(sfile)
+    
 def write_json(fp, data):
     with open(fp, 'w') as sfile:
             json.dump(data, sfile, indent = 4, sort_keys=True)
+            
+def copy_rel_files(orig_dir, new_dir, exclude_solver = False):
+    ''' Copies relevant files for a solver from orig dir to new dir. New dir must exist'''
+    join_s = lambda file: os.path.join(orig_dir, file)
+    _, dirs, files = next(os.walk(orig_dir))
+    for f in files:
+        fpath = join_s(f)
+        if f in {'inflow.png', 'model_centerlines.vtp'}: # specific case not to be ignored
+            shutil.copy(fpath,new_dir)
+        elif exclude_solver and os.path.splitext(f)[-1] == '.in':
+            continue
+        elif os.path.splitext(f)[-1] not in {'.csv', '.npy', '.png', '.vtp'}:
+            shutil.copy(fpath, new_dir)
+        

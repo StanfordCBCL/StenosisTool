@@ -3,18 +3,20 @@ from collections import defaultdict
 from os import path
 import os
 import shutil
-from tabnanny import check
+
+from traitlets import default
 
 from .misc import *
 from .file_io import check_exists, check_exists_bool, parse_config
 
 
 class ModelPath():
-    ''' Model specific info '''
+    ''' Model specific info
+    '''
     
     CONFIG_DIR = 'config_files'
     CENTERLINES_DIR = 'centerline_files'
-    SOLVER_DIR = 'solver_files'
+    BASE_SOLVER_DIR = 'base_solver_files'
     TUNING_DIR = 'tuning_files'
     
     MODEL_CENT = 'model_centerlines.vtp'
@@ -31,7 +33,7 @@ class ModelPath():
         self.type = model_type
         self.model_name = path.basename(root)
         
-        # config
+        # retrieve dev config
         self.config_files = check_exists(path.join(root, self.CONFIG_DIR), 
                                             err = 'Model {} does not have a {} directory'.format(path.basename(root), self.CONFIG_DIR), mkdir = True)
         
@@ -42,9 +44,6 @@ class ModelPath():
         if not exists: # exit after constructing dev config
             self.construct_dev_config(self.dev_config)
             
-
-            
-            
         # read dev config
         self.info = parse_config(self.dev_config)
         
@@ -52,19 +51,17 @@ class ModelPath():
             print('Info for model {} is unavailable'.format(self.model_name))
             return
         
+        # joins root to the files path.
         for key, vals in self.info['files'].items():
             if vals != '':
                 self.info['files'][key] = path.join(root, vals)
         
-        
         # dirs            
         self.centerline_dir = check_exists(path.join(root, self.CENTERLINES_DIR), mkdir = True)
-        self.solver_dir = check_exists(path.join(root, self.SOLVER_DIR), mkdir = True)
-        self.tuning_dir = check_exists(path.join(root, self.TUNING_DIR), mkdir = True)
+        self.base_solver_dir = check_exists(path.join(root, self.BASE_SOLVER_DIR), mkdir = True)
         
         # files
-        self.model_solver = path.join(self.solver_dir, self.info['metadata']['name'] + '_' + self.MODEL_SOLVER)
-        self.tune_solver = path.join(self.tuning_dir, self.info['metadata']['name'] + '_' + self.TUNING_SOLVER)
+        self.base_model_solver = path.join(self.base_solver_dir, self.info['metadata']['name'] + '_' + self.MODEL_SOLVER)
         self.model_centerlines = path.join(self.centerline_dir, self.info['metadata']['name'] + '_' + self.MODEL_CENT)
     
     def check_info(self):
@@ -83,11 +80,11 @@ class ModelPath():
         
         file += '# 3D model info\n'
         file += '[model]\ninlet = \nunits = \n'
+        file += '# Prefix before outlet cap names\nprefix = \n'
     
         with open(dev_config_fp, 'w') as dfile:
             dfile.write(file)
         
-    
     def __repr__(self):
         s = ''
         for attr, val in self.__dict__.items():
@@ -147,72 +144,4 @@ class DataPath():
         else:
             print(model_name + ' is an invalid model')
             return None
-    
-    
-class Results():
-    
-    RESULTS_DIR = 'results'
-    
-    def __init__(self, root, model: ModelPath):
-        
-        # convert Model path to an equivalent results path
-        self.root = root
-        
-        self.model = model
-        self.results_dir = check_exists(os.path.join(self.root, self.RESULTS_DIR), mkdir = True)
-        self.type_dir = check_exists(os.path.join(self.results_dir, self.model.type), mkdir = True)
-        
-        self.model_dir  = check_exists(os.path.join(self.type_dir, model.info['metadata']['name']), mkdir = True)
-
-        
-
-class StenosisToolResults(Results):
-    
-    BASE_SOLVER_DIR = 'base_solver_dir'
-    ART_STEN_DIR = 'artificial_stenosis_dir'
-    FIXED_STEN_DIR = 'fixed_stenosis_dir'
-    
-    def __init__(self, root, model: ModelPath):
-        super().__init__(root, model)
-        self.base_solver_dir = check_exists(os.path.join(self.model_dir, self.BASE_SOLVER_DIR), mkdir = True)
-
-        self.base_solver = os.path.join(self.base_solver_dir, os.path.basename(model.model_solver))
-        if not os.path.exists(self.base_solver):
-            shutil.copy(model.model_solver, self.base_solver)
-        
-        if self.model.type == 'healthy':
-            self.setup_healthy()
-        elif self.model.type == 'stenosis':
-            self.setup_stenosis()
-            
-        
-        
-    def setup_stenosis(self):
-        ''' if self.type = None, set up like a stenosis model '''
-        pass
-    
-    def setup_healthy(self):
-        ''' if self.type = healthy'''
-        self.artificial_sten_dir = check_exists(os.path.join(self.model_dir, self.ART_STEN_DIR), mkdir = True)
-        
-        
-class JunctionStenosisResults(Results):
-    
-    THREE_D_DIR = 'three_d_dir'
-    THREE_D_PARAMS = 'parameters.npy'
-    THREE_D_RERUNS = '3d_rerun'
-    
-    METHOD_DIR_1 = 'method_dir_1'
-    
-    def __init__(self, root, model: ModelPath):
-        super().__init__(root, model)
-        # 3D Directory
-        self.three_d_dir = check_exists(os.path.join(self.results_dir, self.THREE_D_DIR), mkdir = False)
-        self.three_d_parameters = check_exists(os.path.join(self.three_d_dir, self.THREE_D_PARAMS), mkdir = False)
-        self.three_d_reruns = check_exists(os.path.join(self.three_d_dir, self.THREE_D_RERUNS))
-        self.available_3d_models = {model_name.split('.')[0] for model_name in os.listdir(self.three_d_reruns)}
-
-        self.method_dir_1 = check_exists(os.path.join(self.model_dir, self.METHOD_DIR_1), mkdir = True)
-        self.model_three_d_dir = check_exists(os.path.join(self.model_dir, self.THREE_D_DIR), mkdir = True)
-        
         
