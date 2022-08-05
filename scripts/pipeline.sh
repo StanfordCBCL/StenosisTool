@@ -19,3 +19,6 @@ python scripts/three_d/correct_healthy_3D.py -solver_dirs $BASE_0080_0001 $BASE_
 # run all
 python scripts/run_zerod_sim.py -solver_dirs $BASE_0080_0001 $BASE_0082_0001 $BASE_0086_0001 $JC0_0080_0001 $JC0_0082_0001 $JC0_0086_0001 $BASE_0118_1000 $BASE_SU0238 $JC0_0118_1000 $JC0_SU0238 -b -s -f -r
 
+simvascular --python -- scripts/viz_script/sv_zerod_to_geom.py -solver_dirs $BASE_0080_0001 $BASE_0082_0001 $BASE_0086_0001 $JC0_0080_0001 $JC0_0082_0001 $JC0_0086_0001 $BASE_0118_1000 $BASE_SU0238 $JC0_0118_1000 $JC0_SU0238 -s -r
+
+python scripts

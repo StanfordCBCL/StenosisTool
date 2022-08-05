@@ -225,6 +225,7 @@ def get_integral(inp_3d, origin, normal):
     # recursively add calculators for normal velocities
     for v in get_res_names(inp_3d, 'velocity'):
         fun = 'dot((iHat*'+repr(normal[0])+'+jHat*'+repr(normal[1])+'+kHat*'+repr(normal[2])+'),' + v + ')'
+        #fun = '(iHat*'+repr(normal[0])+'+jHat*'+repr(normal[1])+'+kHat*'+repr(normal[2])+').' + v 
         inp = calculator(inp, fun, [v], 'normal_' + v)
 
     return Integration(inp)

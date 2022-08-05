@@ -106,6 +106,6 @@ def copy_rel_files(orig_dir, new_dir, exclude_solver = False):
             shutil.copy(fpath,new_dir)
         elif exclude_solver and os.path.splitext(f)[-1] == '.in':
             continue
-        elif os.path.splitext(f)[-1] not in {'.csv', '.npy', '.png', '.vtp'}:
+        elif os.path.splitext(f)[-1] not in {'.csv', '.npy', '.png', '.vtp', '.cfg'}:
             shutil.copy(fpath, new_dir)
         

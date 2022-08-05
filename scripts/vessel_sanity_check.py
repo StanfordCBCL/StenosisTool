@@ -20,7 +20,7 @@ if __name__ == '__main__':
         outlet = False
         if 'boundary_conditions' in node.vessel_info:
             outlet = True
-        vessel_info[node.vess_id] = [node.generation, node.side, outlet]
+        vessel_info[node.vess_id[0]] = [node.generation, node.side, outlet]
     
     solver_rez_file = os.path.join(os.path.dirname(solver_file), get_basename(solver_file) + '_branch_results.csv')
     solver_rez = SolverResults.load_from_csv(solver_rez_file)

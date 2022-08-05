@@ -50,7 +50,10 @@ def get_solver_name(solver_dir):
             return name
         
 def get_solver_path(solver_dir):
-    return os.path.join(solver_dir, get_solver_name(solver_dir))
+    solver_name = get_solver_name(solver_dir)
+    if solver_name is None:
+        return
+    return os.path.join(solver_dir, solver_name)
 
 
 def get_basename(fp):

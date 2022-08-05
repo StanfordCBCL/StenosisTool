@@ -60,7 +60,7 @@ def plot_inlet_PAP(centerlines: Centerlines, outfile):
     ax.legend()
     fig.savefig(outfile)
             
-def add_summary(centerlines: Centerlines, inflow: Inflow0D):
+def add_summary(centerlines: Centerlines):
     ''' adds max, min, and avg'''
     
     array_names = centerlines.get_pointdata_arraynames()
@@ -79,24 +79,23 @@ def add_summary(centerlines: Centerlines, inflow: Inflow0D):
         
     t = np.array(list(sorted(mpap.keys())))
     P = np.array([d2m(mpap[tidx]) for tidx in t])
-    Q = np.array([d2m(mq[tidx]) for tidx in t])
+    Q = np.array([mq[tidx] for tidx in t])
     mPAP = np.trapz(P, t, axis = 0) / (t[-1] - t[0])
     mQ = np.trapz(Q, t, axis = 0) / (t[-1] - t[0])
-    centerlines.add_pointdata(mPAP,'mean_PAP')
-    centerlines.add_pointdata(mQ, 'mean_Q')
+    centerlines.add_pointdata(mPAP,'meanPAP')
+    centerlines.add_pointdata(mQ, 'meanQ')
     
     
-    # find closes point in time to max
-    t_max = inflow.max_inflow_t
-    t_min = inflow.min_inflow_t
-    t_max_closest = t[np.abs(t - t_max).argmin()]
-    t_min_closest = t[np.abs(t - t_min).argmin()]
+    # find max and min are computed using maxQt/minQt of inlet
+    inlet_flows = np.array([mq[tidx][0] for tidx in t])
+    t_max = t[np.where(inlet_flows == inlet_flows.max())][0]
+    t_min = t[np.where(inlet_flows == inlet_flows.min())][0]
 
-    centerlines.add_pointdata(d2m(mpap[t_max_closest]), 'sysPAP_' + str(t_max_closest))
-    centerlines.add_pointdata(d2m(mpap[t_min_closest]), 'diaPAP_' + str(t_min_closest))
+    centerlines.add_pointdata(d2m(mpap[t_max]), 'sysPAP_' + str(t_max))
+    centerlines.add_pointdata(d2m(mpap[t_min]), 'diaPAP_' + str(t_min))
     
-    centerlines.add_pointdata(d2m(mq[t_max_closest]), 'sysQ_' + str(t_max_closest))
-    centerlines.add_pointdata(d2m(mq[t_min_closest]), 'diaQ_' + str(t_min_closest))
+    centerlines.add_pointdata(mq[t_max], 'sysQ_' + str(t_max))
+    centerlines.add_pointdata(mq[t_min], 'diaQ_' + str(t_min))
     
     return centerlines
     
@@ -110,6 +109,9 @@ def main(args):
     
     for solver_dir in args.solver_dirs:
         
+        
+        
+        
         join = lambda file: os.path.join(solver_dir, file)
         three_d_dir = join('three_d_dir')
         join_3d = lambda file: os.path.join(three_d_dir, file)
@@ -121,9 +123,17 @@ def main(args):
         solver_file = get_solver_name(solver_dir)
         threed_model_name = get_basename(solver_file)
         three_d_file = join_3d(threed_model_name + '.vtp')
+        print(f'Converting 3D file {get_basename(three_d_file)}.')
         if not os.path.exists(three_d_file):
             print(f'{three_d_file} does not exist. Skipping...')
             continue
+        
+        # get converted filename and check if one already exists
+        converted_centerlines = join_3d(threed_model_name + '_converted.vtp')
+        if not args.force and os.path.exists(converted_centerlines):
+            print(f'A conversion {os.path.basename(converted_centerlines)} already exists. Skipping...')
+            continue
+            
         
         # load inflow for tc
         inflow_file = join('inflow.flow')
@@ -133,17 +143,26 @@ def main(args):
         # load 3D centerlines
         centerlines = Centerlines()
         centerlines.load_centerlines(three_d_file)
+        
+        
     
         # convert time steps
+        print('Converting time steps...', end = '\t', flush = True)
         convert_time_steps(centerline3d=centerlines, tc = tc)
-        add_summary(centerlines=centerlines, inflow = inflow)
+        print('Done')
+        print('Adding summary data...', end = '\t', flush = True)
+        add_summary(centerlines=centerlines)
+        print('Done')
         
         # converted 3D file
-        converted_centerlines = join_3d(threed_model_name + '_converted.vtp')
+        print('Writing centerlines...', end = '\t', flush = True)
         centerlines.write_centerlines(converted_centerlines)
+        print('Done')
         
         # plot inlet PAP
+        print('Plotting inlet pressures...', end = '\t', flush = True)
         plot_inlet_PAP(centerlines, join_3d('inlet_pressures.png') )
+        print('Done')
         
 
 
@@ -151,6 +170,7 @@ def main(args):
 if __name__ == '__main__':
     
     tool = create_tool_parser(desc = 'Converts existing 3D results to summary statistics')
+    tool.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'Force overwrite the old file')
     args = tool.parse_args()
     
     main(args)

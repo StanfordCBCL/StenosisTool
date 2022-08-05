@@ -52,30 +52,35 @@ class TuneParams():
 ############################
 # Constructing Tuner Model #
 ############################
-def compute_total_resistance(cur_node: Solver0D.Node):
-    ''' computes total resistance/stenosis coefficients of a tree recursively
+def compute_total_resistance_round1(cur_node: Solver0D.Node):
+    ''' computes total resistance coefficients of a tree recursively
     '''
     
     if not cur_node.children:
         r_p = cur_node.vessel_info[0]['zero_d_element_values']['R_poiseuille']
-        sc = cur_node.vessel_info[0]['zero_d_element_values']['stenosis_coefficient']
-        return r_p, sc
+        return r_p
     
     total_inv_res = 0
-    total_inv_sc = 0
     for child_node in cur_node.children:
-        r_p_child, sc_child = compute_total_resistance(child_node)
+        r_p_child = compute_total_resistance_round1(child_node)
         if r_p_child != 0:
             total_inv_res += 1/r_p_child
-        if sc_child != 0:
-            total_inv_sc += 1/sc_child
     total_child_res = 1/total_inv_res
-    total_child_sc = 1/ total_inv_sc
-    
     r_p = cur_node.vessel_info[0]['zero_d_element_values']['R_poiseuille'] + total_child_res
-    sc = cur_node.vessel_info[0]['zero_d_element_values']['stenosis_coefficient'] + total_child_sc
-    return r_p, sc
+    return r_p
 
+def compute_lpa_rpa_resistances_round1(dummy_solver: Solver0D ):
+    ''' computes LPA and RPA resistances from each branch
+    '''
+    vessel_tree = dummy_solver.get_vessel_tree()
+    assert len(vessel_tree.children) == 2, 'Pulmonary vasculature should only branch into 2 sections, LPA and RPA'
+        
+    rpa, lpa = get_lpa_rpa(vessel_tree)
+    
+    lpa_res = compute_total_resistance_round1(lpa)
+    rpa_res = compute_total_resistance_round1(rpa)
+
+    return lpa_res, rpa_res
 
     
 def get_lpa_rpa(vessel_tree: Solver0D.VesselNode):
@@ -94,18 +99,7 @@ def get_lpa_rpa(vessel_tree: Solver0D.VesselNode):
         rpa = first_branch
     return rpa, lpa
 
-def compute_lpa_rpa_resistances(dummy_solver: Solver0D ):
-    ''' computes LPA and RPA resistances from each branch
-    '''
-    vessel_tree = dummy_solver.get_vessel_tree()
-    assert len(vessel_tree.children) == 2, 'Pulmonary vasculature should only branch into 2 sections, LPA and RPA'
-        
-    rpa, lpa = get_lpa_rpa(vessel_tree)
-    
-    lpa_res, lpa_sc = compute_total_resistance(lpa)
-    rpa_res, rpa_sc = compute_total_resistance(rpa)
 
-    return lpa_res, lpa_sc, rpa_res, rpa_sc
 
 def compute_lpa_rpa_resistance_clinical(solver: Solver0D, solver_results: SolverResults):
     ''' computes LPA and RPA resistances in a clinical manner, given pressure measurements
@@ -306,7 +300,7 @@ def write_0d_dict(params: TuneParams, inflow: Inflow0D, centerlines: Centerlines
             }
         }
     
-    lpa_res, lpa_sc, rpa_res, rpa_sc = compute_lpa_rpa_resistances(dummy_solver=dummy_solver)
+    lpa_res,  rpa_res = compute_lpa_rpa_resistances_round1(dummy_solver=dummy_solver)
     lpa =  [{
             "vessel_id": 1,
             "vessel_length": 10.0,
@@ -314,7 +308,6 @@ def write_0d_dict(params: TuneParams, inflow: Inflow0D, centerlines: Centerlines
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
                 "R_poiseuille": lpa_res,
-                "stenosis_coefficient": lpa_sc
             }
         },
             {
@@ -345,7 +338,6 @@ def write_0d_dict(params: TuneParams, inflow: Inflow0D, centerlines: Centerlines
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
                 "R_poiseuille": rpa_res,
-                "stenosis_coefficient": rpa_sc
             }
         }, 
             { 
@@ -373,8 +365,8 @@ def write_0d_dict(params: TuneParams, inflow: Inflow0D, centerlines: Centerlines
     
     # check that the results are within reasonable bounds
     tree = dummy_solver.get_vessel_tree()
-    tree_res, tree_sc = compute_total_resistance(tree)
-    print('delta_P =', d2m(inflow.mean_inflow * tree_res + tree_sc * inflow.mean_inflow**2))
+    tree_res = compute_total_resistance_round1(tree)
+    print('delta_P =', d2m(inflow.mean_inflow * tree_res))
     
     return solver_data
     

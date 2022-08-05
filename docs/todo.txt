@@ -12,18 +12,33 @@ Done
 
 
 Order
-- Run healthy results
-- Create a more accurate stenosis (Tuning stenosis coefficients using 3D solver and pressure drops and flow splits)
+1. Run healthy results (DOES NOT WORKKKKKKKKKK.)
+    - Tried Changing TS... no solution
+    - Flow is not correct for 0080_0001. So many orders of magnitude lower
+    - PROPOSED SOLUTION: DO NOT PERFORM COMPARISONS WITH OWN DATA, BUT WITH MARTIN's ALREADY RUN DATA, JUST MODITY IN FILE
+
+
+2?. Create a more accurate stenosis (Tuning stenosis coefficients using 3D solver and pressure drops and flow splits)
+    - Using inlet, outlet areas
     - Need quantitative (can use Martins, but also include pressure drops)
-
-#- Get more healthy data
-- A more quantitative measure of accuracy for M1 solver
-
-- Run/Setup Neural Network
+    
+3. Construct a more realistic artificial stenosis based on 0D solver
 
 
+4. Run/Setup Neural Network
+    - Can figure out flow after treated stenosis point, but pressure upstream changes
+    - For now , local pressure/flow after
+
+
+5. Get More Healthy Results
+
+
+Slides
+ Follow tree along branches and follow pressure alongm branch
+ Construct Resistance tree
+
+7. Iterate Optimizer if flow changes, or set distal pressure to 0 and try.
 
 
 
-Can figure out flow after treated stenosis point, but pressure upstream changes
-For now , local pressure/flow after
+Cannot get

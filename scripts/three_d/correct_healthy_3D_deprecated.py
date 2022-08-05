@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import shutil
+#!      NEED TO RERUN PREFILE w/o DISTAL PRESSURES SINCE IT IS ADDITIVE.... JUST
 
 def read_pre_file(pre_file):
     
