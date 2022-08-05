@@ -1,3 +1,11 @@
+# File: dev_configure_base_solver.py
+# File Created: Thursday, 28th July 2022 5:49:29 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:30:42 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: For a particular 0D solver file, prepare necessary files for future work
+
 
 from src.misc import create_dev_parser
 from src.solver import Solver0D

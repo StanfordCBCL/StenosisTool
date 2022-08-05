@@ -1,4 +1,10 @@
-# Performs comparison of Control and Stenosis generation resistances to determine if a segment contains severe to-be-fixed stenoses
+# File: stenosis_detection_driver.py
+# File Created: Wednesday, 29th June 2022 11:26:57 am
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:32:20 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Given a directory of a stenosis model, performs comparison of Control and Stenosis generation resistances to determine if a segment contains severe to-be-fixed stenoses
 
 from asyncore import write
 import numpy as np

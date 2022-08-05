@@ -17,9 +17,6 @@ docs
     todo.txt
         - contains information about what needs to be done
 
-results (Disabled)
-    - Contains pictures/images of graphs
-
 notebooks
     - Contains ipynb notebooks for the project
 
@@ -51,9 +48,12 @@ scripts
     
     three_d
 
-        correct_healthy_3D.py
+        correct_healthy_3D.py (deprecated)
             - given a Simulation files in the model directory, copies over files and replaces parameters/bc with 0D tuned versions
             - only for healthy models
+        
+        compare_3D_0D.py
+            - Computes error terms between 0D and 3D
         
         extract_3D_centerlines.py
             - Given 3D vtu file and centerlines, map 3D to 1D centerlines 
@@ -67,6 +67,7 @@ scripts
 
         zerod_to_geom.py(yet to be fixed)
             - Takes in a solver file with a branch_results.npy file in the same directory and maps it back to the centerline geometry
+            - Also constructs a resistance map
 
 
     add_solver_rcrs.py

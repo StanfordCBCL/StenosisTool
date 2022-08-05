@@ -1,4 +1,12 @@
 
+# File: optimization_driver.py
+# File Created: Friday, 29th July 2022 12:24:00 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:40:35 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Optimizes a healthy model with appropriate BC
+
 
 
 from src.flow import Inflow0D

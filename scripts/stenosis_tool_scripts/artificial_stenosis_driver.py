@@ -1,3 +1,12 @@
+# File: artificial_stenosis_driver.py
+# File Created: Tuesday, 5th July 2022 3:31:59 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:31:41 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Given a particular directory containing a solver file and a config file containing occlusions mapped from another stenosis, construct a healthy model with an appropriate amount of stenosis
+
+
 
 
 from traitlets import default

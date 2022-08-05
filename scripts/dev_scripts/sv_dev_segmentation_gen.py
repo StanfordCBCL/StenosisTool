@@ -1,3 +1,12 @@
+# File: sv_dev_segmentation_gen.py
+# File Created: Thursday, 28th July 2022 3:33:40 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:28:14 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Using Simvascular Automated Pipeline & Development given parameters, construct a 0D model from a particular 3D geometry
+
+
 
 try:
     import sv_rom_simulation

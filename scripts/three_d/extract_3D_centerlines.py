@@ -1,3 +1,13 @@
+# File: extract_3D_centerlines.py
+# File Created: Monday, 25th July 2022 3:39:06 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:34:36 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: A Very long running code (2+ hrs) where given a 3D vtu and its corresponding centerlines, the flows and pressures can be mapped back onto the 0D
+
+
+
 import os
 import vtk
 from vtk.util.numpy_support import numpy_to_vtk as n2v

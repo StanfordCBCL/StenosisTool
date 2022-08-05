@@ -1,3 +1,12 @@
+# File: sv_zerod_to_geom.py
+# File Created: Wednesday, 27th July 2022 11:28:30 am
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:36:25 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: For a particular directory (and potentially its children directory) if a centerlines exists and a branch_result.npy file exists, then map the 0D results to centerlines.
+
+
 import sys
 import os
 import argparse

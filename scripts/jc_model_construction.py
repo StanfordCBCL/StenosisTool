@@ -1,3 +1,12 @@
+# File: jc_model_construction.py
+# File Created: Monday, 18th July 2022 3:40:19 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Friday, 5th August 2022 1:38:11 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Constructs a new directory from an base one where everything is identical except the solver file is processed to includes junction coefficients
+
+
 from src.solver import Solver0D
 from src.misc import create_tool_parser, get_basename, get_solver_path
 import os

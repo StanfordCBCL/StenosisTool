@@ -2,7 +2,7 @@
 data/**
 broken_data/**
 !data/data.xlsx
-#ignore the zero D solver
+# ignore the zero D solver
 svZeroDSolver
 # ignore expensive files
 *.npy
@@ -10,7 +10,7 @@ svZeroDSolver
 *.vtu
 *.csv
 
-#ignore irrelevant dirs
+# ignore irrelevant dirs
 pptx
 scratch
 results
@@ -19,3 +19,7 @@ results
 *.icloud
 *.DS_Store
 *.egg-info
+
+# ignore presonal scripts
+scripts/load_env.sh
+scripts/pipeline.sh
