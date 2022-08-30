@@ -1,7 +1,7 @@
 # File: stenosis_detection_driver.py
 # File Created: Wednesday, 29th June 2022 11:26:57 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:32:20 am
+# Last Modified: Monday, 29th August 2022 4:37:38 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a directory of a stenosis model, performs comparison of Control and Stenosis generation resistances to determine if a segment contains severe to-be-fixed stenoses
@@ -14,6 +14,7 @@ from collections import defaultdict
 from src.solver import Solver0D
 from src.file_io import copy_rel_files, write_json, check_exists
 from src.misc import create_tool_parser, get_solver_path
+from src.stenosis import new_capacitance, new_inductance, new_r_poiseuille, new_sten_coeff
 
 ########################
 # Non-Config Functions #
@@ -95,7 +96,7 @@ def gen_config(model_solver: Solver0D, age, r_threshold):
     generations = defaultdict(d)
     config_file = {}
     config_file['generation_info'] = defaultdict()
-    config_file['metadata'] = {'r_threshold': r_threshold, 'model_name': model_solver.simulation_params['model_name'], 'total_stenosis_ratio': 0}
+    config_file['metadata'] = {'r_threshold': r_threshold, 'model_name': model_solver.simulation_params['model_name']}
     
 
     branch_tree = model_solver.get_branch_tree()
@@ -143,18 +144,6 @@ def compute_radii(viscosity, length, rp):
     r = ((8 * viscosity * length) / (rp * np.pi)) ** (1/4)
     return r
 
-def new_inductance(old_ind, rad_rat):
-    return old_ind / (rad_rat ** 2)
-
-def new_capacitance(old_c, rad_rat):
-    return rad_rat**2 * old_c
-
-def new_sten_coeff(old_sten_coeff, rad_rat):
-    # modifications to a_0 and a_s
-    return old_sten_coeff / (rad_rat**4)
-    
-def new_r_poiseuille(old_r_p, rad_rat):
-    return old_r_p / (rad_rat ** 4)
 
 def construct_fixed_solver(sten_model: Solver0D, stenosis_dict, out_dir):
     
@@ -236,7 +225,7 @@ def main(args):
             # retrieve all stenosable vessels
             config_file = gen_config(sten_solver, model_age, r_threshold = r_threshold)
             
-            write_json(os.path.join(solver_dir, 'artificial_stenosis.cfg'), config_file)
+            write_json(os.path.join(solver_dir, args.config_file), config_file)
             
         print('Done')
 
@@ -251,6 +240,8 @@ if __name__ == '__main__':
     group.add_argument('-gens', type = int, default = [0,1,2,3], nargs = '*', help = 'generations to identify fixable stenosis in')
     
     group.add_argument('-config', action = 'store_true', default = False, help = 'Generate a config file for artificial stenosis generation')
+    
+    parser.add_argument('-config_file', default = 'artificial_stenosis.cfg', help = 'File name to save config to if -config is specified')
     
     args = parser.parse_args()
     

@@ -110,6 +110,11 @@ class Solver0D():
         with open(solver_file, 'r') as sfile:
             self.solver_data = json.load(sfile)
         self._update_solver_data()
+        
+    def from_dict(self, solver_dict):
+        self.solver_file = None
+        self.solver_data = solver_dict
+        self._update_solver_data()
     
     # Private Operations
     def _update_solver_data(self):

@@ -1,7 +1,7 @@
 # File: artificial_stenosis_driver.py
 # File Created: Tuesday, 5th July 2022 3:31:59 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:31:41 am
+# Last Modified: Monday, 29th August 2022 4:38:22 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a particular directory containing a solver file and a config file containing occlusions mapped from another stenosis, construct a healthy model with an appropriate amount of stenosis
@@ -23,6 +23,24 @@ import shutil
 #############
 # functions #
 #############
+
+
+# ONLY WORK DOWNWARDS
+def new_inductance(old_ind, occlusion):
+    return old_ind / (1 - occlusion)
+
+def new_capacitance(old_c, occlusion):
+    return (1 - occlusion) * old_c
+
+def new_sten_coeff(old_sten_coeff, occlusion):
+    remaining_area_pct = 1 - occlusion
+    # modifications to a_0 and a_s
+    return old_sten_coeff / (remaining_area_pct**2)
+    
+def new_r_poiseuille(old_r_p, occlusion):
+    remaining_area_pct = 1 - occlusion
+    radius_change = np.sqrt(remaining_area_pct)
+    return old_r_p / (radius_change ** 4)
     
 def compute_stenosis_vessels(solver: Solver0D, plausible_gens = {0,1,2,3}, occlusion_range = (.5, .75)):
     ''' Uses a poisson distribution (lambda = len(plausible_gens)) to determine number of stenosis point to actually use'''
@@ -116,27 +134,6 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     old_solver.write_solver_file(new_solver_file)
 
 
-def new_inductance(old_ind, occlusion):
-    
-    return old_ind / (1 - occlusion)
-
-def new_capacitance(old_c, occlusion):
-    return (1 - occlusion) * old_c
-
-def new_sten_coeff(old_sten_coeff, occlusion):
-    
-    remaining_area_pct = 1 - occlusion
-    
-    # modifications to a_0 and a_s
-    return old_sten_coeff / (remaining_area_pct**2)
-    
-
-def new_r_poiseuille(old_r_p, occlusion):
-
-    remaining_area_pct = 1 - occlusion
-    radius_change = np.sqrt(remaining_area_pct)
-    return old_r_p / (radius_change ** 4)
-
 ###################
 # Config Function #
 ###################
@@ -205,27 +202,25 @@ def main(args):
 
     plausible_gens = set(args.gens)
     occlusion_range = (args.occlusion[0], args.occlusion[1])
-    print('Plausible generations:', plausible_gens)
-    print(f'Occlusion Range: {occlusion_range[0]} - {occlusion_range[1]}')
     
     for solver_dir in args.solver_dirs:
         
         base_solver_file = get_solver_path(solver_dir)
         
         # create the proximal test
-        # load in base solver file
-        proximal_solver = Solver0D()
-        proximal_solver.read_solver_file(base_solver_file)
-        
-        n_vessels, occlusions, lengths= compute_stenosis_vessels(solver = proximal_solver,
-                                    plausible_gens={0,1},
-                                    occlusion_range=(.75, .75))
         artificial_sten_dir = check_exists(os.path.join(solver_dir, 'artificial_stenosis'), mkdir = True)
         join_art = lambda file: os.path.join(artificial_sten_dir, file)
         version_dir = join_art('proximal')
         proximal_solver_file = os.path.join(version_dir, get_basename(base_solver_file) + '_proximal_sten.in') 
         
         if args.force or not os.path.exists(version_dir):
+            # load in base solver file
+            proximal_solver = Solver0D()
+            proximal_solver.read_solver_file(base_solver_file)
+            
+            n_vessels, occlusions, lengths= compute_stenosis_vessels(solver = proximal_solver,
+                                        plausible_gens={0,1},
+                                        occlusion_range=(.75, .75))
             if not os.path.exists(version_dir):
                 os.mkdir(version_dir)
             # only if one does not already exist
@@ -269,9 +264,10 @@ def main(args):
                 # compute which vessels
                 n_vessels, occlusions, lengths= compute_from_config(solver = tmp_solver, cfg = cfg)
                 
-                version_dir = join_art(str(i))
+                
+                version_dir = join_art(cfg['metadata']['model_name'] + '_' + str(i))
                 if args.force or not os.path.exists(version_dir):
-                    print(f'Generating version {i}')
+                    print(f'Generating version {version_dir}')
                     if not os.path.exists(version_dir):
                         os.mkdir(version_dir)
                     copy_rel_files(solver_dir, version_dir, exclude_solver = True)
