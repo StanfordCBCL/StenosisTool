@@ -22,3 +22,6 @@ results
 # ignore presonal scripts
 scripts/load_env.sh
 scripts/pipeline.sh
+
+# ignore all scripts
+*.sh
