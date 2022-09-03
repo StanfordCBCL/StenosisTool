@@ -58,3 +58,12 @@ Need to optimize the neural network
 
 
 Can we generate more stenosis then determine only the most extreme to fix.
+
+Increasing size improves loss, but has a severe diminishing effect. 50 x 500 = 1.52e07, 100 x 1000 = 5.75e06
+Increasing data*4 -> 16k does not have significant effect. -> 1.46e07
+    - Faster Convergence though
+
+
+Make sure data is correct -> 1-> 2.6
+PCA
+Point-level normalization
