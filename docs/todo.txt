@@ -58,3 +58,6 @@ Need to optimize the neural network
 
 
 Can we generate more stenosis then determine only the most extreme to fix.
+
+
+4098
