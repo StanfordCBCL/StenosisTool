@@ -79,7 +79,7 @@ class LightningNN(pl.LightningModule):
         return torch.stack((y, y_hat), dim = 1)
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=.00005)
+        optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=0)
         return {
         "optimizer": optimizer,
         "lr_scheduler": {
@@ -105,7 +105,7 @@ class Dataset0D(tdata.Dataset):
         return len(self.input)
     
     def __getitem__(self, idx):
-        return torch.from_numpy(self.input[idx]).float(), torch.from_numpy(self.output[idx]).float()
+        return torch.from_numpy(self.input[idx][0:3]).float(), torch.from_numpy(self.output[idx][0:6]).float()
 
 # Normalization methods
 def normalization(output):
