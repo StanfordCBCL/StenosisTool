@@ -1,7 +1,7 @@
 # File: artificial_stenosis_driver.py
 # File Created: Tuesday, 5th July 2022 3:31:59 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 10:06:13 pm
+# Last Modified: Tuesday, 13th September 2022 10:18:40 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a particular directory containing a solver file and a config file containing occlusions mapped from another stenosis, construct a healthy model with an appropriate amount of stenosis
@@ -9,7 +9,6 @@
 
 
 
-from traitlets import default
 from src.misc import create_tool_parser, get_basename, get_solver_path
 from src.file_io import copy_rel_files, write_json, check_exists, read_json
 from src.solver import Solver0D
