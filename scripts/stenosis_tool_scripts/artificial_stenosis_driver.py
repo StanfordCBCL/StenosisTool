@@ -1,7 +1,7 @@
 # File: artificial_stenosis_driver.py
 # File Created: Tuesday, 5th July 2022 3:31:59 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 29th August 2022 4:38:22 pm
+# Last Modified: Tuesday, 13th September 2022 10:06:13 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a particular directory containing a solver file and a config file containing occlusions mapped from another stenosis, construct a healthy model with an appropriate amount of stenosis
@@ -82,7 +82,6 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     
     new_solver = Solver0D()
     new_solver.read_solver_file(old_solver.solver_file )
-    
     vessels = []
     old_sc = []
     old_rp = []
@@ -92,21 +91,20 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     exp_occlusions = []
     
     for idx in range(len(n_vess)):
-        for vidx in range(len(n_vess[idx].vess_id)):
-            v = n_vess[idx].vessel_info[vidx]
-            side.append(n_vess[idx].side)
-            vessels.append(n_vess[idx].vess_id[vidx])
-            old_sc.append(v['zero_d_element_values']['stenosis_coefficient'])
-            old_rp.append(v['zero_d_element_values']['R_poiseuille'])
-            old_l.append(v['zero_d_element_values']['L'])
-            old_c.append(v['zero_d_element_values']['C'])
-            exp_occlusions.append(occlusions[idx])
+        branch = n_vess[idx].vessel_info
+        side.append(n_vess[idx].side)
+        vessels.append(n_vess[idx].vess_id)
+        old_sc.append([v['zero_d_element_values']['stenosis_coefficient'] for v in branch])
+        old_rp.append([v['zero_d_element_values']['R_poiseuille'] for v in branch])
+        old_l.append([v['zero_d_element_values']['L'] for v in branch])
+        old_c.append([v['zero_d_element_values']['C'] for v in branch])
+        exp_occlusions.append(occlusions[idx])
     
     exp_occlusions = np.array(exp_occlusions)
-    new_sc = new_sten_coeff(np.array(old_sc), occlusion= exp_occlusions)
-    new_rp = new_r_poiseuille(np.array(old_rp), occlusion= exp_occlusions)
-    new_l = new_inductance(np.array(old_l), occlusion= exp_occlusions)
-    new_c = new_capacitance(np.array(old_c), occlusion= exp_occlusions)
+    new_sc = [list(new_sten_coeff(np.array(old_sc[i]), occlusion= exp_occlusions[i])) for i in range(len(old_sc))]
+    new_rp = [list(new_r_poiseuille(np.array(old_rp[i]), occlusion= exp_occlusions[i])) for i in range(len(old_rp))]
+    new_l = [list(new_inductance(np.array(old_l[i]), occlusion= exp_occlusions[i])) for i in range(len(old_l))]
+    new_c = [list(new_capacitance(np.array(old_c[i]), occlusion= exp_occlusions[i])) for i in range(len(old_c))]
     
     for idx in range(len(n_vess)):
         for v in n_vess[idx].vessel_info:
@@ -121,13 +119,13 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
                 'lpa/rpa': side,
                 'occlusions': exp_occlusions.tolist(),
                                'r_poiseuille_old': old_rp,
-                               'r_poiseuille_new': new_rp.tolist(),
+                               'r_poiseuille_new': new_rp,
                                'sten_coeff_old': old_sc,
-                               'sten_coeff_new': new_sc.tolist(),
+                               'sten_coeff_new': new_sc,
                                'inductance_old': old_l,
-                               'inductance_new': new_l.tolist(),
+                               'inductance_new': new_l,
                                'capacitance_old': old_c,
-                               'capacitance_new': new_c.tolist(),
+                               'capacitance_new': new_c,
                                'lengths': lengths}
     write_json(stenosis_file, changes)
     
@@ -253,7 +251,6 @@ def main(args):
     
         else:
             # Takes in a config
-            
             cfg = read_json(args.config)
             # Default version...
             for i in range(args.n_versions):
