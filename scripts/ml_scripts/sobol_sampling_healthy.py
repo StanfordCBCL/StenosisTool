@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 10:29:21 pm
+# Last Modified: Tuesday, 13th September 2022 11:05:46 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -41,10 +41,11 @@ def proc_func(pbatch, changed_vessels, original_data, targets):
         psolver = Solver0D()
         psolver.from_dict(copy.deepcopy(original_data))
         # fill psolver with correct modifications
-        for idx, vessid in enumerate(changed_vessels):
-            vess = psolver.get_vessel(vessid)
-            rad_rat = p[idx]
-            convert_all(vess, rad_rat)
+        for idx, branch in enumerate(changed_vessels):
+            for vessid in branch:
+                vess = psolver.get_vessel(vessid)
+                rad_rat = p[idx]
+                convert_all(vess, rad_rat)
             
         print(f'Running sample {pidx + 1} / {total}')
         df = run_from_config(psolver.solver_data)
