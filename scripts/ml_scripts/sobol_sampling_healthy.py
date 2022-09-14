@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 10:11:06 pm
+# Last Modified: Tuesday, 13th September 2022 10:29:21 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -126,9 +126,7 @@ def main(args):
         
         # get data
         data = data_gen(num_samples_log2=args.num_samples, dims = len(stenosis_points['all_changed_vessels']), occlusions = stenosis_points['occlusions'] )
-        tqdm.tqdm()
         
-        print(data[0])
         # divide data
         chunk_size = int(np.ceil(len(data) / args.num_proc))
         print(chunk_size)

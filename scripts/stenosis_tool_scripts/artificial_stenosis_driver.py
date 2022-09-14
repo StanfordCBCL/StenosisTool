@@ -1,7 +1,7 @@
 # File: artificial_stenosis_driver.py
 # File Created: Tuesday, 5th July 2022 3:31:59 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 10:06:13 pm
+# Last Modified: Tuesday, 13th September 2022 10:42:06 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a particular directory containing a solver file and a config file containing occlusions mapped from another stenosis, construct a healthy model with an appropriate amount of stenosis
@@ -107,11 +107,12 @@ def create_new_solver(old_solver: Solver0D, new_solver_file, out_dir, n_vess, oc
     new_c = [list(new_capacitance(np.array(old_c[i]), occlusion= exp_occlusions[i])) for i in range(len(old_c))]
     
     for idx in range(len(n_vess)):
-        for v in n_vess[idx].vessel_info:
-            v['zero_d_element_values']['stenosis_coefficient'] = new_sc[idx]
-            v['zero_d_element_values']['R_poiseuille'] = new_rp[idx]
-            v['zero_d_element_values']['L'] = new_l[idx]
-            v['zero_d_element_values']['C'] = new_c[idx]
+        for vidx in range(len(n_vess[idx].vessel_info)):
+            v = n_vess[idx].vessel_info[vidx]
+            v['zero_d_element_values']['stenosis_coefficient'] = new_sc[idx][vidx]
+            v['zero_d_element_values']['R_poiseuille'] = new_rp[idx][vidx]
+            v['zero_d_element_values']['L'] = new_l[idx][vidx]
+            v['zero_d_element_values']['C'] = new_c[idx][vidx]
         
     stenosis_file = os.path.join(out_dir, 'stenosis_vessels.dat')
     print('Changed vessels:', vessels)
