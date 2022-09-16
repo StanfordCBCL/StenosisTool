@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 11:05:46 pm
+# Last Modified: Thursday, 15th September 2022 8:19:52 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -94,7 +94,7 @@ def data_gen(dims, occlusions, num_samples_log2 = 3):
     ubound = []
     for occ in occlusions:
         bounds = parametrize_stenosis(occ)
-        lbound = bounds[0]
+        lbound = bounds[0] - .05
         ubound = bounds[1]
     
     # create data
