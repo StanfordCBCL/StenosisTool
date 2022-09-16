@@ -15,25 +15,36 @@ class BasicNN(nn.Module):
     
     def __init__(self, input_neurons, output_neurons, hidden_layers, neurons_per_layer):
         super(BasicNN, self).__init__()
+        self.relu = nn.ReLU()
         self.input_layer = nn.Linear(input_neurons, neurons_per_layer )
-        self.input_relu = nn.ReLU()
         self.hidden = nn.Sequential()
         if hidden_layers < 1:
             raise ValueError('hidden layers must be > 0')
         else:
             for i in range(hidden_layers):
                 self.hidden.append(nn.Linear(neurons_per_layer, neurons_per_layer))
-                self.hidden.append(nn.ReLU())
+                self.hidden.append(self.relu)
         self.output_layer = nn.Linear(neurons_per_layer, output_neurons)
-        self.output_relu = nn.ReLU()
+        self.output2_modules = nn.ModuleList()
+        for i in range(input_neurons):
+            tmp = nn.Sequential(nn.Linear(input_neurons+2, neurons_per_layer // 2), self.relu)
+            for j  in range(hidden_layers - 1):
+                tmp.append(nn.Linear( neurons_per_layer //2, neurons_per_layer // 2))
+                tmp.append(self.relu)
+            tmp.append(nn.Linear( neurons_per_layer //2,2))
+            self.output2_modules.append(tmp)    
+
     
     def forward(self, x):
+        inp = x
         x = self.input_layer(x)
-        x = self.input_relu(x)
+        x = self.relu(x)
         x = self.hidden(x)
         x = self.output_layer(x)
-        # x = self.output_relu(x)
-        return x
+        y = torch.cat([self.output2_modules[i](torch.cat([x[:,i*2:i*2+2], inp], dim = 1)) for i in range(len(inp[0]))], dim = 1)
+        bools = (inp < 1.2).any()
+        output = torch.where(bools, y, x)
+        return output
 
 class LightningNN(pl.LightningModule):
     
@@ -127,7 +138,7 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_')
+    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
     sim_dataset = Dataset0D(dir / 'training_data' / 'input.npy', dir / 'training_data' / 'output.npy', normalization)
     
@@ -150,6 +161,7 @@ if __name__ == '__main__':
     # Arbitrary
     nnmodel = BasicNN(input_neurons=len(input_data), output_neurons=len(output_data), hidden_layers=3, neurons_per_layer=1000)
     litmodel = LightningNN(nnmodel, lr = 1e-3, revert_map = sim_dataset.revert_map)
+    print(nnmodel)
     
     all_results_folder = dir / 'training_results'
     if not os.path.exists(all_results_folder):
@@ -165,7 +177,7 @@ if __name__ == '__main__':
     early_stop = EarlyStopping(monitor="val_loss", mode="min",check_finite=True, patience=10,  )
 
     csv_logger = CSVLogger(cur_results_folder)
-    trainer = pl.Trainer( max_epochs=500, accelerator="gpu", default_root_dir=cur_results_folder, callbacks=[checkpoint_callback, early_stop], logger = csv_logger, log_every_n_steps=5)#, fast_dev_run=True)
+    trainer = pl.Trainer( max_epochs=500, accelerator="gpu", default_root_dir=cur_results_folder, callbacks=[checkpoint_callback, early_stop], logger = csv_logger, log_every_n_steps=5)
     trainer.fit(model=litmodel, train_dataloaders=train_loader, val_dataloaders=val_loader)
     
     # test and save test dataloader

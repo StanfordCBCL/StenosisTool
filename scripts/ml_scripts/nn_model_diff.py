@@ -15,25 +15,34 @@ class BasicNN(nn.Module):
     
     def __init__(self, input_neurons, output_neurons, hidden_layers, neurons_per_layer):
         super(BasicNN, self).__init__()
+        self.relu = nn.ReLU()
         self.input_layer = nn.Linear(input_neurons, neurons_per_layer )
-        self.input_relu = nn.ReLU()
         self.hidden = nn.Sequential()
         if hidden_layers < 1:
             raise ValueError('hidden layers must be > 0')
         else:
             for i in range(hidden_layers):
                 self.hidden.append(nn.Linear(neurons_per_layer, neurons_per_layer))
-                self.hidden.append(nn.ReLU())
-        self.output_layer = nn.Linear(neurons_per_layer, output_neurons)
-        self.output_relu = nn.ReLU()
+                self.hidden.append(self.relu)
+        self.output_layer1 = nn.Linear(neurons_per_layer, output_neurons)
+        self.hidden2 = nn.Sequential(nn.Linear(output_neurons, neurons_per_layer),
+                                      self.relu)
+        self.output_layer2 = nn.Linear(neurons_per_layer, output_neurons)
+        
     
     def forward(self, x):
+        inp = x
         x = self.input_layer(x)
-        x = self.input_relu(x)
+        x = self.relu(x)
         x = self.hidden(x)
-        x = self.output_layer(x)
-        # x = self.output_relu(x)
-        return x
+        x = self.output_layer1(x)
+        
+        bools = (inp < 1.2).any(dim = 1).unsqueeze(1)
+        y = self.hidden2(x)
+        y = self.output_layer2(y)
+        
+        output = torch.where(bools.tile((1, len(x[0]))), y, x)
+        return output
 
 class LightningNN(pl.LightningModule):
     
@@ -127,7 +136,7 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_')
+    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
     sim_dataset = Dataset0D(dir / 'training_data' / 'input.npy', dir / 'training_data' / 'output.npy', normalization)
     
@@ -150,6 +159,7 @@ if __name__ == '__main__':
     # Arbitrary
     nnmodel = BasicNN(input_neurons=len(input_data), output_neurons=len(output_data), hidden_layers=3, neurons_per_layer=1000)
     litmodel = LightningNN(nnmodel, lr = 1e-3, revert_map = sim_dataset.revert_map)
+    print(nnmodel)
     
     all_results_folder = dir / 'training_results'
     if not os.path.exists(all_results_folder):

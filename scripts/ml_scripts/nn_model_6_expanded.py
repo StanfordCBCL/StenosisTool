@@ -56,7 +56,12 @@ class LightningNN(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         #print(y[0])
+        input_filter = (x< 1.0).any(dim = 1) == False
+        x = x[input_filter]
+        y = y[input_filter]
+        
         y_hat = self.model(x)
+        
         #print(y_hat[0])
         #print(y_hat.shape)
         loss = nn.functional.huber_loss(y_hat, y)
@@ -105,7 +110,7 @@ class Dataset0D(tdata.Dataset):
         return len(self.input)
     
     def __getitem__(self, idx):
-        return torch.from_numpy(self.input[idx]).float(), torch.from_numpy(self.output[idx]).float()
+        return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
 
 # Normalization methods
 def normalization(output):
@@ -127,7 +132,7 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_')
+    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
     sim_dataset = Dataset0D(dir / 'training_data' / 'input.npy', dir / 'training_data' / 'output.npy', normalization)
     

@@ -10,13 +10,34 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import CSVLogger
 from pathlib import Path
 
+class FilterDropout(nn.Module):
+    
+    def __init__(self, filter_threshold):
+        super(FilterDropout, self).__init__()
+        self.threshold = filter_threshold
+        
+    def forward(self, x, inp):
+        new_inp = (inp < self.threshold).unsqueeze(-1).tile((1, 1, 2)) 
+        new_inp[:,:,1] = new_inp[:,:,1] == False # invert
+        new_inp = new_inp.reshape((1, len(inp), -1)).squeeze()
+        x = torch.where(new_inp, x, 0.)
+        return x
+
+def double(x):
+    new_inp = x.unsqueeze(-1).tile((1, 1, 2)) 
+    new_inp = new_inp.reshape((1, len(x), -1)).squeeze()
+    return new_inp
+        
 
 class BasicNN(nn.Module):
     
     def __init__(self, input_neurons, output_neurons, hidden_layers, neurons_per_layer):
         super(BasicNN, self).__init__()
-        self.input_layer = nn.Linear(input_neurons, neurons_per_layer )
-        self.input_relu = nn.ReLU()
+        #self.input_layer = nn.Linear(input_neurons, 2*input_neurons )
+        self.filter = FilterDropout(1.35)
+        #self.input_relu = nn.ReLU()
+        self.filtered_layers = nn.Linear(2*input_neurons, neurons_per_layer)
+        self.filter_relu = nn.ReLU()
         self.hidden = nn.Sequential()
         if hidden_layers < 1:
             raise ValueError('hidden layers must be > 0')
@@ -28,8 +49,14 @@ class BasicNN(nn.Module):
         self.output_relu = nn.ReLU()
     
     def forward(self, x):
-        x = self.input_layer(x)
-        x = self.input_relu(x)
+        inp = x
+        x = double(x)
+        #print(x[0])
+        x = self.filter(x, inp)
+        #print(x[0])
+
+        x = self.filtered_layers(x)
+        x = self.filter_relu(x)
         x = self.hidden(x)
         x = self.output_layer(x)
         # x = self.output_relu(x)
@@ -105,7 +132,7 @@ class Dataset0D(tdata.Dataset):
         return len(self.input)
     
     def __getitem__(self, idx):
-        return torch.from_numpy(self.input[idx]).float(), torch.from_numpy(self.output[idx]).float()
+        return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
 
 # Normalization methods
 def normalization(output):
@@ -127,7 +154,7 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_')
+    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
     sim_dataset = Dataset0D(dir / 'training_data' / 'input.npy', dir / 'training_data' / 'output.npy', normalization)
     

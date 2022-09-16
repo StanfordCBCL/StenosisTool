@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 13th September 2022 11:05:46 pm
+# Last Modified: Friday, 16th September 2022 12:18:34 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -94,7 +94,7 @@ def data_gen(dims, occlusions, num_samples_log2 = 3):
     ubound = []
     for occ in occlusions:
         bounds = parametrize_stenosis(occ)
-        lbound = bounds[0]
+        lbound = bounds[0] - .05
         ubound = bounds[1]
     
     # create data
@@ -123,7 +123,7 @@ def main(args):
         targets = ['V' + str(x[-1]) for x in stenosis_points['all_changed_vessels']]
 
 
-        #ray.init(num_cpus=args.num_proc)
+        ray.init(num_cpus=args.num_proc)
         
         # get data
         data = data_gen(num_samples_log2=args.num_samples, dims = len(stenosis_points['all_changed_vessels']), occlusions = stenosis_points['occlusions'] )
@@ -162,7 +162,9 @@ if __name__ == '__main__':
     
     parser = create_tool_parser(desc = 'Use Multi-threading to create data samples in numpy array for machine learning ')
     
-    parser.add_argument('-n', dest = 'num_samples', default = 10, type = int, help = '2^num_samples will be generated. Default: 2^10 = 1024.')
+    parser.add_argument('-ntrain', dest = 'num_train_samples', default = 1024, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-nval' dest = 'num_val_samples', default = 1024, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-n')
     parser.add_argument('-p', dest = 'num_proc', default = 4, type = int, help = 'number of processes to use')
     
     args = parser.parse_args()

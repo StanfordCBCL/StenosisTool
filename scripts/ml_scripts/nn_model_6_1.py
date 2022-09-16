@@ -105,7 +105,7 @@ class Dataset0D(tdata.Dataset):
         return len(self.input)
     
     def __getitem__(self, idx):
-        return torch.from_numpy(self.input[idx]).float(), torch.from_numpy(self.output[idx]).float()
+        return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
 
 # Normalization methods
 def normalization(output):
@@ -127,9 +127,9 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_')
+    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
-    sim_dataset = Dataset0D(dir / 'training_data' / 'input.npy', dir / 'training_data' / 'output.npy', normalization)
+    sim_dataset = Dataset0D(dir / 'training_data_1' / 'input.npy', dir / 'training_data_1' / 'output.npy', normalization)
     
     
     
