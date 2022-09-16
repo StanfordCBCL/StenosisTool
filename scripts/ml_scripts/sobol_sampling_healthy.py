@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 16th September 2022 2:47:45 pm
+# Last Modified: Friday, 16th September 2022 3:01:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -126,20 +126,20 @@ def main(args):
         
         ray.init(num_cpus=args.num_proc)
         
-        for idx, mode in enumerate(['training_data', 'val_data', 'test_data']):
+        for idx, (mode, dirname, num_samples) in enumerate([('train','training_data', args.num_train_samples), ('val','val_data', args.num_val_samples), ('test','test_data', args.num_test_samples)]):
             
-            mode_dir = data_dir / mode
+            mode_dir = data_dir / dirname
             if not os.path.exists(mode_dir):
                 os.mkdir(mode_dir)
             
             # change offset 
-            if mode == 'training_data':
+            if mode == 'train':
                 lower_offset = 0.05
             else:
                 lower_offset = 0
                 
             # get data (with different seeds)
-            data = data_gen(num_samples=args.num_samples, 
+            data = data_gen(num_samples=num_samples, 
                             dims = len(stenosis_points['all_changed_vessels']), 
                             occlusions = stenosis_points['occlusions'],
                             seed = 42 + idx,
