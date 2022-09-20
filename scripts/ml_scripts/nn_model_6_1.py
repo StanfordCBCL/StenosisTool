@@ -129,21 +129,19 @@ if __name__ == '__main__':
     #! Temp
     dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
 
-    sim_dataset = Dataset0D(dir / 'training_data_1' / 'input.npy', dir / 'training_data_1' / 'output.npy', normalization)
-    
-    
+    sim_dataset = Dataset0D(dir / 'training_data_old' / 'input.npy', dir / 'training_data_old' / 'output.npy', normalization)
     
     
     train_len = int(.8 * len(sim_dataset))
     val_len = int(.1 * len(sim_dataset))
     test_len = len(sim_dataset) - train_len - val_len
+    
     train_dataset, val_dataset, test_dataset = tdata.random_split(sim_dataset, lengths=[train_len, val_len, test_len], generator= torch.Generator().manual_seed(42))
     
     
     train_loader = tdata.DataLoader(train_dataset, batch_size = 128, shuffle = True,)
     val_loader = tdata.DataLoader(val_dataset, batch_size=128, shuffle = False, )
     test_loader = tdata.DataLoader(test_dataset, batch_size=128, shuffle = False)
-    
     # retrieve first value of Dataset for sizes
     input_data, output_data = sim_dataset[0]
     #print(output_data)

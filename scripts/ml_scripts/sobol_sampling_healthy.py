@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 16th September 2022 3:01:37 pm
+# Last Modified: Friday, 16th September 2022 11:01:29 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -177,8 +177,8 @@ if __name__ == '__main__':
     parser = create_tool_parser(desc = 'Use Multi-threading to create data samples in numpy array for machine learning ')
     
     parser.add_argument('-ntrain', dest = 'num_train_samples', default = 1024, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, type = int, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
     parser.add_argument('-p', dest = 'num_proc', default = 4, type = int, help = 'number of processes to use')
     
     args = parser.parse_args()
