@@ -179,7 +179,7 @@ if __name__ == '__main__':
     
     # test and save test dataloader
     trainer.test(model=litmodel, dataloaders=test_loader, ckpt_path='best', verbose = True)
-    torch.save(test_loader, dir / "training_results" / "run1" / "lightning_logs" / f"version_{csv_logger.version}" / "test_dataloader.pt")
+
     
     # predict on the test loader and get normalized results
     rez = trainer.predict(model=litmodel, dataloaders=test_loader, ckpt_path="best", return_predictions=True)
