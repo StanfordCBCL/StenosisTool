@@ -216,6 +216,9 @@ class StenosisDistribution():
         self.stenosis_params = stenosis_parametrization
         self.stenosis_points = [self.StenosisRandom(category_probs=self.category_probs,
                                                   radius_range=sten_point) for sten_point in self.stenosis_params]
+    
+    def __len__(self):
+        return len(self.stenosis_points)
         
     def fixed(self, sten_point, r_increase):
         ''' change a particular vessel to fixed '''
@@ -253,8 +256,10 @@ class StenosisDistribution():
         print(input_data.shape)
         return PredictDataset(input_data)
     
-    
-    
+    def get_histograms(self, results):
+        return [(np.histogram(results[:, 2*i]), np.histogram(results[:, 2*i+1])) for i in range(len(self))]
+            
+    def plot_histograms(self, results):
     
 
 def parametrize_stenosis(occlusion):
