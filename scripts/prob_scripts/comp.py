@@ -1,5 +1,6 @@
 
 
+from unittest import result
 from torch import nn
 from torch import optim
 import torch
@@ -8,7 +9,9 @@ import pytorch_lightning as pl
 import numpy as np
 from pathlib import Path
 from src.file_io import read_json
+from src.misc import d2m
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 class BasicNN(nn.Module):
     
@@ -253,15 +256,47 @@ class StenosisDistribution():
     
     def create_dataset(self, num_samples):
         input_data = np.array([self.sample() for i in range(num_samples)])
-        print(input_data.shape)
         return PredictDataset(input_data)
     
     def get_histograms(self, results):
-        return [(np.histogram(results[:, 2*i]), np.histogram(results[:, 2*i+1])) for i in range(len(self))]
+        return [(np.histogram(results[:, 2*i], bins = 'auto'), np.histogram(results[:, 2*i+1], bins = 'auto')) for i in range(len(self))]
             
-    def plot_histograms(self, results):
-    
-
+    def plot_histograms(self, results, save):
+        
+        fig, ax = plt.subplots(1, 2, figsize = (16, 8))
+        def animate(vessel):
+            P_vessel = vessel * 2
+            Q_vessel = vessel * 2 + 1 
+            ax[0].clear()
+            ax[1].clear()
+            ax[0].set_title('Pressures (mmHg)')
+            ax[0].set_xlabel('Pressures (mmHg)')
+            ax[0].set_ylabel('count')
+            ax[1].set_title('Flows (ml/s)')
+            ax[1].set_xlabel('Flows (ml/s)')
+            ax[1].set_ylabel('count')
+            P_vessel = vessel * 2
+            Q_vessel = vessel * 2 + 1
+            ax[0].hist(d2m(results[:, P_vessel]), bins = 'auto')
+            ax[1].hist(results[:, Q_vessel], bins = 'auto')
+            fig.suptitle(f'Vessel {vessel}')
+            
+        anim = FuncAnimation(fig, animate, frames = range(len(results[0])// 2), interval = 200, repeat = True)
+        anim.save(save, writer = 'pillow', fps = .5)
+        
+    def run_test(self, model, trainer, best_chkpt,  num_samples = 4096, batch_size = 4096):
+        test_dataset = self.create_dataset(num_samples)
+        test_loader = tdata.DataLoader(test_dataset, batch_size = batch_size)
+        # predict on the test loader and get normalized results
+        rez = trainer.predict(model=model, dataloaders=test_loader, ckpt_path=best_chkpt, return_predictions=True)
+        # retrieve x
+        x = []
+        for i in range(len(test_loader.dataset)):
+            x.append(test_loader.dataset[i][0])
+        x = torch.vstack(x)
+        rez = torch.vstack(rez)
+        return x, rez
+        
 def parametrize_stenosis(occlusion):
     ''' takes the artificial occlusion and computes the range of diameter changes for that particular vessel'''
     cur_area = 1 - occlusion
@@ -299,24 +334,41 @@ if __name__ == '__main__':
     # create probability distribution
     stenosis_file = read_json(dir / 'stenosis_vessels.dat')
     stenosis_parametrizations = parametrize_stenosis(np.array(stenosis_file['occlusions']))
-    print(stenosis_parametrizations)
     distribution = StenosisDistribution(stenosis_parametrizations)
     
     
-    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_10" / "checkpoints" / "epoch=86-step=11136.ckpt"
+    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_11" / "checkpoints" / "epoch=147-step=37888.ckpt"
     trainer = pl.Trainer(logger = False, accelerator='gpu')
     
-    test_dataset = distribution.create_dataset(4096)
-    test_loader = tdata.DataLoader(test_dataset, batch_size = 128)
-    # predict on the test loader and get normalized results
-    rez = trainer.predict(model=litmodel, dataloaders=test_loader, ckpt_path=best_checkpoint, return_predictions=True)
-    # retrieve x
-    x = []
-    for i in range(len(test_loader.dataset)):
-        x.append(test_loader.dataset[i][0])
-    x = torch.vstack(x)
-    rez = torch.vstack(rez)
+    '''
+    # starting at random, no fixture
+    x, yhat = distribution.run_test(model=litmodel,
+                          trainer=trainer,
+                          best_chkpt=best_checkpoint,
+                          num_samples=4096*24,
+                          batch_size=4096)
+    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.random.gif')
     
-    plt.plot(x[:, 0], rez[:, 0])
-    plt.show()
     
+    # fix 3, keep 1 random, freeze rest
+    distribution.fixed(0, 1.5)
+    distribution.fixed(1, 2.1)
+    distribution.fixed(2, 1.9)
+    # freeze all but 3
+    distribution.freeze(to_freeze=list(range(4, len(distribution))))
+    x, yhat = distribution.run_test(model=litmodel,
+                          trainer=trainer,
+                          best_chkpt=best_checkpoint,
+                          num_samples=4096*24,
+                          batch_size=4096)
+    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.f3r1rf17.gif')
+    
+    '''
+    # freeze all but 3
+    distribution.freeze(to_freeze=list(range(1, len(distribution))))
+    x, yhat = distribution.run_test(model=litmodel,
+                          trainer=trainer,
+                          best_chkpt=best_checkpoint,
+                          num_samples=4096*24,
+                          batch_size=4096)
+    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.test.gif')

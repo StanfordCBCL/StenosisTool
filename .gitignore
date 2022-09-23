@@ -13,6 +13,7 @@ svZeroDSolver
 # ignore irrelevant dirs
 scratch
 results
+pptx/pptx_img
 
 # ignore misc files
 *.icloud
