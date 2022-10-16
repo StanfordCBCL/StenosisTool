@@ -1,7 +1,7 @@
 import os
 
 class BoundaryConditions(object):
-        '''The BoundaryConditions class is used to set 1D simulation boundary conditions.
+        '''The BoundaryConditions class is used to set 0D simulation boundary conditions.
         Attributes:
             bc_list (list[dict]): The list of boundary conditions.
             bc_path (str): The path to the boundary conditions files.
@@ -53,6 +53,7 @@ class BoundaryConditions(object):
                     if bc['type'] != self.BC_TYPE_RESISTANCE:
                         continue
                     res_file.write(bc['faceID'] + ' ' + str(bc['resistance']) + newline) 
+
 
         def write_rcrt_file(self, path=None, three_d = False):
             '''Write RCR boundary conditions to a file.
