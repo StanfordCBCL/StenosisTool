@@ -29,6 +29,7 @@ def convert_all(vess, rad_rat):
 
 
 
-        
-        
+def rp_to_radius(vessel, mu):
+    
+    return (8 * mu * vessel['vessel_length'] / (np.pi * vessel['zero_d_element_values']['R_poiseuille'])) ** (1/4)
         
