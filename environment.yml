@@ -10,10 +10,10 @@ dependencies:
     - argparse==1.4.0
     - numpy==1.22.3
     - matplotlib==3.5
-    - pandas=1.4.3
+    - pandas==1.4.3
     - ray==2.0.0
     - torch==1.12.1
     - pytorch-lightning==1.7.3
     - scipy==1.9.1
     - ipykernel==6.15.2
-    - ipywidgets-8.0.2
+    - ipywidgets==8.0.2
