@@ -4,49 +4,38 @@ from collections import defaultdict
 import xml.etree.ElementTree as ET
 import json
 import shutil
+from pathlib import Path
 
 class NotFound(Exception):
     pass
 
-def check_exists(file, err = None, mkdir = False, ignore = False):
-    ''' check if file/path exists'''
-    if err == None:
-        err = file + ' does not exist'
-    if not os.path.exists(file):
+def check_dir(dirpath: Path, mkdir = False, ignore = False):
+    ''' checks if dirpath exists
+    '''
+    if dirpath.is_dir():
+        return dirpath
+    else:
         if mkdir:
-            print(err + ': making directory')
-            os.mkdir(file)
+            dirpath.mkdir(parents = True, exist_ok = False)
+            return dirpath
         elif ignore:
-            print(err)
             return None
-        else:
-            raise NotFound(err)
-    return file
+        
+        raise FileNotFoundError()
 
-def check_exists_bool(file, err = None, ignore = False):
-    ''' check if file/path exists'''
-    if err == None:
-        err = file + ' does not exist'
-    if not os.path.exists(file):
+def check_file(filepath: Path, ignore = False):
+    ''' check if file exists
+    '''
+    if filepath.is_file():
+        return filepath
+    else:
         if ignore:
-            print(err)
-            return False
-        else:
-            raise NotFound(err)
-    return True
-
-def check_many(files):
-    ''' checks many files for if they all exist'''
-    rez = []
-    for f in files:
-        rez.append(check_exists(f, mkdir = False, ignore = True))
-    if None in rez:
-        return False
-    return True
-
+            return None
+        raise FileNotFoundError()
 
 def parse_config(config_file, default_section = configparser.DEFAULTSECT):
-    ''' turn a config file to a dict (all strs) '''
+    ''' turn a config file to a dict (all strs)
+    '''
     config = configparser.ConfigParser(allow_no_value=True,
                                        default_section=default_section,
                                        interpolation=configparser.ExtendedInterpolation())
@@ -59,7 +48,8 @@ def parse_config(config_file, default_section = configparser.DEFAULTSECT):
     return cfg_dict
 
 def parse_mdl(mdl_file, reverse = False):
-    ''' parses mdl file for faceid corresponding to caps'''
+    ''' parses mdl file for faceid corresponding to caps
+    '''
     
     # since .mdl has a line like "<format version="1.0" />" which fails for the standard XMLparser, rather than creating a custom parser, just remove that line after reading the file in and parse as a list of strings
     with open(mdl_file, 'r') as mdl:
