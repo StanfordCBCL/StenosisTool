@@ -9,9 +9,9 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
 
 ## Current Tasks
 
-[x] Construct Pipeline for Healthy Model
-[] Construct Pipeline for Unhealthy Model
-[] Write Paper
+- [x] Construct Pipeline for Healthy Model
+- [] Construct Pipeline for Unhealthy Model
+- [] Write Paper
 
 ## Installation
 

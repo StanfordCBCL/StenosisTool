@@ -83,7 +83,7 @@ class BoundaryConditions(object):
                     rcr_file.write('1.0 ' + pressure + newline) 
 
         def read_rcrt_file(self, rcrt_file, three_d = False):
-            ''' Read rcr BC from file
+            ''' Read RCR BC from file
             '''
             with open(rcrt_file, 'r') as rfile:
                 keyword = rfile.readline()
@@ -109,6 +109,8 @@ class BoundaryConditions(object):
             return
                     
         def get_bc_map(self):
+            ''' Retrieve a BC Map from bc_list
+            '''
             bc_map = {}
             for bc in self.bc_list:
                 bc_map[bc['faceID']] = bc

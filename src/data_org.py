@@ -2,7 +2,6 @@
 from collections import defaultdict
 from os import path
 import os
-import shutil
 
 from traitlets import default
 
@@ -11,7 +10,7 @@ from .file_io import check_exists, check_exists_bool, parse_config
 
 
 class ModelPath():
-    ''' Model specific info
+    ''' Model specific info & Paths
     '''
     
     CONFIG_DIR = 'config_files'
@@ -71,7 +70,8 @@ class ModelPath():
         return True
 
     def construct_dev_config(self, dev_config_fp):
-        ''' constructs an empty dev config '''
+        ''' constructs an empty dev config file
+        '''
         file = '# general model information\n'
         file += '[metadata]\nid = \nname = \nage = \ngender = \ncondition = \n\n'
         

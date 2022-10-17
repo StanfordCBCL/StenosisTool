@@ -1,7 +1,7 @@
 # File: sv_dev_centerline_gen.py
 # File Created: Thursday, 28th July 2022 3:28:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:28:52 am
+# Last Modified: Monday, 17th October 2022 2:54:59 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Using Simvascular VMTK, generate centerlines for a particular 3D geometry
@@ -9,6 +9,7 @@
 
 import sys
 import os
+# append the src path, since it uses Simvascular's python.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.centerlines import Centerlines
