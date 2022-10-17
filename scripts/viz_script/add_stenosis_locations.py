@@ -1,7 +1,7 @@
 # File: add_stenosis_locations.py
 # File Created: Wednesday, 27th July 2022 11:28:30 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 25th September 2022 12:07:20 am
+# Last Modified: Monday, 17th October 2022 6:08:18 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Adds stenosis locations to the centerline files
@@ -10,7 +10,7 @@ import argparse
 from src.centerlines import Centerlines
 from src.file_io import read_json
 from src.misc import create_tool_parser, get_solver_path
-from src.solver import Solver0D
+from src.lpn import Solver0D
 import numpy as np
 import re
 from pathlib import Path

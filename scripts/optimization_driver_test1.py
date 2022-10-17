@@ -5,7 +5,7 @@ from attr import s
 from src.flow import Inflow0D
 from src.centerlines import Centerlines
 from src.file_io import check_exists_bool, parse_face_names
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.bc import BoundaryConditions
 from src.solver_results import SolverResults
 from src.misc import m2d, d2m, create_tool_parser, get_solver_name

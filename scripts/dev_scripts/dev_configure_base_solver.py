@@ -1,17 +1,17 @@
 # File: dev_configure_base_solver.py
 # File Created: Thursday, 28th July 2022 5:49:29 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:30:42 am
+# Last Modified: Monday, 17th October 2022 6:09:49 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: For a particular 0D solver file, prepare necessary files for future work
 
 
-from src.misc import create_dev_parser
-from src.solver import Solver0D
+from src.parser import DevParser
+from src.lpn import LPN
 from src.bc import BoundaryConditions
 from src.data_org import DataPath
-from src.file_io import parse_mdl, write_json, check_many
+from src.file_io import parse_mdl, write_json
 
 import os
 import shutil
@@ -41,7 +41,6 @@ def read_solver_file(solver3d_file):
                 break
 
     return [int(i) for i in used_values]
-
     
                 
 def convert_old_rcrt(old_rcrt_file, solver3d_file, pre_file, out_dir, prefix = '_'):
@@ -92,6 +91,7 @@ def main(args):
     
     org = DataPath(args.root)
     
+    # determine models
     if args.models:
         model_list = args.models
     else:
@@ -101,43 +101,40 @@ def main(args):
         print(f'Configuring base solver for {model_name}...', end = '\t', flush=True)
         model = org.find_model(model_name)
         
-        # func to join to base solver
-        join = lambda file: os.path.join(model.base_solver_dir, file)
-        
         # Convert Model to cpp 
         #! May be able to remove with updates to C solver
-        solver = Solver0D()
-        solver.read_solver_file(model.base_model_solver)
-        solver.to_cpp()
+        lpn = LPN.from_file(model.base_lpn)
+        lpn.to_cpp()
         
         # add a BC map
         bc = BoundaryConditions()
-        bc.read_rcrt_file(join('rcrt.dat'))
-        solver.write_bc_map(bc)
+        bc.read_rcrt_file(model.base_lpn_dir / 'rcrt.dat')
+        lpn.write_bc_map(bc)
         
         # write model units and name
-        solver.simulation_params['units'] = model.info['model']['units']
-        solver.simulation_params['age'] = int(model.info['metadata']['age'])
-        solver.simulation_params['gender'] = model.info['metadata']['gender']
+        lpn.simulation_params['units'] = model.info['model']['units']
+        lpn.simulation_params['age'] = int(model.info['metadata']['age'])
+        lpn.simulation_params['gender'] = model.info['metadata']['gender']
         
         # plot inflow
-        solver.inflow.plot_flow(join('inflow.png'))
+        lpn.inflow.plot_flow(model.base_lpn_dir / 'inflow.png')
         
-        # write cpp solver
-        solver.write_solver_file(model.base_model_solver)
+        # write cpp lpn
+        lpn.write_lpn_file(model.base_lpn)
         
         # write inlet/outlet mappings file
         outlet_mappings = parse_mdl(model.info['files']['mdl_file'])
         inlet_mapping = {model.info['model']['inlet']: outlet_mappings[model.info['model']['inlet']]}
         del outlet_mappings[model.info['model']['inlet']]
-        write_json(join('inlet_mapping.dat'), inlet_mapping)
-        write_json(join('outlet_mapping.dat'), outlet_mappings)
+        write_json(model.base_lpn_dir / 'inlet_mapping.dat', inlet_mapping)
+        write_json(model.base_lpn_dir / 'outlet_mapping.dat', outlet_mappings)
         
         # copy centerlines
-        shutil.copy(model.model_centerlines, join('model_centerlines.vtp'))
+        shutil.copy(model.model_centerlines, model.base_lpn_dir / 'model_centerlines.vtp')
         
         # if stenosis model, write the rcrt into 0D format
         if model.type == 'stenosis':
+            #! UPDATE THIS AFTER LOADING NEW STENOSIS FILE
             try:
                 convert_old_rcrt(old_rcrt_file=model.info['files']['rcrt3d_file'],
                                 solver3d_file=model.info['files']['solver3d_file'],
@@ -148,10 +145,10 @@ def main(args):
                 print(f'Failed: {e}')
                 continue
         elif model.type == 'healthy':
-            
             # copy CapInfo
-            if not os.path.exists(join('CapInfo')):
-                shutil.copy(model.info['files']['cap_info'], join('CapInfo'))
+            capinfo = model.base_lpn_dir / 'CapInfo'
+            if not capinfo.exists():
+                shutil.copy(model.info['files']['cap_info'], capinfo)
             
         print('Done')
         
@@ -162,7 +159,7 @@ def main(args):
 
 if __name__ == '__main__':
     
-    dev_parser = create_dev_parser(desc = 'set up base solver with all necessary files for other non-dev scripts')
+    dev_parser = DevParser(desc = 'set up base solver with all necessary files for other non-dev scripts')
     
     args = dev_parser.parse_args()
     main(args)

@@ -1,10 +1,12 @@
 import numpy as np
 from scipy.interpolate import interp1d
 class Inflow0D():
-    
     ''' Handles inflow and inflow files'''
+    
+    
     def __init__(self, inflow_arr, inverse = False, smooth = True, n_points = 1000):
-        ''' inflow arr must be inform np.array[(t, Q), (t, Q), ...] '''
+        ''' inflow arr must be inform np.array[(t, Q), (t, Q), ...] 
+        '''
         self.inflow = inflow_arr
         
         self.correct_flow()
@@ -28,10 +30,14 @@ class Inflow0D():
     
     @classmethod
     def from_file(cls, inflow_file, inverse = False, smooth = True, n_points = 1000):
+        ''' Constructs inflow from a file
+        '''
         inflow_arr = np.loadtxt(inflow_file,)
         return cls(inflow_arr, inverse, smooth, n_points)
 
     def write_flow(self, flow_path):
+        ''' Writes inflow to a file
+        '''
         np.savetxt(flow_path, self.inflow)
     
     def inverse_flow(self):
@@ -64,6 +70,7 @@ class Inflow0D():
             import matplotlib.pyplot as plt
         except ImportError as e:
             print(e, ': aborting plot')
+            return
         
         ## save inflow graph
         fig,ax = plt.subplots(1,1 )

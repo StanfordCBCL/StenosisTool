@@ -1,7 +1,7 @@
 # File: sv_zerod_to_geom.py
 # File Created: Wednesday, 27th July 2022 11:28:30 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:36:25 am
+# Last Modified: Monday, 17th October 2022 6:08:17 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: For a particular directory (and potentially its children directory) if a centerlines exists and a branch_result.npy file exists, then map the 0D results to centerlines.
@@ -11,7 +11,7 @@ import sys
 import os
 import argparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.misc import create_tool_parser, get_basename, get_solver_path, m2d, d2m, get_solver_name
 from src.centerlines import Centerlines
 

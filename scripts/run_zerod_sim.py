@@ -1,13 +1,13 @@
 # File: run_zerod_sim.py
 # File Created: Tuesday, 12th July 2022 1:26:42 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:40:57 am
+# Last Modified: Monday, 17th October 2022 6:08:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Runs a 0D sim assuming a directory has a solver file in it
 
 
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.run_sim import run_sim, validate_rez, get_waveform_file, get_branch_results_file
 from src.misc import create_tool_parser, get_solver_name
 import os

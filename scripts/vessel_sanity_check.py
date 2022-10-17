@@ -1,13 +1,13 @@
 # File: vessel_sanity_check.py
 # File Created: Monday, 25th July 2022 5:28:16 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:41:54 am
+# Last Modified: Monday, 17th October 2022 6:08:31 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a csv branch result, performs a print check of each vessel's inlet and outlet flows and pressures
 
 from src.solver_results import SolverResults
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.misc import get_basename, d2m
 import sys
 import numpy as np

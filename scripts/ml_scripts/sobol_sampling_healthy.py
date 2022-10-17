@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 16th September 2022 11:01:29 pm
+# Last Modified: Monday, 17th October 2022 6:08:29 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
@@ -21,7 +21,7 @@ from pathlib import Path
 from svzerodsolver.runnercpp import run_from_config
 
 
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.flow import Inflow0D
 from src.misc import create_tool_parser, get_solver_path
 from src.file_io import read_json

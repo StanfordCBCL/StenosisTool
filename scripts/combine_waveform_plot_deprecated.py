@@ -1,13 +1,13 @@
 # File: combine_waveform_plot_deprecated.py
 # File Created: Wednesday, 27th July 2022 9:37:19 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:37:29 am
+# Last Modified: Monday, 17th October 2022 6:08:39 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Can combine waveforms given a multitude of csv result files. Deprecated due to difficulty of use, but technically works
 
 
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.solver_results import SolverResults
 from src.misc import d2m, get_basename
 import matplotlib.pyplot as plt

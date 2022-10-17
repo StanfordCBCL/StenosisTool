@@ -16,13 +16,13 @@ class ModelPath():
     
     CONFIG_DIR = 'config_files'
     CENTERLINES_DIR = 'centerline_files'
-    BASE_SOLVER_DIR = 'base_solver_files'
+    BASE_LPN_DIR = 'base_lpn_files'
     TUNING_DIR = 'tuning_files'
     
     MODEL_CENT = 'model_centerlines.vtp'
     
-    MODEL_SOLVER = 'model.in'
-    TUNING_SOLVER = 'tuning.in'
+    MODEL_LPN = 'lpn.in'
+    TUNING_LPN = 'tuning.in'
     
     STENOSIS_FILE = 'stenosis_file.txt'
     DEV_CONF = 'dev_config.ini'
@@ -56,13 +56,15 @@ class ModelPath():
         
         # dirs            
         self.centerline_dir = check_dir(self.model_root / self.CENTERLINES_DIR, mkdir = True)
-        self.base_solver_dir = check_dir(self.model_root, self.BASE_SOLVER_DIR, mkdir = True)
+        self.base_lpn_dir = check_dir(self.model_root, self.BASE_LPN_DIR, mkdir = True)
         
         # files
-        self.base_model_solver = self.base_solver_dir / (self.info['metadata']['name'] + '_' + self.MODEL_SOLVER)
+        self.base_lpn = self.base_lpn_dir / (self.info['metadata']['name'] + '_' + self.MODEL_LPN)
         self.model_centerlines = self.centerline_dir / (self.info['metadata']['name'] + '_' + self.MODEL_CENT)
     
     def check_info(self):
+        ''' validates metadata exists
+        '''
         for data in self.info['metadata']:
             if data == '':
                 return False

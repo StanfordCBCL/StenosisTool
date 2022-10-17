@@ -1,7 +1,7 @@
 # File: add_solver_rcrs.py
 # File Created: Thursday, 28th July 2022 11:21:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:36:51 am
+# Last Modified: Monday, 17th October 2022 6:08:39 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: If an rcrt and a solver file exist in a dir, maps the solver rcrt file into the solver file
@@ -10,7 +10,7 @@
 
 from src.misc import create_tool_parser, get_solver_name
 from src.bc import BoundaryConditions
-from src.solver import Solver0D
+from src.lpn import Solver0D
 import os
 
 

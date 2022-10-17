@@ -7,7 +7,7 @@ from src.centerlines import Centerlines
 from src.file_io import read_json
 from src.misc import create_tool_parser, get_solver_path
 from src.stenosis import rp_to_radius
-from src.solver import Solver0D
+from src.lpn import Solver0D
 import numpy as np
 import re
 from pathlib import Path

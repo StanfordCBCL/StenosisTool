@@ -1,7 +1,7 @@
 # File: sv_dev_segmentation_gen.py
 # File Created: Thursday, 28th July 2022 3:33:40 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:28:14 am
+# Last Modified: Monday, 17th October 2022 5:29:51 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Using Simvascular Automated Pipeline & Development given parameters, construct a 0D model from a particular 3D geometry
@@ -18,10 +18,12 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.misc import *
+
+from src.parser import DevParser
 from src.flow import Inflow0D
 from src.file_io import parse_mdl
 from src.data_org import DataPath
+from src.bc import BoundaryConditions
 
 ##########
 # Params #
@@ -54,8 +56,8 @@ class ModelParams():
         self.units = 'mm'
         
 class FileParams():
-    def __init__(self, centerlines_file, solver_dir, inflow_file, out_name):
-        self.solver_dir = solver_dir
+    def __init__(self, centerlines_file, lpn_dir, inflow_file, out_name):
+        self.lpn_dir = lpn_dir
         self.centerlines_input_file = centerlines_file
         self.inflow_file = inflow_file
         self.out_name = out_name
@@ -69,23 +71,23 @@ class SimulationParams():
     
 
 def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluids: FluidParams, material: MaterialParams, sim: SimulationParams, dummy_bc = True):
-    ''' Writes a 0D file '''
+    ''' Writes a 0D LPN file '''
     
     ## needed to write 0d file
     params = sv_rom_simulation.Parameters()
 
-    ## params
-    
+    ## FILL PARAMS
     params.model_order = model.model_order
     params.model_name = model.model_name
     
-    with open(os.path.join(files.solver_dir, 'inlet_face_names.dat'), 'w') as infile:
+    # write inlet/outlet to a dat file
+    with open(files.lpn_dir / 'inlet_face_names.dat', 'w') as infile:
         infile.write(model.inlet + '\n')
-    with open(os.path.join(files.solver_dir, 'outlet_face_names.dat'), 'w') as outfile:
+    with open(files.lpn_dir / 'outlet_face_names.dat', 'w') as outfile:
         for outlet in model.outlets:
             outfile.write(outlet + '\n')
 
-    params.outlet_face_names_file = os.path.join(files.solver_dir, 'outlet_face_names.dat')
+    params.outlet_face_names_file = files.lpn_dir / 'outlet_face_names.dat'
     params.centerlines_input_file = files.centerlines_input_file
     
 
@@ -99,62 +101,51 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     params.density = fluids.density
     params.viscosity = fluids.viscocity
     
-    # material
+    # material (only allows linear for now.)
     params.material_model = 'LINEAR'
     params.linear_material_ehr = material.linear_ehr
     params.linear_material_pressure = material.linear_pressure
     params.uniform_material = True
     
-
     # change Units
     params.set_units(model.units)
     
-    
+    # retrieve appropriate inflow
     inflow = Inflow0D.from_file(files.inflow_file, inverse = files.inverse_flow, smooth = files.smooth)
-    smooth_flowfile = os.path.join(files.solver_dir, 'inflow.flow')
+    smooth_flowfile = files.lpn_dir / 'inflow.flow'
     inflow.write_flow(smooth_flowfile)
+    params.inflow_input_file = smooth_flowfile
     
     # simulation params
     params.time_step = inflow.tc / sim.num_ts_per_cycle
     params.num_time_steps = sim.num_ts_per_cycle * (sim.num_cycles - 1)
     
     # other
-    params.output_directory = files.solver_dir
+    params.output_directory = files.lpn_dir
     params.compute_centerlines = False
     params.solver_output_file = files.out_name
     
-    
-    mesh_0d = sv_rom_simulation.Mesh()
-    
-    # put directory in outflowbcfile
-    # put bc type in outflow_bc_Type as list
+    # BC
     params.uniform_bc = False   
     params.outflow_bc_type = ['rcrt.dat']
     
-    rcr_file = os.path.join(files.solver_dir, 'rcrt.dat')
-    if dummy_bc:
-        # just write an empty file
-        if not os.path.exists(rcr_file):
-            with open(rcr_file, 'w') as rfile:
-                rfile.write('2\n') # dummy rcrt
-                for outlet in model.outlets:
-                    rfile.write('2\n')
-                    rfile.write(outlet + '\n')
-                    rfile.write('0\n')
-                    rfile.write('0\n')
-                    rfile.write('0\n')
-                    rfile.write('0 0\n')
-                    rfile.write('0 0\n')
+    rcr_file = files.lpn_dir / 'rcrt.dat'
+    # write an empty if BC does not exist
+    if not rcr_file.exists():
+        bc = BoundaryConditions()
+        for outlet in model.outlets:
+            bc.add_rcr(outlet, 0, 0, 0, 0)
+        bc.write_rcrt_file(rcr_file)
     
-    
-    params.outflow_bc_file = files.solver_dir
-    params.inflow_input_file = smooth_flowfile
+    params.outflow_bc_file = files.lpn_dir
 
 
-    # centerlines for mesh
+    ## GET CENTERLINES
     centerlines = sv_rom_simulation.Centerlines()
-    centerlines.read(params, params.centerlines_input_file)
+    centerlines.read(None, params.centerlines_input_file)
     
+    ## GENERATE MESH
+    mesh_0d = sv_rom_simulation.Mesh()
     mesh_0d.generate(params, centerlines)
     
     return
@@ -168,6 +159,8 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
 def main(args):
     
     org = DataPath(args.root)
+    
+    # either only specified models, or all possible models.
     if args.models:
         model_list = args.models
     else:
@@ -179,6 +172,11 @@ def main(args):
         
         
         #! Can implement a config file here to change params
+        lpn_config = model.config_files / 'lpn_config.ini'
+        if lpn_config.is_file():
+            print('Config File currently not implemented. Using defaults.')
+        
+        
         # model
         face_mappings = parse_mdl(model.info['files']['mdl_file'])
         del face_mappings[model.info['model']['inlet']]
@@ -211,12 +209,13 @@ def main(args):
             raise RuntimeError('Inflow file does not exist')
 
         file_params = FileParams(centerlines_file=model.model_centerlines,
-                                 solver_dir=model.base_solver_dir,
+                                 solver_dir=model.base_lpn_dir,
                                  inflow_file=inflow,
-                                 out_name=os.path.basename(model.base_model_solver))
+                                 out_name=model.base_model_solver.name)
         file_params.inverse_flow = inverse
         file_params.smooth = True
 
+        # write the LPN file
         write_0d_file(files=file_params,
                       model=mod_params,
                       mesh=mesh_params,
@@ -232,7 +231,7 @@ def main(args):
 
 if __name__ == '__main__':
     
-    dev_parser = create_dev_parser(desc= 'Constructs a 0d input segmentation of the vasculature without BC for a 0d solver for pulmonary vasculature')
+    dev_parser = DevParser(desc= 'Constructs a 0d input segmentation of the vasculature with dummy BC values for a 0d solver for pulmonary vasculature')
     
     args = dev_parser.parse_args()
     main(args)

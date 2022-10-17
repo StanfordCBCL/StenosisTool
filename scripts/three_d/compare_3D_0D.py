@@ -1,7 +1,7 @@
 # File: compare_3D_0D.py
 # File Created: Sunday, 31st July 2022 5:32:43 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:32:45 am
+# Last Modified: Monday, 17th October 2022 6:08:21 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Computes error measurements for a 0D and a 3D model
@@ -10,7 +10,7 @@
 from src.misc import create_tool_parser, get_solver_path, get_solver_name, get_basename
 from src.file_io import check_exists, write_json
 from src.centerlines import Centerlines
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.solver_results import SolverResults
 from src.misc import m2d, d2m
 

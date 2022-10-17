@@ -1,7 +1,7 @@
 # File: correct_healthy_3D_deprecated.py
 # File Created: Sunday, 31st July 2022 2:04:51 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:33:34 am
+# Last Modified: Monday, 17th October 2022 6:08:19 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Copy over 3D files to create an appropriate directory to run 3D simulations in. Currently deprecated due to unresolved issues
@@ -10,7 +10,7 @@
 from src.bc import BoundaryConditions
 from src.file_io import parse_face_names
 from src.misc import create_tool_parser, get_solver_path
-from src.solver import Solver0D
+from src.lpn import Solver0D
 import argparse
 import os
 import re

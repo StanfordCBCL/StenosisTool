@@ -110,6 +110,11 @@ class Centerlines(Polydata):
     def __init__(self):
         super().__init__()
 
+    @classmethod
+    def from_file(cls, centerlines_file):
+        c = cls()
+        c.read_polydata(centerlines_file)
+        return c
         
     def check_centerlines_data(self):
         """ Check that the centerline data contains all of the required fields.
@@ -132,7 +137,7 @@ class Centerlines(Polydata):
         ''' Generates centerlines 
         
         mdl:    (str) file path to the .mdl file
-        vtp:    (vtp) file patht to the model .vtp file
+        vtp:    (vtp) file path to the model .vtp file
              
         '''
     
@@ -154,11 +159,12 @@ class Centerlines(Polydata):
         model_polydata = model.get_polydata()
 
         ## Calculate centelines. 
-        # Use face IDs.
+        # generate centerlines for entire model
         if use_entire_tree:
             inlet_ids = [face_mappings[inlet]]
             del face_mappings[inlet]
             outlet_ids = list(face_mappings.values())
+        # only generate centerlines for part of the model.
         else:
             inlet_ids = [face_mappings[inlet]]
             outlet_ids = [face_mappings[name] for name in outlet_names]

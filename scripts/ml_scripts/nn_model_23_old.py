@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import CSVLogger
 from pathlib import Path
 # plot by generations
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.file_io import read_json
 from collections import defaultdict
 

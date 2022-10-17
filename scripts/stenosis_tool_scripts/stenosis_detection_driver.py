@@ -1,7 +1,7 @@
 # File: stenosis_detection_driver.py
 # File Created: Wednesday, 29th June 2022 11:26:57 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 29th August 2022 4:37:38 pm
+# Last Modified: Monday, 17th October 2022 6:08:29 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Given a directory of a stenosis model, performs comparison of Control and Stenosis generation resistances to determine if a segment contains severe to-be-fixed stenoses
@@ -11,7 +11,7 @@ import numpy as np
 import os
 from collections import defaultdict
 
-from src.solver import Solver0D
+from src.lpn import Solver0D
 from src.file_io import copy_rel_files, write_json, check_exists
 from src.misc import create_tool_parser, get_solver_path
 from src.stenosis import new_capacitance, new_inductance, new_r_poiseuille, new_sten_coeff
