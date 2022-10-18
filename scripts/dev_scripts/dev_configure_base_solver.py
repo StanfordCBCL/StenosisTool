@@ -1,7 +1,7 @@
 # File: dev_configure_base_solver.py
 # File Created: Thursday, 28th July 2022 5:49:29 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 6:09:49 pm
+# Last Modified: Monday, 17th October 2022 6:55:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: For a particular 0D solver file, prepare necessary files for future work
@@ -117,7 +117,7 @@ def main(args):
         lpn.simulation_params['gender'] = model.info['metadata']['gender']
         
         # plot inflow
-        lpn.inflow.plot_flow(model.base_lpn_dir / 'inflow.png')
+        lpn.inflow.plot_flow(str(model.base_lpn_dir / 'inflow.png'))
         
         # write cpp lpn
         lpn.write_lpn_file(model.base_lpn)
@@ -126,21 +126,21 @@ def main(args):
         outlet_mappings = parse_mdl(model.info['files']['mdl_file'])
         inlet_mapping = {model.info['model']['inlet']: outlet_mappings[model.info['model']['inlet']]}
         del outlet_mappings[model.info['model']['inlet']]
-        write_json(model.base_lpn_dir / 'inlet_mapping.dat', inlet_mapping)
-        write_json(model.base_lpn_dir / 'outlet_mapping.dat', outlet_mappings)
+        write_json(str(model.base_lpn_dir / 'inlet_mapping.dat'), inlet_mapping)
+        write_json(str(model.base_lpn_dir / 'outlet_mapping.dat'), outlet_mappings)
         
         # copy centerlines
-        shutil.copy(model.model_centerlines, model.base_lpn_dir / 'model_centerlines.vtp')
+        shutil.copy(str(model.model_centerlines), str(model.base_lpn_dir / 'model_centerlines.vtp'))
         
         # if stenosis model, write the rcrt into 0D format
         if model.type == 'stenosis':
             #! UPDATE THIS AFTER LOADING NEW STENOSIS FILE
             try:
-                convert_old_rcrt(old_rcrt_file=model.info['files']['rcrt3d_file'],
-                                solver3d_file=model.info['files']['solver3d_file'],
-                                pre_file=model.info['files']['pre3d_file'],
-                                out_dir=model.base_solver_dir,
-                                prefix=model.info['model']['prefix'])
+                convert_old_rcrt(old_rcrt_file=str(model.info['files']['rcrt3d_file']),
+                                solver3d_file=str(model.info['files']['solver3d_file']),
+                                pre_file=str(model.info['files']['pre3d_file']),
+                                out_dir=str(model.base_lpn_dir),
+                                prefix=str(model.info['model']['prefix']))
             except Exception as e:
                 print(f'Failed: {e}')
                 continue
@@ -148,7 +148,7 @@ def main(args):
             # copy CapInfo
             capinfo = model.base_lpn_dir / 'CapInfo'
             if not capinfo.exists():
-                shutil.copy(model.info['files']['cap_info'], capinfo)
+                shutil.copy(str(model.info['files']['cap_info']), str(capinfo))
             
         print('Done')
         

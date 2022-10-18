@@ -1,7 +1,7 @@
 # File: sv_dev_segmentation_gen.py
 # File Created: Thursday, 28th July 2022 3:33:40 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 5:29:51 pm
+# Last Modified: Monday, 17th October 2022 7:01:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Using Simvascular Automated Pipeline & Development given parameters, construct a 0D model from a particular 3D geometry
@@ -16,6 +16,7 @@ except ImportError as e:
 
 import sys
 import os
+from pathlib import Path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
@@ -56,7 +57,7 @@ class ModelParams():
         self.units = 'mm'
         
 class FileParams():
-    def __init__(self, centerlines_file, lpn_dir, inflow_file, out_name):
+    def __init__(self, centerlines_file: Path, lpn_dir: Path, inflow_file, out_name):
         self.lpn_dir = lpn_dir
         self.centerlines_input_file = centerlines_file
         self.inflow_file = inflow_file
@@ -70,7 +71,7 @@ class SimulationParams():
         self.num_ts_per_cycle = 1000
     
 
-def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluids: FluidParams, material: MaterialParams, sim: SimulationParams, dummy_bc = True):
+def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluids: FluidParams, material: MaterialParams, sim: SimulationParams):
     ''' Writes a 0D LPN file '''
     
     ## needed to write 0d file
@@ -81,14 +82,14 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     params.model_name = model.model_name
     
     # write inlet/outlet to a dat file
-    with open(files.lpn_dir / 'inlet_face_names.dat', 'w') as infile:
+    with (files.lpn_dir / 'inlet_face_names.dat').open('w') as infile:
         infile.write(model.inlet + '\n')
-    with open(files.lpn_dir / 'outlet_face_names.dat', 'w') as outfile:
+    with (files.lpn_dir / 'outlet_face_names.dat').open('w') as outfile:
         for outlet in model.outlets:
             outfile.write(outlet + '\n')
 
-    params.outlet_face_names_file = files.lpn_dir / 'outlet_face_names.dat'
-    params.centerlines_input_file = files.centerlines_input_file
+    params.outlet_face_names_file = str(files.lpn_dir / 'outlet_face_names.dat')
+    params.centerlines_input_file = str(files.centerlines_input_file)
     
 
     # mesh params
@@ -112,7 +113,7 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     
     # retrieve appropriate inflow
     inflow = Inflow0D.from_file(files.inflow_file, inverse = files.inverse_flow, smooth = files.smooth)
-    smooth_flowfile = files.lpn_dir / 'inflow.flow'
+    smooth_flowfile = str(files.lpn_dir / 'inflow.flow')
     inflow.write_flow(smooth_flowfile)
     params.inflow_input_file = smooth_flowfile
     
@@ -121,7 +122,7 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
     params.num_time_steps = sim.num_ts_per_cycle * (sim.num_cycles - 1)
     
     # other
-    params.output_directory = files.lpn_dir
+    params.output_directory = str(files.lpn_dir)
     params.compute_centerlines = False
     params.solver_output_file = files.out_name
     
@@ -135,9 +136,9 @@ def write_0d_file(files: FileParams, model: ModelParams, mesh: MeshParams, fluid
         bc = BoundaryConditions()
         for outlet in model.outlets:
             bc.add_rcr(outlet, 0, 0, 0, 0)
-        bc.write_rcrt_file(rcr_file)
+        bc.write_rcrt_file(str(files.lpn_dir))
     
-    params.outflow_bc_file = files.lpn_dir
+    params.outflow_bc_file = str(files.lpn_dir)
 
 
     ## GET CENTERLINES
@@ -209,9 +210,9 @@ def main(args):
             raise RuntimeError('Inflow file does not exist')
 
         file_params = FileParams(centerlines_file=model.model_centerlines,
-                                 solver_dir=model.base_lpn_dir,
+                                 lpn_dir=model.base_lpn_dir,
                                  inflow_file=inflow,
-                                 out_name=model.base_model_solver.name)
+                                 out_name=model.base_lpn.name)
         file_params.inverse_flow = inverse
         file_params.smooth = True
 

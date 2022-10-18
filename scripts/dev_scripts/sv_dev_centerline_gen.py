@@ -1,7 +1,7 @@
 # File: sv_dev_centerline_gen.py
 # File Created: Thursday, 28th July 2022 3:28:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 4:29:20 pm
+# Last Modified: Monday, 17th October 2022 6:50:52 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Using Simvascular VMTK, generate centerlines for a particular 3D geometry
@@ -9,6 +9,7 @@
 
 import sys
 import os
+from pathlib import Path
 # append the src path, since it uses Simvascular's python.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -32,9 +33,9 @@ def construct_full_centerlines(model: ModelPath, force = False):
                 print('Model centerlines file exists already.')
                 return False
     
-        gen.generate_centerlines(mdl=mdl,
-                                vtp=vtp,
-                                inlet=inlet,
+        gen.generate_centerlines(mdl=str(mdl),
+                                vtp=str(vtp),
+                                inlet=str(inlet),
                                 use_entire_tree=True)
         
         
@@ -42,7 +43,7 @@ def construct_full_centerlines(model: ModelPath, force = False):
             print(model.model_name + ' failed to generate centerlines.')
             return False
             
-        gen.write_polydata(model.model_centerlines)
+        gen.write_polydata(str(model.model_centerlines))
         return True
     
     except Exception as e:

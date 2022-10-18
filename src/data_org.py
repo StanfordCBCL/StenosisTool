@@ -1,13 +1,10 @@
 
 from collections import defaultdict
-from os import path
-import os
+import shutil
 from pathlib import Path
 
-from traitlets import default
-
 from .misc import *
-from .file_io import check_dir, check_file, check_exists_bool, parse_config
+from .file_io import check_dir, parse_config
 
 
 class ModelPath():
@@ -42,7 +39,7 @@ class ModelPath():
             self.construct_dev_config(self.dev_config)
             
         # read dev config
-        self.info = parse_config(self.dev_config)
+        self.info = parse_config(str(self.dev_config))
         
         # check info for completeness
         if not self.check_info():
@@ -52,11 +49,11 @@ class ModelPath():
         # joins root to the files as a Path object.
         for key, vals in self.info['files'].items():
             if vals != '':
-                self.info['files'][key] = self.model_root / vals
+                self.info['files'][key] = str(self.model_root / vals)
         
         # dirs            
         self.centerline_dir = check_dir(self.model_root / self.CENTERLINES_DIR, mkdir = True)
-        self.base_lpn_dir = check_dir(self.model_root, self.BASE_LPN_DIR, mkdir = True)
+        self.base_lpn_dir = check_dir(self.model_root / self.BASE_LPN_DIR, mkdir = True)
         
         # files
         self.base_lpn = self.base_lpn_dir / (self.info['metadata']['name'] + '_' + self.MODEL_LPN)
@@ -73,12 +70,8 @@ class ModelPath():
     def construct_dev_config(self, config_fp: Path):
         ''' constructs an empty dev config file from template
         '''
-        template_config = Path('templates/dev_config.ini')
-        with template_config.open() as template:
-            file = template.readlines()
-            
-        with config_fp.open('w') as dfile:
-            dfile.write(file)
+        template_config = Path(__file__).parent / 'templates/dev_config.ini'
+        shutil.copy(str(template_config), str(config_fp))
         
     def __repr__(self):
         s = ''
@@ -97,7 +90,7 @@ class DataPath():
     def __init__(self, root):
         # main data dirs
         self.project_root = Path(root)
-        self.data_root = check_dir(root / self.DATA, mkdir = True)
+        self.data_root = check_dir(self.project_root / self.DATA, mkdir = True)
         self.healthy = check_dir(self.data_root / self.HEALTHY, mkdir = True)
         self.stenosis = check_dir(self.data_root / self.STENOSIS, mkdir = True)
         
