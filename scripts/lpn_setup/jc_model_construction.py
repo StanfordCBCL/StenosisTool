@@ -1,7 +1,7 @@
 # File: jc_model_construction.py
 # File Created: Monday, 18th July 2022 3:40:19 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 12:23:10 pm
+# Last Modified: Tuesday, 18th October 2022 5:50:39 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Constructs a new directory from an base one where everything is identical except the solver file is processed to includes junction coefficients
@@ -15,7 +15,7 @@ from pathlib import Path
 
 def convert_to_jc(lpn: LPN):
     
-    for junc in solver.junctions:
+    for junc in lpn.junctions:
         if junc['junction_type'] != 'internal_junction':
             
             inlet = junc['inlet_vessels']
@@ -27,9 +27,9 @@ def convert_to_jc(lpn: LPN):
             
             outlet_areas = list(zip(outlets, s_outlets))
             
-            density = solver.simulation_params['density']
+            density = lpn.simulation_params['density']
             for out, S1 in outlet_areas:
-                out_vess = solver.get_vessel(out)
+                out_vess = lpn.get_vessel(out)
                 
                 # update with stenosis coefficient of junction
                 out_vess['junction_coefficient'] = 1.52 * density * ( (S0/S1 - 1) **2) / (2 * S0**2)
@@ -48,12 +48,12 @@ def main(args):
     shutil.copy(args.in_dir, str(out_dir))
     
     if args.jc:
-        lpn_dir = ''
-        lpn_jc = 
-        convert_to_jc(solver)
-
-        new_jc_solver = os.path.join(new_jc_dir, get_basename(solver_file) + '_jc.in')
-        solver.write_solver_file(new_jc_solver)
+        lpn_dir = LPNDir(args.out_dir)
+        lpn_jc = LPN.from_file(str(lpn_dir.lpn_root))
+        convert_to_jc(lpn_jc)
+        new_jc_lpn = lpn_dir.lpn_root.with_suffix('.jc.in')
+        lpn_dir.lpn_root.rename(new_jc_lpn)
+        lpn_jc.write_lpn_file(str(new_jc_lpn))
     print('Done')
     
 
