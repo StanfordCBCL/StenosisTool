@@ -1,19 +1,19 @@
 # File: jc_model_construction.py
 # File Created: Monday, 18th July 2022 3:40:19 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 6:08:38 pm
+# Last Modified: Tuesday, 18th October 2022 12:23:10 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Constructs a new directory from an base one where everything is identical except the solver file is processed to includes junction coefficients
 
 
-from src.lpn import Solver0D
-from src.misc import create_tool_parser, get_basename, get_solver_path
-import os
+from src.lpn import LPN
+from src.data_org import LPNDir
+from src.parser import Parser
 import shutil
-from src.file_io import copy_rel_files
+from pathlib import Path
 
-def convert_to_jc(solver: Solver0D):
+def convert_to_jc(lpn: LPN):
     
     for junc in solver.junctions:
         if junc['junction_type'] != 'internal_junction':
@@ -36,40 +36,37 @@ def convert_to_jc(solver: Solver0D):
                 out_vess['zero_d_element_values']['stenosis_coefficient'] += out_vess['junction_coefficient']
 
 def main(args):
+    print(f'Constructing LPN dir for {args.out_dir}...',end = '\t', flush = True)
     
-    for solver_dir in args.solver_dirs:
-        print(f'Constructing JC solver for {solver_dir}...',end = '\t', flush = True)
-        # construct a copy of the base directory
-        model_dir = os.path.dirname(solver_dir)
-        new_jc_dir = os.path.join(model_dir, args.outdir)
-        if not os.path.exists(new_jc_dir):
-            os.mkdir(new_jc_dir)
-        elif not args.force:
-            print(new_jc_dir + ' already exists. Skipping')
-            continue
-        
-        # copy files
-        copy_rel_files(solver_dir, new_jc_dir, exclude_solver=True)
-        
-        # rename solver file
-        solver_file=get_solver_path(solver_dir)
-        solver = Solver0D()
-        solver.read_solver_file(solver_file = solver_file)
-        
+    out_dir = Path(args.out_dir)
+    # construct a copy of the base directory
+    if out_dir.exists() and not args.force:
+        print(out_dir + ' already exists. Skipping')
+        return
+    
+    # copy all base files
+    shutil.copy(args.in_dir, str(out_dir))
+    
+    if args.jc:
+        lpn_dir = ''
+        lpn_jc = 
         convert_to_jc(solver)
 
         new_jc_solver = os.path.join(new_jc_dir, get_basename(solver_file) + '_jc.in')
         solver.write_solver_file(new_jc_solver)
-        print('Done')
-        
+    print('Done')
+    
+
         
 
 if __name__ == '__main__':
     
-    tool = create_tool_parser(desc = 'Implementing a new method of stenosis junction handling')
+    tool = Parser(desc = 'Set up a model')
     
-    tool.add_argument('-o', dest = 'outdir', default = 'jc_solver_dir', help = 'Dirname of out file')
-    tool.add_argument('-f', dest = 'force', default = False, action = 'store_true', help = 'Force override files in existing dir')
+    tool.parser.add_argument('-i', dest = 'in_dir', help = 'Dirname of base files to copy' )
+    tool.parser.add_argument('-o', dest = 'out_dir', default = 'base_lpn_dir', help = 'Dirname of output LPN dir')
+    tool.parser.add_argument('-jc', dest = 'jc', default = False, action = 'store_true', help = 'Flag to convert LPN file to a JC LPN file.')
+    tool.parser.add_argument('-f', dest = 'force', default = False, action = 'store_true', help = 'Force override files in existing dir')
     args = tool.parse_args()
 
     main(args)

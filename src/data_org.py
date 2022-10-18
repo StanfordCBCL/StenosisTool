@@ -6,6 +6,35 @@ from pathlib import Path
 from .misc import *
 from .file_io import check_dir, parse_config
 
+class LPNDir():
+    ''' Information for an LPN Dir. Used in Tool Scripts
+    '''
+    
+    INFLOW = 'inflow.flow'
+    RCRT = 'rcrt.dat'
+    CENT = 'model_centerlines.vtp'
+    
+    def __init__(self, lpn_dir):
+        self.lpn_root = check_dir(Path(lpn_dir))
+        self.lpn_path = self._find_lpn()
+        self.inflow_file = self.lpn_root / self.INFLOW
+        self.rcrt_file = self.lpn_root / self.RCRT
+        self.centerlines = self.lpn_root / self.CENT
+        self.other_base_files = {'CapInfo', 'inlet_face_names.dat', 'inlet_mapping.dat'
+                                'outlet_face_names.dat', 'outlet_mapping.dat', 'rcrt.dat'}
+        
+        # possible dirs. They may not exist for child dirs #! correct
+        self.three_d_dir = check_dir(self.lpn_root / 'three_d_dir', ignore = True)
+        self.artificial_stenosis_dir = check_dir(self.lpn_root / 'artificial_sten', ignore = True)
+        self.tuning_dir = check_dir(self.lpn_root / 'tuning', ignore = True)
+        
+    def _find_lpn(self):
+        for path in self.lpn_root.iterdir():
+            if path.is_file() and path.suffix == 'in':
+                return path
+        raise FileNotFoundError('LPN file not found. Please set the suffix to .in')
+
+    
 
 class ModelPath():
     ''' Model specific info & Paths
@@ -58,7 +87,7 @@ class ModelPath():
         # files
         self.base_lpn = self.base_lpn_dir / (self.info['metadata']['name'] + '_' + self.MODEL_LPN)
         self.model_centerlines = self.centerline_dir / (self.info['metadata']['name'] + '_' + self.MODEL_CENT)
-    
+
     def check_info(self):
         ''' validates metadata exists
         '''
@@ -89,7 +118,7 @@ class DataPath():
         
     def __init__(self, root):
         # main data dirs
-        self.project_root = Path(root)
+        self.project_root = check_dir(Path(root))
         self.data_root = check_dir(self.project_root / self.DATA, mkdir = True)
         self.healthy = check_dir(self.data_root / self.HEALTHY, mkdir = True)
         self.stenosis = check_dir(self.data_root / self.STENOSIS, mkdir = True)

@@ -15,7 +15,7 @@ class ToolParser(Parser):
     '''
     def __init__(self, desc):
         super().__init__(desc)
-        self.parser.add_argument('-solver_dirs', default=[], nargs = '*', help='Solver Directories to begin searching from')
+        self.parser.add_argument('-lpn_dirs', default=[], nargs = '*', help='LPN Directories to begin searching from')
 
 class DevParser(Parser):
     ''' parser for dev scripts
