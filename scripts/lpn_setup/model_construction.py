@@ -1,7 +1,7 @@
 # File: jc_model_construction.py
 # File Created: Monday, 18th July 2022 3:40:19 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 5:50:39 pm
+# Last Modified: Tuesday, 18th October 2022 6:01:03 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Constructs a new directory from an base one where everything is identical except the solver file is processed to includes junction coefficients
@@ -41,18 +41,20 @@ def main(args):
     out_dir = Path(args.out_dir)
     # construct a copy of the base directory
     if out_dir.exists() and not args.force:
-        print(out_dir + ' already exists. Skipping')
+        print(str(out_dir) + ' already exists. Skipping')
         return
     
     # copy all base files
-    shutil.copy(args.in_dir, str(out_dir))
+    out_dir.mkdir(exist_ok = True)
+    for file in Path(args.in_dir).iterdir():
+        shutil.copy(str(file), str(out_dir))
     
     if args.jc:
         lpn_dir = LPNDir(args.out_dir)
-        lpn_jc = LPN.from_file(str(lpn_dir.lpn_root))
+        lpn_jc = LPN.from_file(str(lpn_dir.lpn_path))
         convert_to_jc(lpn_jc)
-        new_jc_lpn = lpn_dir.lpn_root.with_suffix('.jc.in')
-        lpn_dir.lpn_root.rename(new_jc_lpn)
+        new_jc_lpn = lpn_dir.lpn_path.with_suffix('.jc.in')
+        lpn_dir.lpn_path.rename(new_jc_lpn)
         lpn_jc.write_lpn_file(str(new_jc_lpn))
     print('Done')
     

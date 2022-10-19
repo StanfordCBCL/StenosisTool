@@ -30,7 +30,7 @@ class LPNDir():
         
     def _find_lpn(self):
         for path in self.lpn_root.iterdir():
-            if path.is_file() and path.suffix == 'in':
+            if path.is_file() and path.suffix == '.in':
                 return path
         raise FileNotFoundError('LPN file not found. Please set the suffix to .in')
 
