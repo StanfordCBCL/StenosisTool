@@ -3,7 +3,7 @@
 
 from attr import s
 from src.flow import Inflow0D
-from src.centerlines import Centerlines
+from src.polydata import Centerlines
 from src.file_io import check_exists_bool, parse_face_names
 from src.lpn import Solver0D
 from src.bc import BoundaryConditions

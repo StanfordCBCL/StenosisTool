@@ -3,7 +3,7 @@
 import numpy as np
     
 import argparse
-from src.centerlines import Centerlines
+from src.polydata import Centerlines
 from src.file_io import read_json
 from src.misc import create_tool_parser, get_solver_path
 from src.stenosis import rp_to_radius
