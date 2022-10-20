@@ -78,7 +78,9 @@ class Polydata():
         new_celldata.SetName(array_name)
         self.polydata.GetPointData().AddArray(new_celldata)
        
-    def remove_pointdata(self, array_name):
+    def remove_pointdata_array(self, array_name):
+        ''' removes an array from pointdata
+        '''
         self.polydata.GetPointData().RemoveArray(array_name)
 
         

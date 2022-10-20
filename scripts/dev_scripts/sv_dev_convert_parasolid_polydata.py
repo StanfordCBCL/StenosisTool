@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.centerlines import Polydata
+from src.polydata import Polydata
 
 if __name__ == '__main__':
     # Create a modeler.
