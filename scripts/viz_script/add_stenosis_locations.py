@@ -1,13 +1,13 @@
 # File: add_stenosis_locations.py
 # File Created: Wednesday, 27th July 2022 11:28:30 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 6:08:18 pm
+# Last Modified: Tuesday, 18th October 2022 9:14:13 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Adds stenosis locations to the centerline files
 
 import argparse
-from src.centerlines import Centerlines
+from src.polydata import Centerlines
 from src.file_io import read_json
 from src.misc import create_tool_parser, get_solver_path
 from src.lpn import Solver0D

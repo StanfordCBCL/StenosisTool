@@ -2,7 +2,7 @@
 # File: optimization_driver.py
 # File Created: Friday, 29th July 2022 12:24:00 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th October 2022 6:08:37 pm
+# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Optimizes a healthy model with appropriate BC
@@ -10,7 +10,7 @@
 
 
 from src.flow import Inflow0D
-from src.centerlines import Centerlines
+from src.polydata import Centerlines
 from src.file_io import check_exists_bool, parse_face_names
 from src.lpn import Solver0D
 from src.bc import BoundaryConditions

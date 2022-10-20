@@ -1,7 +1,7 @@
 # File: summarize_3d.py
 # File Created: Sunday, 24th July 2022 1:39:38 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 1:35:25 am
+# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Turns a 3D simulation with array timesteps into arrays with actual time. Furthermore, summarizes mean, sys and dia, pressures
@@ -14,7 +14,7 @@ import os
 
 import matplotlib.pyplot as plt
 from src.misc import create_tool_parser, d2m, get_basename, get_solver_name
-from src.centerlines import Centerlines
+from src.polydata import Centerlines
 from src.flow import Inflow0D
 
 #########
