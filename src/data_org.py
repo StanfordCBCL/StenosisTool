@@ -127,14 +127,14 @@ class DataPath():
         self.models = defaultdict(dict)
         self.model_names = set()
         for model_path in self.healthy.iterdir():
-            if not model_path.is_dir():
-                pass
+            if not model_path.is_dir() or model_path.name == '.DS_Store':
+                continue
             self.models[self.HEALTHY][model_path.name] = ModelPath(model_path, self.HEALTHY)
             self.model_names.add(model_path.name)
                 
         for model_path in self.stenosis.iterdir():
-            if not model_path.is_dir():
-                pass
+            if not model_path.is_dir() or model_path.name == '.DS_Store':
+                continue
             self.models[self.STENOSIS][model_path.name] = ModelPath(model_path, self.STENOSIS)
             self.model_names.add(model_path.name)
                 

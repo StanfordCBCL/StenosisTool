@@ -11,6 +11,27 @@ class Polydata():
     def __init__(self):
         self.polydata = None
     
+    def convert_from_parasolid(self, parasolid_file):
+        '''loads a Parasolid xmt_txt file which is converted into polydata.
+        Only accessible throught a private Parasolid plugin.
+        '''
+        #! Currently not working as intended. Please use Simvascular's GUI to perform this operation.
+        try:
+            import sv
+        except ImportError as e:
+            print(e + ': use simvascular --python -- this_script.py')
+            exit(1)
+        
+        try:
+            kernel = sv.modeling.Kernel.PARASOLID
+            modeler = sv.modeling.Modeler(kernel)
+
+            # Read model geometry.
+            model = modeler.read(parasolid_file)
+            self.polydata = model.get_polydata()
+        except Exception as e:
+            print(e, ': requires parasolid plugin, which is a private plugin.')
+    
     def load_polydata(self, input_file, format = 'xml'):
         '''loads a PolyData file from <input_file> which is in <format>
         
@@ -154,6 +175,7 @@ class Centerlines(Polydata):
         modeler = sv.modeling.Modeler(kernel)
 
         # Read model geometry.
+        print('Generating centerlines from:', vtp)
         model = modeler.read(vtp)
         
         # parse mdl for mapping

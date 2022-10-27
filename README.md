@@ -11,6 +11,9 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
 
 - [x] Construct Pipeline for Healthy Model
 - [] Construct Pipeline for Unhealthy Model
+    - Errors
+        - [] Code Parasolid -> Polydata does not work in Python. Use GUI
+        - [] Code Centerline_Gen does not work in Python. Use GUI.
 - [] Write Paper
 
 ## Installation
