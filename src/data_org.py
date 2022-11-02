@@ -13,6 +13,7 @@ class LPNDir():
     INFLOW = 'inflow.flow'
     RCRT = 'rcrt.dat'
     CENT = 'model_centerlines.vtp'
+    CAPINFO = 'CapInfo'
     
     def __init__(self, lpn_dir):
         self.lpn_root = check_dir(Path(lpn_dir))
@@ -20,8 +21,9 @@ class LPNDir():
         self.inflow_file = self.lpn_root / self.INFLOW
         self.rcrt_file = self.lpn_root / self.RCRT
         self.centerlines = self.lpn_root / self.CENT
-        self.other_base_files = {'CapInfo', 'inlet_face_names.dat', 'inlet_mapping.dat'
-                                'outlet_face_names.dat', 'outlet_mapping.dat', 'rcrt.dat'}
+        self.capinfo = self.lpn_root / self.CAPINFO
+        self.other_base_files = {'inlet_face_names.dat', 'inlet_mapping.dat'
+                                'outlet_face_names.dat', 'outlet_mapping.dat'}
         
         # possible dirs. They may not exist for child dirs #! correct
         self.three_d_dir = check_dir(self.lpn_root / 'three_d_dir', ignore = True)
@@ -34,7 +36,11 @@ class LPNDir():
                 return path
         raise FileNotFoundError('LPN file not found. Please set the suffix to .in')
 
-    
+    def check_complete(self):
+        for file in [self.lpn_path, self.inflow_file, self.centerlines, self.rcrt_file, self.capinfo]:
+            if not file.exists():
+                raise FileNotFoundError(str(file))
+                
 
 class ModelPath():
     ''' Model specific info & Paths
@@ -65,6 +71,7 @@ class ModelPath():
         # search and read for dev_config file in self.config_files
         self.dev_config = self.config_files / self.DEV_CONF
         if not self.dev_config.is_file():
+            print("Dev config file not found. Constructing template.")
             self.construct_dev_config(self.dev_config)
             
         # read dev config

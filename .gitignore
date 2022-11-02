@@ -3,7 +3,7 @@ data/**
 broken_data/**
 !data/data.xlsx
 # ignore the zero D solver
-svZeroDSolver
+svZeroDPlus
 # ignore expensive files
 *.npy
 *.vtp

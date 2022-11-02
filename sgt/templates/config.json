@@ -1,0 +1,20 @@
+{
+    "metadata": {
+        "diseased": true,
+        "inlet": "",
+        "model_name": ""
+    },
+    "workspace": {
+        "centerlines": ".vtp",
+        "flow_file": ".flow",
+        "mdl_mapping": ".mdl",
+        "rcrt_file": "rcrt.dat",
+        "root": "",
+        "surface_model": ".vtp"
+        "capinfo": "",
+    },
+    "options": {
+        "tune": false
+    }
+    
+}

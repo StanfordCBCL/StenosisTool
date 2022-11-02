@@ -2,7 +2,7 @@
 # File: optimization_driver.py
 # File Created: Friday, 29th July 2022 12:24:00 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
+# Last Modified: Thursday, 27th October 2022 4:41:08 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Optimizes a healthy model with appropriate BC
@@ -10,12 +10,13 @@
 
 
 from src.flow import Inflow0D
+from src.parser import ToolParser
 from src.polydata import Centerlines
-from src.file_io import check_exists_bool, parse_face_names
-from src.lpn import Solver0D
+from src.file_io import parse_face_names
+from src.lpn import LPN
 from src.bc import BoundaryConditions
 from src.solver_results import SolverResults
-from src.misc import m2d, d2m, create_tool_parser, get_solver_name
+from src.misc import m2d, d2m
 from src.run_sim import run_sim
 
 import numpy as np
@@ -151,7 +152,8 @@ def get_lpa_rpa(vessel_tree: Solver0D.VesselNode):
 
 
 def write_0d_dict(params: TuneParams, inflow: Inflow0D, centerlines: Centerlines,dummy_solver: Solver0D) -> Solver0D:
-    ''' sets up solver file skeleton'''
+    ''' sets up solver file skeleton for the tuning solver
+    '''
     solver_data = Solver0D()
     solver_data.setup_empty_solver()
     
@@ -710,7 +712,7 @@ def convert_to_dict(opt_results: optimize.OptimizeResult):
     return rez
 
 ###########
-# Drivers #
+# Driver #
 ###########
 
 def main(args: Namespace):
