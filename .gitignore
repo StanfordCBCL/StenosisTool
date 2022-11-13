@@ -26,3 +26,5 @@ scripts/pipeline.sh
 
 # ignore all scripts
 *.sh
+
+*/__pycache__/*

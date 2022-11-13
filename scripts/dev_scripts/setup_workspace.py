@@ -1,7 +1,7 @@
 # File: setup_workspace.py
 # File Created: Monday, 31st October 2022 6:47:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 1st November 2022 1:49:01 pm
+# Last Modified: Wednesday, 2nd November 2022 10:35:58 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Sets up a results workspace from a SV Model Directory

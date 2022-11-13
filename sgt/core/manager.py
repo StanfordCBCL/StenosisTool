@@ -1,7 +1,7 @@
 # File: manager.py
 # File Created: Monday, 31st October 2022 6:02:27 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 2nd November 2022 12:22:25 am
+# Last Modified: Friday, 4th November 2022 11:31:09 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Manages files for 1 model in pipeline
@@ -113,7 +113,7 @@ class SVManager(Manager):
             
         if self.tune:
             capinfo = outdir / "CapInfo"
-            shutil.copy(str(capinfo), str(bc) )
+            shutil.copy(str(self.capinfo), str(capinfo) )
         
         # write a config json
         cfg = {
@@ -135,6 +135,12 @@ class SVManager(Manager):
                 'tune': self.tune
             }
         }
+        
+        # add rest of meta data in.
+        for key, val in self.info['metadata'].items():
+            if key not in cfg['metadata']:
+                cfg['metadata'][key] = val
+        
         config = outdir / 'config.json'
         io.write_json(config, cfg)
         
@@ -149,13 +155,6 @@ class LPNConstructionManager(Manager):
         self.lpn = self.lpn_files / (self.model_name + self.lpn_suff)
         
         
-class PipelineManager(Manager):
-    ''' Manages Pipeline directory inside of workspace'''
-    
-    def __init__(self, config: str):
-        super().__init__(config)
-        
-        pass
 
 class TuningManager(LPNConstructionManager):
     ''' manages Tuning
@@ -176,4 +175,35 @@ class TuningManager(LPNConstructionManager):
         
         # sensitivity test dir
         self.sens_dir = io.check_dir(self.tuning_dir / "sens_test", mkdir = True)
+        
+class StenosisParametrizationManager(LPNConstructionManager):
+    ''' manages artificial stenosis
+    '''
+    
+    def __init__(self, config):
+        super().__init__(config)
+        
+        if self.diseased: # stenosis
+            
+            # real stenosis
+            self.SP_dir = io.check_dir(self.lpn_files / 'real_stenosis', mkdir = True)
+            
+            # copy of stenosis lpn
+            self.SP_lpn = self.SP_dir / self.lpn.name
+            
+        else: # healthy
+            
+            # artificial stenosis dir.
+            self.SP_dir = io.check_dir(self.lpn_files / 'artificial_stenosis', mkdir = True)
+            
+            # new artificial stenosis lpn
+            self.SP_lpn = self.SP_dir / (self.lpn.stem.split('.')[0] + '.as' + ''.join(self.lpn.suffixes))
+            
+            # if a config file to output
+            self.SP_config = self.SP_dir / 'AS_config.json'
+            
+        # changes
+        self.stenosis_parametrization = self.SP_dir / 'stenosis_parametrization.dat'
+        
+
         

@@ -1,10 +1,10 @@
 # File: extract_3D_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 5th August 2022 3:23:02 pm
+# Last Modified: Thursday, 3rd November 2022 2:12:40 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: A Very long running code (2+ hrs) where given a 3D vtu and its corresponding centerlines, the flows and pressures can be mapped back onto the 0D
+# Description: A Very long running code (2+ hrs) where given a 3D vtu and its corresponding centerlines, the flows and pressures can be mapped back onto the 0D (Individual script that can be run on compute cluster)
 
 
 
@@ -309,7 +309,7 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description = 'extract 3D to centerlines (takes 40 min)')
+    parser = argparse.ArgumentParser(description = 'extract 3D to centerlines (takes 1hr +)')
     
     parser.add_argument('-c', dest = 'centerlines', help = 'centerlines file')
     parser.add_argument('-v', dest = 'volume', help = 'vtu file of results')

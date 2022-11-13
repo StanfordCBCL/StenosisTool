@@ -10,11 +10,23 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
 ## Current Tasks
 
 - [x] Construct Pipeline for Healthy Model
+
+- [] Rewrite Code to be more pipeline-like rather than research
+    - Skipped Sections
+    - [] Compare 3D 1D, check to make sure its correct.
+    - [] Write code to convert 0D to 1D centerlines for visualization
+    - [x] Write pre-code for centerline gen
+    - [x] Write pre-code for CapInfo????
+    - [] Code to compare 3D0D /  extract 3D to centerlines / 
+    - [] Change BC tuning framework
+
 - [] Construct Pipeline for Unhealthy Model
+    - [] Get Flow File
     - Errors
         - [] Code Parasolid -> Polydata does not work in Python. Use GUI
         - [] Code Centerline_Gen does not work in Python. Use GUI.
 - [] Write Paper
+- [] Create Interface
 
 ## Installation
 

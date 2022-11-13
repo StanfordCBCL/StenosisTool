@@ -2,6 +2,7 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
 import numpy as np
+from sgt.utils.io import parse_mdl
 #from .file_io import parse_mdl
 
 
@@ -196,4 +197,5 @@ class Centerlines(Polydata):
             outlet_ids = [face_mappings[name] for name in outlet_names]
 
         self.polydata = sv.vmtk.centerlines(model_polydata, inlet_ids, outlet_ids, use_face_ids=True)
+
     

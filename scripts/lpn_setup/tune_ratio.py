@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 2nd November 2022 12:31:25 am
+# Last Modified: Sunday, 13th November 2022 4:03:43 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions if necessary.
@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 # Params #
 ##########
 
+
 class TuneParams():
     
     def __init__(self):
@@ -40,7 +41,9 @@ class TuneParams():
         self.rpa_flow_split = .55
         self.mPAP_meas = [m2d(12), m2d(16)] # mmHg -> cgs
         self.maxPAP_meas = [m2d(18), m2d(25)]
+        self.minPAP_meas = [m2d(8), m2d(12)]
         
+        self.full_sim_res = None
         
         ## assume wedge pressure
         self.cap_wedge_pressure = m2d(7) # mmHg -> cgs
@@ -49,6 +52,7 @@ class TuneParams():
         self.pat = 5
         self.pat_tol  = 1e-6
         self.target = 0.0005
+        self.iter = 0
 
 ##############
 # Tuning LPN #
@@ -181,7 +185,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_lpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": lpa_res,
+                "R_poiseuille":  lpa_res,
             }
         },
             {
@@ -211,7 +215,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_rpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": rpa_res
+                "R_poiseuille": rpa_res,
             }
         }, 
             { 
@@ -239,14 +243,15 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
     
     # check that the results are within reasonable bounds
     approximate_pdrop(main_lpn, None)
+
     
     return tuning_lpn
 
 def approximate_pdrop(main_lpn: LPN, results: SolverResults = None):
     ''' approximates pressure drop accross LPN by computing total resistance in tree as one element'''
-    tree = main_lpn.get_vessel_tree()
-    tree_res = compute_total_resistance(tree, results)
-    print('Approximate Pressure Drop = ~', d2m(main_lpn.inflow.mean_inflow * tree_res))
+    tree = main_lpn.get_branch_tree()
+    tree_val = compute_total_vals(tree, results)
+    print('Approximate Pressure Drop from R values alone = ~', d2m(main_lpn.inflow.mean_inflow * tree_val[0]))
 
 def compute_lpa_rpa_resistances(main_lpn: LPN, results: SolverResults = None):
     ''' computes LPA and RPA resistances from each branch
@@ -265,42 +270,72 @@ def compute_lpa_rpa_resistances(main_lpn: LPN, results: SolverResults = None):
         lpa = mpa.children[1]
         rpa = mpa.children[0]
     
-    # Compute resistance for each side.
-    lpa_res = compute_total_resistance(lpa, results)
-    rpa_res = compute_total_resistance(rpa, results)
+    # Compute RCL for each side.
+    lpa_val = compute_total_vals(lpa, results)
+    rpa_val = compute_total_vals(rpa, results)
 
-    return lpa_res, rpa_res
+    return lpa_val[0], rpa_val[0]
 
 def get_avg_flow(df):
     flow = np.array(df['flow_in'])
     time = np.array(df['time'])
     return np.trapz(flow, time) / (time[-1] - time[0])
 
-def compute_total_resistance(cur_node: LPN.VesselNode, results: SolverResults = None):
-    ''' computes total resistance coefficients of a tree recursively 
+def compute_total_vals(cur_node: LPN.BranchNode, results: SolverResults = None):
+    ''' computes total RCL coefficients of a tree recursively 
     Includes stenosis coefficients if results is not None
     '''
     if not cur_node.children:
+        
+        r = 0
+        c = 0
+        l = 0
+        for vess in cur_node.vessel_info:
+            
+            # resistance factor
+            r += vess['zero_d_element_values']['R_poiseuille']
+            if results:
+                # R expansion factor
+                r += vess['zero_d_element_values']['stenosis_coefficient'] * abs(get_avg_flow(results.vessel_df(vess['vessel_name'])))
+            
+            # CL
+            c += 1/vess['zero_d_element_values']['C']
+            l += vess['zero_d_element_values']['L']
+        
+        c = 1/c
+        return r, c, l
+    
+    r = 0
+    c = 0
+    l = 0
+    # compute RCL in parallel for children.
+    for child_node in cur_node.children:
+        r_child, c_child, l_child = compute_total_vals(child_node, results)
+        if r_child != 0:
+            r += 1/r_child
+        if c_child != 0:
+            c += c_child
+        if l_child != 0:
+            l += 1/l_child
+    r = 1/r
+    l = 1/l
+    c = 1/c
+    
+    for vess in cur_node.vessel_info:
+            
         # resistance factor
-        r_p = cur_node.vessel_info[0]['zero_d_element_values']['R_poiseuille']
+        r += vess['zero_d_element_values']['R_poiseuille']
         if results:
             # R expansion factor
-            r_p += cur_node.vessel_info[0]['zero_d_element_values']['stenosis_coefficient'] * abs(get_avg_flow(results.vessel_df(cur_node.vessel_info[0]['vessel_name'])))
-        return r_p
+            r += vess['zero_d_element_values']['stenosis_coefficient'] * abs(get_avg_flow(results.vessel_df(vess['vessel_name'])))
+        
+        # CL
+        c += 1/vess['zero_d_element_values']['C']
+        l += vess['zero_d_element_values']['L']
     
-    total_inv_res = 0
-    # compute resistances in series and parallel
-    for child_node in cur_node.children:
-        r_p_child = compute_total_resistance(child_node, results)
-        if r_p_child != 0:
-            total_inv_res += 1/r_p_child
-    total_child_res = 1/total_inv_res
+    c = 1/c
     
-    r_p = cur_node.vessel_info[0]['zero_d_element_values']['R_poiseuille'] + total_child_res
-    if results:
-        # R expansion factor
-            r_p += cur_node.vessel_info[0]['zero_d_element_values']['stenosis_coefficient'] * abs(get_avg_flow(results.vessel_df(cur_node.vessel_info[0]['vessel_name'])))
-    return r_p
+    return r, c, l
 
 ############
 # Opt Func #
@@ -317,12 +352,16 @@ def opt_function(x, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams):
                          last_cycle_only=True)
     rez = solver.run_sim()
     
-    mPAP_loss, qRPA_loss, maxPAP_loss, waveform_loss = loss_function(results = rez,
+    mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss = loss_function(results = rez,
                          tune_params = params,
                          inflow = main_lpn.inflow,
                          )
     
-    loss = (mPAP_loss + qRPA_loss + maxPAP_loss + waveform_loss) / 4
+    loss = mPAP_loss + qRPA_loss + maxPAP_loss + minPAP_loss
+    
+    
+    params.iter += 1
+    print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15.5f}|")
     
     return loss
 
@@ -351,9 +390,7 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     mpa = results.vessel_df('branch_mpa')
     rpa = results.vessel_df('branch_rpa_rd')
     
-    # mPAP
-    mPAP_sim = np.trapz(mpa['pressure_in'].to_numpy(), mpa['time'].to_numpy()) / inflow.tc
-    mPAP_loss = piecewise_error(tune_params.mPAP_meas[0], tune_params.mPAP_meas[1], mPAP_sim)
+  
     
     # qRPA
     qRPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
@@ -364,15 +401,20 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     maxPAP_sim = mpa['pressure_in'].to_numpy().max()
     maxPAP_loss = piecewise_error(tune_params.maxPAP_meas[0], tune_params.maxPAP_meas[1], maxPAP_sim)
     
-    # waveform loss
-    f = interp1d(mpa['time'].to_numpy(), rpa['flow_out'].to_numpy())
-    waveform_sim = f(inflow.t[:-1])
-    waveform_loss = np.square(np.divide( waveform_sim - (inflow.Q[:-1] * tune_params.rpa_flow_split), (inflow.Q[:-1] * tune_params.rpa_flow_split))).mean()
+    # minPAP
+    minPAP_sim = mpa['pressure_out'].to_numpy().min()
+    minPAP_loss = piecewise_error(tune_params.minPAP_meas[0], tune_params.minPAP_meas[1], minPAP_sim)
+    
+    # mPAP
+    mPAP_sim = np.trapz(mpa['pressure_in'].to_numpy(), mpa['time'].to_numpy()) / inflow.tc
+    mPAP_loss = piecewise_error(tune_params.mPAP_meas[0], tune_params.mPAP_meas[1], mPAP_sim )
+    #mPAP_loss = squared_error(1/3 * maxPAP_sim + 2/3 * minPAP_sim, mPAP_sim)
+    
     
     if intermediate:
-        return mPAP_loss , qRPA_loss, maxPAP_loss, waveform_loss,  (mPAP_sim, qRPA_sim, maxPAP_sim, waveform_sim)
+        return mPAP_loss , qRPA_loss, maxPAP_loss, minPAP_loss, (mPAP_sim, qRPA_sim, maxPAP_sim, minPAP_sim)
     
-    return mPAP_loss, qRPA_loss, maxPAP_loss,waveform_loss
+    return mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss
 
 #############
 # Split RCR #
@@ -483,15 +525,14 @@ def update_tuning_lpn(tuning_lpn: LPN, main_lpn: LPN, main_results: SolverResult
     ''' updates the tuning param with new resistances include stenosis coefficients'''
     approximate_pdrop(main_lpn, main_results)
 
-    lpa_r, rpa_r = compute_lpa_rpa_resistances(main_lpn, main_results)
+    lpa_res, rpa_res = compute_lpa_rpa_resistances(main_lpn, main_results)
     
     tuning_lpn._construct_vessel_map()
     lpa = tuning_lpn.get_vessel(1)
-    lpa['zero_d_element_values']['R_poiseuille'] =  lpa_r
+    lpa['zero_d_element_values']['R_poiseuille'] =  lpa_res
 
     rpa = tuning_lpn.get_vessel(4)
-    rpa['zero_d_element_values']['R_poiseuille'] =  rpa_r
-
+    rpa['zero_d_element_values']['R_poiseuille'] =  rpa_res
     
 ###############
 # Tune Driver #
@@ -507,36 +548,42 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
     
     
     # bounds
-    bounds = optimize.Bounds([0,0,0,0,0,0], [ np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
+    bounds = optimize.Bounds([0,0,0,0], [ np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
     
     # run it max epoch # of times or till stable.
-    diff_tol = 1e-8
+    diff_tol = .5
     max_epochs = 10
     epoch = 1
     diff = 1
     prev = None
     cur = None
-    while diff > diff_tol or epoch > max_epochs:
+    while diff >= diff_tol and epoch < max_epochs:
         # run optimizer
+        params.iter = 0 
+        print(f"{'Iteration':^15}|{'mPAP Loss':^15}|{'maxPAP Loss':^15}|{'minPAP Loss':^15}|{'qRPA Loss':^15}|{'Total Loss':^15}")
+        print("-" * 15 * 7 + "-" * 6)
         results = optimize.minimize(fun = opt_function,
                                     x0 = x0,
                                     args = (main_lpn,
                                             tuning_lpn, params),
-                                    method='trust-constr',
+                                    method='Nelder-Mead',
                                     bounds=bounds,
-                                    options={'verbose':3,
-                                            }, # to test
-                                    callback=termination_closure(params))
-            
+                                    options = {'disp': True,
+                                               'maxiter': 200})
             
         # set prev x0 as start point
         x0 = results.x
+        # split using 1:4 ratio
+        x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+        
         
         # track difference.
         prev = cur
         cur = x0
+        print("Curr", cur)
         if prev is not None and cur is not None:
-            diff = abs(prev - cur).sum()
+            print("Prev:", prev)
+            diff = np.nan_to_num(abs(prev - cur),nan =0 ).sum()
             print("Difference from previous Epoch: ", diff)
         epoch += 1
 
@@ -553,13 +600,13 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
             validate_results(params,
                              main_lpn,
                              tuning_lpn,
-                             results.x,
+                             x_new,
                              epoch_dir
                              )
                     
         
         # split rcrs
-        bcs = split_rcrs(TM, x0, params.cap_wedge_pressure)
+        bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
         add_rcrs(main_lpn, bcs)
     
         # run a simulation on the main lpn
@@ -568,6 +615,7 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
             
         # update Tuning LPN accordingly
         update_tuning_lpn(tuning_lpn, main_lpn, main_results)
+   
         
     
     # store final
@@ -575,11 +623,19 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
     # save tuning file
     modify_params(tuning_lpn, results.x)
     tuning_lpn.write_lpn_file(TM.tuning_lpn)
+    
+    x0 = results.x
+    x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+    # split rcrs
+    bc = split_rcrs(TM, x_new, params.cap_wedge_pressure)
+    # write rcrt
+    bc.write_rcrt_file(str(TM.rcrt.parent))
+    
     # validate results
     validate_results(params,
                         main_lpn,
                         tuning_lpn,
-                        results.x,
+                        x_new,
                         TM.tuning_dir
                         )
     
@@ -598,12 +654,11 @@ def get_initial_cond(params: TuneParams, main_lpn: LPN, tuning_lpn: LPN):
     # determine MPA capacitance using capacitance in series
     mpa_c = tuning_lpn.vessel[0]['zero_d_element_values']['C']
     
-    x0 = np.array([.4 * PVR,
+    x0 = np.array([
                     mpa_c,
-                    1.6 * PVR,
-                    .4 * PVR,
+                    2 * PVR,
                     mpa_c,
-                    1.6 * PVR]
+                    2 * PVR]
                     )
     return x0
 
@@ -612,45 +667,13 @@ def modify_params(lpn: LPN, x ):
     vess = lpn.vessel
 
     # LPA
-    vess[2]['zero_d_element_values']['R_poiseuille']  = x[0]
-    vess[2]['zero_d_element_values']['C'] = x[1]
-    vess[3]['zero_d_element_values']['R_poiseuille'] = x[2]
+    vess[2]['zero_d_element_values']['C'] = x[0]
+    vess[3]['zero_d_element_values']['R_poiseuille'] = x[1]
     
     # RPA
-    vess[5]['zero_d_element_values']['R_poiseuille']  = x[3]
-    vess[5]['zero_d_element_values']['C'] = x[4]
-    vess[6]['zero_d_element_values']['R_poiseuille'] = x[5]
+    vess[5]['zero_d_element_values']['C'] = x[2]
+    vess[6]['zero_d_element_values']['R_poiseuille'] = x[3]
 
-
-def termination_closure(params: TuneParams):
-        ''' creates a closure for tuning termination
-        '''
-        params = {'target': params.target, 'losses': [],'patience': params.pat, 'diff_tol': params.pat_tol, 'cur_patience': 0 }
-
-        def termination_callback(xk, state):
-            # terminate if loss has not improved
-            if params['losses']:
-                if params['losses'][-1] - state['fun'] < params['diff_tol']:
-                    if state['cg_stop_cond'] == 1 : # only if iteration limit reached
-                        params['cur_patience'] +=1
-                else:
-                    if state['cg_stop_cond'] != 0: # only if it actually evaluated something
-                        params['cur_patience'] = 0
-            
-            params['losses'].append(state['fun'])
-                
-            if params['cur_patience'] >= params['patience']:
-                print('Optimization exited abnormally: target tolerance not reached.')
-                return True
-                
-            # terminate if loss is below tolerance
-            if state['fun'] < params['target']:
-                print(f"Optimization exited normally: target tolerance {params['target']} reached.")
-                return True
-            else: 
-                return False
-        return termination_callback
-    
 def convert_to_dict(opt_results: optimize.OptimizeResult):
     rez = {}
     for key, val in opt_results.items():
@@ -681,19 +704,22 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
                          last_cycle_only=True)
     tune_results = solver.run_sim()
     
-    mPAP_loss, qRPA_loss, maxPAP_loss, waveform_loss, (mPAP_sim, qRPA_sim, maxPAP_sim, waveform_sim) = loss_function(tune_results, tune_params, main_lpn.inflow, intermediate = True)
+    mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss, (mPAP_sim, qRPA_sim, maxPAP_sim, minPAP_sim) = loss_function(tune_results, tune_params, main_lpn.inflow, intermediate = True)
     
-    results_dict['mPAP'] = [d2m(mPAP_sim), [d2m(tune_params.mPAP_meas[0]), d2m(tune_params.mPAP_meas[1])]]
+    results_dict['mPAP'] = [d2m(mPAP_sim), d2m(2/3 * minPAP_sim + 1/3 * maxPAP_sim)]
     
     results_dict['max_pressure'] = [d2m(maxPAP_sim), [d2m(tune_params.maxPAP_meas[0]), d2m(tune_params.maxPAP_meas[1])]]
+    results_dict['min_pressure'] = [d2m(minPAP_sim), [d2m(tune_params.minPAP_meas[0]), d2m(tune_params.minPAP_meas[1])]]
     
     results_dict['rpa_flow_split'] = [qRPA_sim/main_lpn.inflow.mean_inflow, tune_params.rpa_flow_split]
     
     results_dict['qRPA'] = [qRPA_sim, tune_params.rpa_flow_split * main_lpn.inflow.mean_inflow]
     
+    
+    
     results_dict['losses'] = {'mPAP_loss': mPAP_loss,
                               'qRPA_loss': qRPA_loss,
-                              'waveform_loss':waveform_loss,
+                              'minPAP_loss':minPAP_loss,
                               'maxPAP_loss': maxPAP_loss}
     
     write_json(save_dir / 'values.json', results_dict, sort_keys = False)
@@ -831,9 +857,6 @@ def main(TM: TuningManager, args):
 
 
 if __name__ == '__main__':
-
-    # disable tqdm
-    tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
     tool = ToolParser(desc = 'Tunes a model if necessary')
     

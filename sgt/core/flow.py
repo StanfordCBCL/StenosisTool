@@ -63,7 +63,7 @@ class Inflow():
         y = f(x)
         self.inflow = np.array(list(zip(x, y)))
           
-    def plot_flow(self, output_file):
+    def plot_flow(self, output_file, save = True):
         ''' plot the flow
         '''
         
@@ -78,4 +78,7 @@ class Inflow():
         ax.plot(self.t, self.Q)
         ax.set_xlabel('time (s)')
         ax.set_ylabel('flow (ml/s)')
-        fig.savefig(output_file)
+        if save:
+            fig.savefig(output_file)
+        else:
+            fig.show()

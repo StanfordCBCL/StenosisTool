@@ -222,12 +222,58 @@ class LPN():
                 bc_map[bc['bc_name']] = bc_list[counter]
                 counter += 1
         self.bc_map = bc_map
+        
+    def occlude_vessel(self, vessel_id, occlusion):
+        ''' creates an occlusion in a vessel
+        '''
+        vess = self.get_vessel(vessel_id)
+        
+        remaining_area_pct = (1 - occlusion)
+        
+        # modify elements
+        vess['zero_d_element_values']['R_poiseuille'] /= (remaining_area_pct**2)
+        vess['zero_d_element_values']['C'] *= remaining_area_pct
+        vess['zero_d_element_values']['L'] /= remaining_area_pct
+        vess['zero_d_element_values']['stenosis_coefficient'] /= (remaining_area_pct**2)
+        
+        return vess
+        
+    
+    def repair_vessel(self, vessel_id, area_increase):
+        ''' repairs a vessel by an area_increase amount.
+        '''
+        vess = self.get_vessel(vessel_id)
+        
+        area_increase += 1
+        
+        # modify elements
+        vess['zero_d_element_values']['R_poiseuille'] /= (area_increase**2)
+        vess['zero_d_element_values']['C'] *= area_increase
+        vess['zero_d_element_values']['L'] /= area_increase
+        vess['zero_d_element_values']['stenosis_coefficient'] /= (area_increase**2)
+        
+        return vess
+
+    def get_vessel_radius(self, vessel_id):
+        ''' reverse engineer radius from resistance'''
+        vess = self.get_vessel(vessel_id)
+        
+        resistance = vess['zero_d_element_values']['R_poiseuille'] 
+        
+        radius = (8 * self.simulation_params['viscosity'] * vess['vessel_length'] / (np.pi + resistance)) ** (1/4)
+        return radius
+        
+        
+        
     
     def num_vessel_segments(self):
         return len(self.vessel)
     
     def num_junctions(self):
         return len(self.junctions)
+    
+    
+    
     
     # Tree Operations
 
@@ -416,3 +462,6 @@ class LPN():
     def bc_map(self, val):
         self._bc_map = val
         self.lpn_data[self.BC_MAP] = val
+        
+        
+    

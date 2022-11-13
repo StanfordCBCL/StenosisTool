@@ -1,7 +1,7 @@
 # File: sv_lpn_segmentation.py
 # File Created: Monday, 31st October 2022 7:20:33 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 1st November 2022 4:08:28 pm
+# Last Modified: Friday, 4th November 2022 7:32:21 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Construct a basic LPN in the workspace.
@@ -127,7 +127,7 @@ def segment_lpn(M: LPNConstructionManager, model: ModelParams, mesh: MeshParams,
     if M.tune:
         rcrt_path = Path(M.lpn_files.name) / 'rcrt.dat'
         # add to config
-        M.config_add(['paths','rcrt_file'], str(rcrt_path))
+        M.config_add(['workspace','rcrt_file'], str(rcrt_path))
         M.write_config()
         
         # write an empty if BC does not exist

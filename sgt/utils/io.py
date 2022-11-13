@@ -1,7 +1,7 @@
 # File: io.py
 # File Created: Monday, 31st October 2022 6:06:44 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 1st November 2022 11:58:15 pm
+# Last Modified: Thursday, 3rd November 2022 9:29:03 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: IO utilities
@@ -53,7 +53,8 @@ def parse_mdl(mdl_file: Path, reverse = False):
     '''
     
     # since .mdl has a line like "<format version="1.0" />" which fails for the standard XMLparser, rather than creating a custom parser, just remove that line after reading the file in and parse as a list of strings
-    with mdl_file.open('r') as mdl:
+    mdl_file = str(mdl_file)
+    with open(mdl_file, 'r') as mdl:
         lines = mdl.readlines()
         if 'format' in lines[1]:
             lines[1] = ''
