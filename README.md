@@ -17,15 +17,17 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
     - [] Write code to convert 0D to 1D centerlines for visualization
     - [x] Write pre-code for centerline gen
     - [x] Write pre-code for CapInfo????
-    - [] Code to compare 3D0D /  extract 3D to centerlines / 
-    - [] Change BC tuning framework
+    - [] Code to compare 3D&0D /  extract 3D to centerlines / 
+    - [x] Change BC tuning framework
 
 - [] Construct Pipeline for Unhealthy Model
-    - [] Get Flow File
+    - [x] Get Flow File
+    - [] Remesh the file so the centerlines work better.
     - Errors
         - [] Code Parasolid -> Polydata does not work in Python. Use GUI
         - [] Code Centerline_Gen does not work in Python. Use GUI.
 - [] Write Paper
+- [] Clean up extra code.
 - [] Create Interface
 
 ## Installation
