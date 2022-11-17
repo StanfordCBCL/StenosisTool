@@ -90,9 +90,11 @@ class SolverResults():
         df['time'] -= df['time'].min()
         return SolverResults(df)
     
-    def validate_results(self, lpn: LPN, outfile ):
+    def validate_results(self, lpn: LPN, outfile, targets = None ):
         ''' plots the inlet pressure for last 3 cycles
         Assumes the entire solution was saved and not only last cycle
+        
+        targets if we want to include targets.
         '''
         # retrieve time of cardiac cycle and number of points per cycle
         inflow_tc = lpn.inflow.tc
@@ -140,6 +142,21 @@ class SolverResults():
                 label = 'Min PAP: ' + str(round(stable_inlet_pressure.min(), 2)))
         ax.hlines(y = mpap_sim, xmin = time_ltc[0], xmax = time_ltc[-1], linewidth=1, color='b', label = 'Avg PAP: ' + str(round(mpap_sim, 2)) )
         
+        # plot targets
+        if targets:
+            factor1 = 0
+            if targets['maxPAP'][0] == targets['maxPAP'][1]:
+                factor1 = 0.5
+            ax.fill_between(x = time_ltc, y1 = targets['maxPAP'][0]-factor1, y2 = targets['maxPAP'][1]+factor1, color = 'r', alpha = .3, label = f"Target Max PAP: ({targets['maxPAP'][0]}, {targets['maxPAP'][1]})")
+            factor2 = 0
+            if targets['minPAP'][0] == targets['minPAP'][1]:
+                factor2 = 0.5
+            ax.fill_between(x = time_ltc, y1 = targets['minPAP'][0]-factor2, y2 = targets['minPAP'][1]+factor2, color = 'g', alpha = .3, label = f"Target Min PAP: ({targets['minPAP'][0]}, {targets['minPAP'][1]})")
+            factor3 = 0
+            if targets['mPAP'][0] == targets['mPAP'][1]:
+                factor3 = 0.5
+            ax.fill_between(x = time_ltc, y1 = targets['mPAP'][0]-factor3, y2 = targets['mPAP'][1]+factor3, color = 'b', alpha = .3, label = f"Target Avg PAP: ({targets['mPAP'][0]}, {targets['mPAP'][1]})")
+
         ax.tick_params(axis="x", labelsize=16) 
         ax.tick_params(axis = 'y', labelsize=16)
         ax.legend(fontsize = 24, loc = 'upper left', framealpha = .5)

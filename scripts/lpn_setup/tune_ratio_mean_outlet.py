@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 13th November 2022 4:55:27 pm
+# Last Modified: Wednesday, 16th November 2022 8:18:24 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions if necessary.
@@ -288,7 +288,7 @@ def compute_lpa_rpa_resistances2(main_lpn: LPN, results: SolverResults = None):
     else:
         lpa = mpa.children[1]
         rpa = mpa.children[0]
-    
+
     # compute LPA approx
     mPAP_lpa = results.get_avg_val(lpa.vessel_info[0]['vessel_name'], 'pressure_in')
     Q_lpa = results.get_avg_val(lpa.vessel_info[0]['vessel_name'], 'flow_in')
@@ -298,6 +298,7 @@ def compute_lpa_rpa_resistances2(main_lpn: LPN, results: SolverResults = None):
         if "boundary_conditions" in node.vessel_info[-1]:
             tmp_mPAP_out = results.get_avg_val(node.vessel_info[-1]['vessel_name'], 'pressure_out')
             total_dP.append(mPAP_lpa - tmp_mPAP_out)
+    print("LPA mean Inlet Pressure:", d2m(mPAP_lpa), "; LPA Average Pressure Drop:", d2m(np.array(total_dP).mean()))
     lpa_res = np.array(total_dP).mean() / Q_lpa
     
     # compute RPA approx
@@ -309,6 +310,7 @@ def compute_lpa_rpa_resistances2(main_lpn: LPN, results: SolverResults = None):
         if "boundary_conditions" in node.vessel_info[-1]:
             tmp_mPAP_out = results.get_avg_val(node.vessel_info[-1]['vessel_name'], 'pressure_out')
             total_dP.append(mPAP_rpa - tmp_mPAP_out)
+    print("RPA mean Inlet Pressure:", d2m(mPAP_rpa), "; RPA Average Pressure Drop:", d2m(np.array(total_dP).mean()))
     rpa_res = np.array(total_dP).mean() / Q_rpa
     
     return lpa_res, rpa_res
@@ -555,7 +557,7 @@ def total_area(areas):
 
 def update_tuning_lpn(tuning_lpn: LPN, main_lpn: LPN, main_results: SolverResults):
     ''' updates the tuning param with new resistances include stenosis coefficients'''
-    approximate_pdrop(main_lpn, main_results)
+    #approximate_pdrop(main_lpn, main_results)
 
     lpa_res, rpa_res = compute_lpa_rpa_resistances2(main_lpn, main_results)
     
@@ -589,7 +591,7 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
     diff = 1
     prev = None
     cur = None
-    while diff >= diff_tol and epoch < max_epochs:
+    while epoch < max_epochs:
         # run optimizer
         params.iter = 0 
         print(f"{'Iteration':^15}|{'mPAP Loss':^15}|{'maxPAP Loss':^15}|{'minPAP Loss':^15}|{'qRPA Loss':^15}|{'Total Loss':^15}")
@@ -617,7 +619,9 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
             print("Prev:", prev)
             diff = np.nan_to_num(abs(prev - cur),nan =0 ).sum()
             print("Difference from previous Epoch: ", diff)
-        epoch += 1
+            if diff <= diff_tol:
+                break
+            
 
         # store intermediate x values if requested
         if store_intermediate:
@@ -633,7 +637,8 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
                              main_lpn,
                              tuning_lpn,
                              x_new,
-                             epoch_dir
+                             epoch_dir,
+                             TM.tune_params
                              )
                     
         
@@ -647,6 +652,7 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
             
         # update Tuning LPN accordingly
         update_tuning_lpn(tuning_lpn, main_lpn, main_results)
+        epoch += 1
    
         
     
@@ -660,20 +666,24 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
     x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
     # split rcrs
     bc = split_rcrs(TM, x_new, params.cap_wedge_pressure)
-    # write rcrt
-    bc.write_rcrt_file(str(TM.rcrt.parent))
+    add_rcrs(main_lpn, bc)
+    
+    # run a simulation on the main lpn
+    main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=False, debug = True)
+    main_results = main_solver.run_sim()
+    main_results.validate_results(main_lpn, outfile=str(TM.tuning_dir / "full_inlet_waveform.png"), targets = TM.tune_params)
     
     # validate results
     validate_results(params,
                         main_lpn,
                         tuning_lpn,
                         x_new,
-                        TM.tuning_dir
-                        )
+                        TM.tuning_dir,
+                        TM.tune_params)
     
     print("Optimization Complete.")
     
-    return 
+    return bc
     
     
     
@@ -716,7 +726,7 @@ def convert_to_dict(opt_results: optimize.OptimizeResult):
 # Results #
 ###########
 
-def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x, save_dir: Path):
+def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x, save_dir: Path, targets):
     
     
     # save some computations as a json
@@ -773,6 +783,7 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
     
     ax[0].plot(mpa['time'].to_numpy()[ltc:], d2m(mpa['pressure_in'].to_numpy())[ltc:])
     ax[0].set_title('Inlet Pressure', fontdict={'fontsize': 24})
+    ax[0].hlines(y = d2m(mPAP_sim), xmin = mpa['time'].to_numpy()[ltc], xmax = mpa['time'].to_numpy()[-1], linewidth=1, color='b')
     ax[1].plot(lpa['time'].to_numpy()[ltc:], d2m(lpa['pressure_out'].to_numpy())[ltc:])
     ax[1].set_title('LPA Outlet Pressure', fontdict={'fontsize': 24})
     ax[2].plot(rpa['time'].to_numpy()[ltc:], d2m(rpa['pressure_out'].to_numpy())[ltc:])
@@ -796,8 +807,24 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
         ax[i].tick_params(axis = 'y', labelsize=16)
         ax[i].set_xlabel('time (s)', fontdict={'fontsize': 20})
         ax[i].set_ylabel('flow (ml/s)', fontdict={'fontsize': 20})
+    
+    
+    factor1 = 0
+    if targets['maxPAP'][0] == targets['maxPAP'][1]:
+        factor1 = 0.5
+    ax[0].fill_between(x = mpa['time'].to_numpy()[ltc:], y1 = targets['maxPAP'][0]-factor1, y2 = targets['maxPAP'][1]+factor1, color = 'r', alpha = .3, label = f"Target Max PAP: ({targets['maxPAP'][0]}, {targets['maxPAP'][1]})")
+    factor2 = 0
+    if targets['minPAP'][0] == targets['minPAP'][1]:
+        factor2 = 0.5
+    ax[0].fill_between(x = mpa['time'].to_numpy()[ltc:], y1 = targets['minPAP'][0]-factor2, y2 = targets['minPAP'][1]+factor2, color = 'g', alpha = .3, label = f"Target Min PAP: ({targets['minPAP'][0]}, {targets['minPAP'][1]})")
+    factor3 = 0
+    if targets['mPAP'][0] == targets['mPAP'][1]:
+        factor3 = 0.5
+    ax[0].fill_between(x = mpa['time'].to_numpy()[ltc:], y1 = targets['mPAP'][0]-factor3, y2 = targets['mPAP'][1]+factor3, color = 'b', alpha = .3, label = f"Target Avg PAP: ({targets['mPAP'][0]}, {targets['mPAP'][1]})")
+    
+    ax[0].legend(fontsize = 16, loc = 'upper left', framealpha = .5)
 
-    fig.savefig(str(save_dir / 'waveforms.png'))
+    fig.savefig(str(save_dir / 'tuning_waveforms.png'))
 
 ####################
 # Sensitivity Test #
@@ -868,14 +895,16 @@ def main(TM: TuningManager, args):
     
     #? Implement Config here if necessary
     tuning_params = TuneParams()
-    add_config(tuning_params, args)
+    #add_config(tuning_params, args)
+    add_config(tuning_params, TM)
     
     # set up tuning lpn
     tuning_lpn = construct_tuning_lpn(tuning_params, main_lpn)
     
     # run optimizer
-    tune(TM, main_lpn, tuning_lpn, tuning_params, args.store_intermediate)
-
+    bc = tune(TM, main_lpn, tuning_lpn, tuning_params, args.store_intermediate)
+    # write the BC
+    bc.write_rcrt_file(str(TM.rcrt.parent))
     # write lpn dir
     main_lpn.write_lpn_file(TM.lpn)
     
@@ -883,19 +912,25 @@ def main(TM: TuningManager, args):
     TM.config_add(['options', 'tune'], False)
     TM.write_config()
     
-def add_config(params: TuneParams, args):
+# def add_config(params: TuneParams, args):
     
-    if args.PCWP:
-        params.cap_wedge_pressure = m2d(args.PCWP)
-    if args.minPAP:
-        params.minPAP_meas = [m2d(args.minPAP), m2d(args.minPAP)]
-    if args.maxPAP:
-        params.maxPAP_meas = [m2d(args.maxPAP), m2d(args.maxPAP)]
-    if args.rpa_split:
-        params.rpa_flow_split = args.rpa_split
-    if args.mPAP:
-        params.mPAP_meas = [m2d(args.mPAP), m2d(args.mPAP)]
-        
+#     if args.PCWP:
+#         params.cap_wedge_pressure = m2d(args.PCWP)
+#     if args.minPAP:
+#         params.minPAP_meas = [m2d(args.minPAP), m2d(args.minPAP)]
+#     if args.maxPAP:
+#         params.maxPAP_meas = [m2d(args.maxPAP), m2d(args.maxPAP)]
+#     if args.rpa_split:
+#         params.rpa_flow_split = args.rpa_split
+#     if args.mPAP:
+#         params.mPAP_meas = [m2d(args.mPAP), m2d(args.mPAP)]
+def add_config(params: TuneParams, TM: TuningManager):
+    
+    params.cap_wedge_pressure = m2d(TM.tune_params['PCWP'])
+    params.minPAP_meas = [m2d(TM.tune_params["minPAP"][0]), m2d(TM.tune_params["minPAP"][1])]
+    params.maxPAP_meas = [m2d(TM.tune_params["maxPAP"][0]), m2d(TM.tune_params["maxPAP"][1])]
+    params.rpa_flow_split = TM.tune_params["rpa_split"]
+    params.mPAP_meas = [m2d(TM.tune_params["mPAP"][0]), m2d(TM.tune_params["mPAP"][1])] 
 
 
 
@@ -920,7 +955,7 @@ if __name__ == '__main__':
     
     TM = TuningManager(args.config)
     
-    if args.tune:
+    if args.sensitivity_test:
         raise NotImplementedError("Sensitivity Tests not implemented. Please remove the -s flag.")
     
     if not TM.tune:

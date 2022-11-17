@@ -1,10 +1,10 @@
 # File: artificial_stenosis_driver.py
 # File Created: Wednesday, 2nd November 2022 10:30:31 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 2nd November 2022 10:14:34 pm
+# Last Modified: Sunday, 13th November 2022 9:29:49 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Select vessels of a model to generate appropriate amount of stenosis.
+# Description: Select vessels of a model to generate appropriate amount of stenosis. Generates a stenosis parametrization file containing vessel_id, final r
 
 
 

@@ -1,7 +1,7 @@
 # File: manager.py
 # File Created: Monday, 31st October 2022 6:02:27 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 4th November 2022 11:31:09 am
+# Last Modified: Wednesday, 16th November 2022 7:57:55 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Manages files for 1 model in pipeline
@@ -41,6 +41,13 @@ class Manager():
         self.diseased = files['metadata']['diseased']
         self.inlet = files['metadata']['inlet']
         self.units = files['metadata']['units'] if 'units' in files['metadata'] else 'cm'
+        
+        # tune params
+        self.tune_params = files['tune_params'] if self.tune else None
+        if 'tune_params' not in files and self.tune:
+            raise ValueError("tune_params not found despite tune = True")
+        
+        
         
         
     
@@ -141,6 +148,10 @@ class SVManager(Manager):
             if key not in cfg['metadata']:
                 cfg['metadata'][key] = val
         
+        # if tune
+        if self.tune:
+            cfg['tune_params'] = self.tune_params
+        
         config = outdir / 'config.json'
         io.write_json(config, cfg)
         
@@ -189,7 +200,7 @@ class StenosisParametrizationManager(LPNConstructionManager):
             self.SP_dir = io.check_dir(self.lpn_files / 'real_stenosis', mkdir = True)
             
             # copy of stenosis lpn
-            self.SP_lpn = self.SP_dir / self.lpn.name
+            self.SP_lpn = self.SP_dir / (self.lpn.stem.split('.')[0] + '.fix' + ''.join(self.lpn.suffixes))
             
         else: # healthy
             
