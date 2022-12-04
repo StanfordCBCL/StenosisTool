@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th November 2022 8:18:24 pm
+# Last Modified: Saturday, 19th November 2022 7:22:36 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions if necessary.
@@ -285,7 +285,7 @@ def compute_lpa_rpa_resistances2(main_lpn: LPN, results: SolverResults = None):
     if mpa.children[0].side == 'lpa':
         lpa = mpa.children[0]
         rpa = mpa.children[1]
-    else:
+    elif mpa.children[0].side == 'rpa':
         lpa = mpa.children[1]
         rpa = mpa.children[0]
 

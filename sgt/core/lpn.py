@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 import numpy as np
 from typing import Generator, Union
 from pathlib import Path
+from copy import deepcopy
 
 from sgt.utils.io import write_json
 from .flow import Inflow
@@ -110,6 +111,10 @@ class LPN():
         lpn.solver_data = solver_dict
         lpn._update_lpn_data()
         return lpn
+    
+    def deep_copy(self):
+        ''' returns a deep copy of the LPN'''
+        return LPN.from_dict(deepcopy(self.solver_data))
     
     # Solver IO
     def setup_empty_lpn(self):
@@ -285,6 +290,13 @@ class LPN():
         
         # sides of PA
         head_node.side = 'mpa'
+        while (len(head_node.children) == 1):
+            head_node = head_node.children[0]
+            head_node.side = 'mpa'
+        
+        
+        assert len(head_node.children) == 2, "MPA can only have 2 children, LPA and RPA"
+        
         side1 = head_node.children[0]
         side2 = head_node.children[1]
         

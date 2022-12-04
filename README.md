@@ -16,7 +16,8 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
         - [x] Generate config for workspace
         - [x] Setup Workspace
         - [x] Setup LPN 
-        - [x] LPN Tuning Setup
+        - [x] LPN Tuning Setup 
+            - [x] !BUG: The LPA and RPA swap??? -> solved by sorting the outlet caps
         - [x] Artificial Stenosis Gen
         - [] Stenosis Detection
         - [] Training Data Generation

@@ -1,7 +1,7 @@
 # File: manager.py
 # File Created: Monday, 31st October 2022 6:02:27 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th November 2022 7:57:55 pm
+# Last Modified: Saturday, 3rd December 2022 1:14:51 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Manages files for 1 model in pipeline
@@ -199,7 +199,7 @@ class StenosisParametrizationManager(LPNConstructionManager):
             # real stenosis
             self.SP_dir = io.check_dir(self.lpn_files / 'real_stenosis', mkdir = True)
             
-            # copy of stenosis lpn
+            # copy of fixed stenosis lpn
             self.SP_lpn = self.SP_dir / (self.lpn.stem.split('.')[0] + '.fix' + ''.join(self.lpn.suffixes))
             
         else: # healthy
@@ -217,4 +217,15 @@ class StenosisParametrizationManager(LPNConstructionManager):
         self.stenosis_parametrization = self.SP_dir / 'stenosis_parametrization.dat'
         
 
+class DataGenerationManager(StenosisParametrizationManager):
+    
+    def __init__(self, config):
+        super().__init__(config)
         
+        self.data_dir = io.check_dir(self.SP_dir / 'data', mkdir = True)
+        
+        # select the appropriate lpn to use as the data generation base.
+        if self.diseased:
+            self.data_gen_lpn = self.lpn
+        else:
+            self.data_gen_lpn = self.SP_lpn

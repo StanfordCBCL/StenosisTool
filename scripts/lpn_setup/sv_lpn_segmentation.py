@@ -1,7 +1,7 @@
 # File: sv_lpn_segmentation.py
 # File Created: Monday, 31st October 2022 7:20:33 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th November 2022 7:22:40 pm
+# Last Modified: Wednesday, 16th November 2022 9:06:58 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Construct a basic LPN in the workspace.
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     # model
     face_ids = io.parse_mdl(M.mdl)
     del face_ids[M.inlet]
-    outlets = list(face_ids.keys())
+    outlets = sorted(list(face_ids.keys()))
     mod_params = ModelParams(model_name=M.model_name,
                                 inlet=M.inlet,
                                 outlets=outlets,
