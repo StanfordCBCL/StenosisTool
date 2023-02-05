@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd  
-from .solver import Solver0D
+from .lpn import Solver0D
         
 class SolverResults():
     ''' 0D c solver results file

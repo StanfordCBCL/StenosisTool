@@ -22,27 +22,6 @@ def enablePrint():
     '''
     sys.stdout = sys.__stdout__
     
-def create_parser(desc = '') -> argparse.ArgumentParser:
-    ''' creates a parse for scripts '''
-    parser = argparse.ArgumentParser(description=desc)
-    subparsers = parser.add_subparsers(help='Mode for script', dest = 'mode')
-    tool = subparsers.add_parser(name='tool')
-    dev = subparsers.add_parser(name='dev')
-    dev.add_argument('-root', default='.', help='Root of entire project')
-    dev.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
-    return parser, dev, tool
-
-def create_dev_parser(desc = '') -> argparse.ArgumentParser:
-    ''' creates a parse for scripts '''
-    parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-root', default='.', help='Root of entire project')
-    parser.add_argument('-models', dest = 'models', nargs = '*', default = [], help = 'Specific models to run')
-    return parser
-
-def create_tool_parser(desc = '') -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-solver_dirs', default=[], nargs = '*', help='Solver Directories to begin searching from')
-    return parser
 
 def get_solver_name(solver_dir):
     for name in os.listdir(solver_dir):

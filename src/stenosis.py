@@ -2,7 +2,7 @@ from lib2to3.pytree import convert
 from .file_io import read_json
 import numpy as np
 from scipy.stats.qmc import Sobol, scale
-from .solver import Solver0D
+from .lpn import Solver0D
 import copy
 
 # Functions for modifying parameters

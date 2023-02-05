@@ -1,5 +1,5 @@
 
-from .solver import Solver0D
+from .lpn import Solver0D
 from .solver_results import SolverResults
 from .misc import *
 from svzerodsolver.runnercpp import run_from_config

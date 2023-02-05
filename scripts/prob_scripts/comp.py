@@ -1,6 +1,12 @@
+# File: comp.py
+# File Created: Thursday, 22nd September 2022 7:45:48 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Monday, 23rd January 2023 7:46:03 pm
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+#! Description: compares final output.
 
 
-from unittest import result
 from torch import nn
 from torch import optim
 import torch
