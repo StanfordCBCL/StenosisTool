@@ -1,10 +1,10 @@
 # File: sv_zerod_to_geom.py
 # File Created: Wednesday, 27th July 2022 11:28:30 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
+# Last Modified: Monday, 23rd January 2023 7:37:30 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: For a particular directory (and potentially its children directory) if a centerlines exists and a branch_result.npy file exists, then map the 0D results to centerlines.
+#! Description: For a particular directory (and potentially its children directory) if a centerlines exists and a branch_result.npy file exists, then map the 0D results to centerlines.
 
 
 import sys
@@ -97,10 +97,7 @@ def create_resistance_map(centerlines: Centerlines, solver: Solver0D):
     centerlines.add_pointdata(resistances, 'Resistances')
             
     return centerlines
-            
-            
-    
-    
+
             
 
 def main(args):

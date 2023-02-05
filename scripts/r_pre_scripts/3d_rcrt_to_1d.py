@@ -1,7 +1,7 @@
 # File: 3d_rcrt_to_1d.py
 # File Created: Monday, 31st October 2022 8:47:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 31st October 2022 9:18:13 pm
+# Last Modified: Monday, 23rd January 2023 7:41:55 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts a 3D rcrt file to 1D rcrt file (Only if 3D simulation exists before)
@@ -46,10 +46,9 @@ if __name__ == '__main__':
     parser.parser.add_argument("-inp", dest = "inp_file", help = "inp file used in 3D simulation")
 
     args = parser.parse_args()
-    
-    bc = BoundaryConditions()
-    
+        
     # read the 3D rcrt
+    bc = BoundaryConditions()
     bc.read_rcrt_file(args.rcrt_file, three_d=True)
     
     # parse files
@@ -58,8 +57,10 @@ if __name__ == '__main__':
     
     assert rcrt_num == len(bc.bc_list), "Number of RCR Surfaces doesn't match number of BC's listed. "
     
+    # add associated faceID
     for idx, b in enumerate(bc.bc_list):
         b['faceID'] = id_to_name[rcrt_list[idx]]
         
+    # write the file back out
     bc.write_rcrt_file(dirpath = args.out_dir)
     

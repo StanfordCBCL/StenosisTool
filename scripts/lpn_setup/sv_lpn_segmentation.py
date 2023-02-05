@@ -1,10 +1,10 @@
 # File: sv_lpn_segmentation.py
 # File Created: Monday, 31st October 2022 7:20:33 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th November 2022 9:06:58 pm
+# Last Modified: Saturday, 4th February 2023 5:10:55 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Construct a basic LPN in the workspace.
+# Description: Utilize Simvascular to construct a 0D LPN from centerlines using Martin's automated pipeline.
 
 try:
     import sv_rom_simulation
@@ -101,7 +101,7 @@ def segment_lpn(M: LPNConstructionManager, model: ModelParams, mesh: MeshParams,
     params.linear_material_pressure = material.linear_pressure
     params.uniform_material = True
     
-    # change Units
+    # set units
     params.set_units(model.units)
     
     # retrieve appropriate inflow
@@ -153,6 +153,7 @@ def segment_lpn(M: LPNConstructionManager, model: ModelParams, mesh: MeshParams,
     return
 
 
+
 if __name__ == '__main__':
     
     parser = ToolParser(desc = "Construct a basic LPN in the workspace.")
@@ -164,7 +165,7 @@ if __name__ == '__main__':
     # model
     face_ids = io.parse_mdl(M.mdl)
     del face_ids[M.inlet]
-    outlets = sorted(list(face_ids.keys()))
+    outlets = sorted(list(face_ids.keys())) #! sorted due to consistency issues
     mod_params = ModelParams(model_name=M.model_name,
                                 inlet=M.inlet,
                                 outlets=outlets,
@@ -191,6 +192,7 @@ if __name__ == '__main__':
                 material=material_params,
                 sim=sim_params)
     
+   
     # read LPN
     lpn = LPN.from_file(str(M.lpn))
     

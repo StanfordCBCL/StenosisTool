@@ -32,8 +32,9 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
             - [] 3D
                 - [x] Use 0D boundary conditions to Tune each version
                 - [x] Create 3D simulation files for each
-                - [-] Run 3D simulation for each
-                    - [] Make it so Diseased model doesn't explode.
+                - [X] Run 3D simulation for each
+                    - [X] Make it so Diseased model doesn't explode.
+                    - [] Make sure Diseased model is solved correctly
                 - [] Postprocess results to 1D centerlines to compare
                     - [] Centerline map from 0D
                     - [] Centerline map from 3D
@@ -44,7 +45,7 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
                 - [] Demonstrate that fixture/AS is insufficient w/ Base model.
     - [] Visualization
         - [x] Better Tuning plots (Add targets)
-        - [] Generate representation of 0D model and expansion operation (fixture)
+        - [] Generate representation of 0D model vs 3D model and expansion operation (fixing)
         - [] Interface
 
 - [] Write Paper

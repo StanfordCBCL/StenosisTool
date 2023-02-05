@@ -3,9 +3,55 @@ from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
 import numpy as np
 from sgt.utils.io import parse_mdl
+
 #from .file_io import parse_mdl
 
+class LegacyVTK():
+    
+    def __init__(self):
+        self.points = None
+        self.triangle_strips = None
+        
+    def write_vtk(self, filename, desc = "Really cool data"):
+        ''' writes vtk file to filename'''
+        with open(filename, "w") as vtkfile:
+            # header
+            vtkfile.write("# vtk DataFile Version 2.0\n")    
+            vtkfile.write(desc + "\n")
+            vtkfile.write('ASCII\n')
+            
+            # write polydata
+            vtkfile.write("DATASET POLYDATA\n")
+            
+            # write points
+            vtkfile.write("POINTS {} float\n".format(len(self.points)))
+            for point in self.points:
+                vtkfile.write("%e %e %e\n" % (point[0], point[1], point[2]))
+            
+            vtkfile.write("\n")
+            # write cells
+            vtkfile.write("TRIANGLE_STRIPS {} {}\n".format(len(self.triangle_strips), self.triangle_strips.shape[0] * self.triangle_strips.shape[1] + self.triangle_strips.shape[0] ))
+            for cell in self.triangle_strips:
+                vtkfile.write("{} ".format(len(cell)))
+                for val in cell[:-1]:
+                    vtkfile.write("{} ".format(val))
+                vtkfile.write("{}\n".format(cell[-1]))
+                
 
+    
+    def add_polydata(self, points, cells):
+        if self.points is None:
+            self.points = points
+        else:
+            # concat
+            self.points = np.concatenate((self.points, points))
+        
+        if self.triangle_strips is None:
+            self.triangle_strips = cells
+        else:
+            # concat
+            self.triangle_strips = np.concatenate((self.triangle_strips, cells))
+        
 
 class Polydata():
     
@@ -46,6 +92,9 @@ class Polydata():
             reader.SetFileName(input_file)
             reader.Update()
             self.polydata = reader.GetOutput()
+            
+    def create_new(self):
+        self.polydata = vtk.vtkPolyData()
             
 
     def write_polydata(self, output_file, format = 'xml'):
@@ -190,11 +239,11 @@ class Centerlines(Polydata):
         if use_entire_tree:
             inlet_ids = [face_mappings[inlet]]
             del face_mappings[inlet]
-            outlet_ids = list(face_mappings.values())
+            outlet_ids = [face_mappings[key] for key in sorted(list(face_mappings.keys()))] #! there is an unavoidable ordering bug, so this fixes it.
         # only generate centerlines for part of the model.
         else:
             inlet_ids = [face_mappings[inlet]]
-            outlet_ids = [face_mappings[name] for name in outlet_names]
+            outlet_ids = [face_mappings[name] for name in sorted(outlet_names)]
 
         self.polydata = sv.vmtk.centerlines(model_polydata, inlet_ids, outlet_ids, use_face_ids=True)
 

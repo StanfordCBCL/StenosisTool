@@ -1,15 +1,21 @@
 import os
 import sys
 
-def m2d(val):
-    '''convert mmHg to dynes/cm^2
+def m2d(val, units = 'cm'):
+    '''convert mmHg to dynes/cm^2 or mm^2
     '''
-    return val * 1333.22
+    if units == 'cm':
+        return val * 1333.22
+    elif units == 'mm':
+        return val * 13.3322
 
-def d2m(val):
-    '''convert dynes/cm^2 to mmHg
+def d2m(val, units = 'cm'):
+    '''convert dynes/cm^2 or mm^2 to mmHg
     '''
-    return val / 1333.22
+    if units == 'cm':
+        return val / 1333.22
+    elif units == 'mm':
+        return val / 13.3322
 
 def blockPrint():
     ''' block printing 

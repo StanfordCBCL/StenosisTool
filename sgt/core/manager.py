@@ -1,7 +1,7 @@
 # File: manager.py
 # File Created: Monday, 31st October 2022 6:02:27 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 3rd December 2022 1:14:51 pm
+# Last Modified: Monday, 5th December 2022 4:24:32 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Manages files for 1 model in pipeline
@@ -40,7 +40,7 @@ class Manager():
         self.model_name = files['metadata']['model_name']
         self.diseased = files['metadata']['diseased']
         self.inlet = files['metadata']['inlet']
-        self.units = files['metadata']['units'] if 'units' in files['metadata'] else 'cm'
+        self.units = files['metadata']['units'] if ('units' in files['metadata'] and files['metadata']['units'] in {'cm', 'mm'}) else 'cm'
         
         # tune params
         self.tune_params = files['tune_params'] if self.tune else None
@@ -136,7 +136,8 @@ class SVManager(Manager):
             'metadata': {
                 'model_name' : self.model_name,
                 'diseased' : self.diseased,
-                'inlet' : self.inlet
+                'inlet' : self.inlet,
+                'units' : self.units
             },
             'options': {
                 'tune': self.tune

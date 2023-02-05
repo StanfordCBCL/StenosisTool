@@ -1,27 +1,28 @@
 # File: run_lpn.py
 # File Created: Thursday, 3rd November 2022 12:44:51 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 3rd November 2022 1:43:42 pm
+# Last Modified: Thursday, 26th January 2023 3:36:02 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Solves an LPN
 
 from sgt.core.solver import Solver0Dcpp
 from sgt.core.lpn import LPN
-from sgt.utils.parser import Parser
 
 from pathlib import Path
+import argparse
 
 if __name__ == '__main__':
     
-    parser = Parser(desc = 'Solves an LPN')
+    parser = argparse.ArgumentParser(description = 'Solves an LPN')
     
-    parser.parser.add_argument('-i', dest = 'lpn', help = 'path to input lpn')
-    parser.parser.add_argument('-c', dest = 'csv', action = 'store_true', default = False, help = 'save csv file: Default = False')
-    parser.parser.add_argument('-b', dest = 'branch', action = 'store_true', default=False,  help = 'to convert c output to python branch files: Default = False')
-    parser.parser.add_argument('-l', dest = 'last_cycle', action = 'store_true', default = False, help = 'only save the last cycle worth of results: Default = False')
-    parser.parser.add_argument('-m', dest = 'mean_only', action = 'store_true', default = False, help = 'only save the mean of the results: Default = False')
-    parser.parser.add_argument('-v', dest = 'validate', action = 'store_true', default = False, help = 'validate the run with inlet pressure waveform: Default = False')
+    parser.add_argument('-i', dest = 'lpn', help = 'path to input lpn')
+    parser.add_argument('-c', dest = 'csv', action = 'store_true', default = False, help = 'save csv file: Default = False')
+    parser.add_argument('-b', dest = 'branch', action = 'store_true', default=False,  help = 'to convert c output to python branch files: Default = False')
+    parser.add_argument('--l', dest = 'last_cycle', action = 'store_true', default = False, help = 'only save the last cycle worth of results: Default = False')
+    parser.add_argument('--m', dest = 'mean_only', action = 'store_true', default = False, help = 'only save the mean of the results: Default = False')
+    parser.add_argument('-v', dest = 'validate', action = 'store_true', default = False, help = 'validate the run with inlet pressure waveform: Default = False')
+    
     
     
     args = parser.parse_args()

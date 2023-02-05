@@ -16,8 +16,12 @@ class Inflow():
             self.inverse_flow()
         if smooth:
             self.smooth_flow(n_points)
-            
-        # compute values
+        
+        self.update()
+       
+    
+    def update(self):
+         # compute values
         self.t = self.inflow[:, 0]
         self.Q = self.inflow[:, 1]
         self.tc = (self.t[-1] - self.t[0])
@@ -45,6 +49,7 @@ class Inflow():
         '''inverse the pos and negative flow values
         '''
         self.inflow[:, 1] *= -1
+        self.update()
 
     def correct_flow(self):
         ''' Checks that the first and last flow values are equivalent. If not, append a last term that is equivalent to the first term
@@ -52,7 +57,7 @@ class Inflow():
         if self.inflow[0, 1] - self.inflow[-1, 1] != 0:
             time_diff = self.inflow[1, 0] - self.inflow[0,0]
             self.inflow = np.append(self.inflow, np.array([[time_diff + self.inflow[-1, 0], self.inflow[0, 1]]]), axis = 0)
-            
+        self.update()
             
     def smooth_flow(self, n_points):
         ''' smooth flow using a cubic spline 
@@ -62,8 +67,9 @@ class Inflow():
         x = np.linspace(self.inflow[0, 0], self.inflow[-1, 0], n_points)
         y = f(x)
         self.inflow = np.array(list(zip(x, y)))
+        self.update()
           
-    def plot_flow(self, output_file, save = True):
+    def plot_flow(self, output_file = None, save = True):
         ''' plot the flow
         '''
         
@@ -81,4 +87,5 @@ class Inflow():
         if save:
             fig.savefig(output_file)
         else:
-            fig.show()
+            plt.show()
+            plt.close(fig)

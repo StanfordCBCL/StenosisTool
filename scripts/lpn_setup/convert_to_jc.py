@@ -1,10 +1,10 @@
 # File: convert_to_jc.py
 # File Created: Tuesday, 1st November 2022 1:28:49 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 1st November 2022 2:13:17 pm
+# Last Modified: Monday, 23rd January 2023 7:47:39 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Convert the model to a JC model
+# Description: Postprocess a 0D model to add Junction coefficients.
 
 from sgt.core.lpn import LPN
 from sgt.core.manager import LPNConstructionManager

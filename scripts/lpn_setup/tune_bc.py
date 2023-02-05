@@ -1,11 +1,11 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 19th November 2022 7:22:36 pm
+# Last Modified: Wednesday, 1st February 2023 12:53:42 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Tunes Boundary Conditions if necessary.
-#! Sensitivity Tests to be implemented
+# Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
+#! Sensitivity Tests to be implemented & clean up code
 
 
 
@@ -25,7 +25,7 @@ from copy import deepcopy
 from scipy import optimize
 from scipy.interpolate import interp1d
 from tqdm import tqdm
-from functools import partialmethod
+from functools import partial
 import matplotlib.pyplot as plt
 
 
@@ -387,7 +387,7 @@ def opt_function(x, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams):
                          last_cycle_only=True)
     rez = solver.run_sim()
     
-    mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss = loss_function(results = rez,
+    mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss= loss_function(results = rez,
                          tune_params = params,
                          inflow = main_lpn.inflow,
                          )
@@ -396,7 +396,7 @@ def opt_function(x, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams):
     
     
     params.iter += 1
-    print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15.5f}|")
+    print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15.5f}")
     
     return loss
 
@@ -436,14 +436,13 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     maxPAP_loss = piecewise_error(tune_params.maxPAP_meas[0], tune_params.maxPAP_meas[1], maxPAP_sim)
     
     # minPAP
-    minPAP_sim = mpa['pressure_out'].to_numpy().min()
+    minPAP_sim = mpa['pressure_in'].to_numpy().min()
     minPAP_loss = piecewise_error(tune_params.minPAP_meas[0], tune_params.minPAP_meas[1], minPAP_sim)
     
     # mPAP
     mPAP_sim = np.trapz(mpa['pressure_in'].to_numpy(), mpa['time'].to_numpy()) / inflow.tc
     mPAP_loss = piecewise_error(tune_params.mPAP_meas[0], tune_params.mPAP_meas[1], mPAP_sim )
     #mPAP_loss = squared_error(1/3 * maxPAP_sim + 2/3 * minPAP_sim, mPAP_sim)
-    
     
     if intermediate:
         return mPAP_loss , qRPA_loss, maxPAP_loss, minPAP_loss, (mPAP_sim, qRPA_sim, maxPAP_sim, minPAP_sim)
@@ -580,12 +579,24 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
     modify_params(tuning_lpn, x0)
     tuning_lpn.write_lpn_file(TM.tuning_lpn)
     
+    # split rcrs
+    x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+    bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
+    add_rcrs(main_lpn, bcs)
+
+    # run a simulation on the main lpn
+    main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=True, debug = True)
+    main_results = main_solver.run_sim()
+        
+    # update Tuning LPN accordingly
+    update_tuning_lpn(tuning_lpn, main_lpn, main_results)
+    
     
     # bounds
     bounds = optimize.Bounds([0,0,0,0], [ np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
     
     # run it max epoch # of times or till stable.
-    diff_tol = .5
+    diff_tol = .01 # 1 %
     max_epochs = 10
     epoch = 1
     diff = 1
@@ -617,7 +628,7 @@ def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, 
         print("Curr", cur)
         if prev is not None and cur is not None:
             print("Prev:", prev)
-            diff = np.nan_to_num(abs(prev - cur),nan =0 ).sum()
+            diff = np.nan_to_num(abs(prev - cur) / prev, nan =0 ).sum()
             print("Difference from previous Epoch: ", diff)
             if diff <= diff_tol:
                 break
@@ -797,9 +808,9 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
         
     ax[3].plot(mpa['time'].to_numpy()[ltc:], mpa['flow_in'].to_numpy()[ltc:])
     ax[3].set_title('Inlet Flow', fontdict={'fontsize': 24})
-    ax[4].plot(lpa['time'].to_numpy()[ltc:], lpa['flow_in'].to_numpy()[ltc:])
+    ax[4].plot(lpa['time'].to_numpy()[ltc:], lpa['flow_out'].to_numpy()[ltc:])
     ax[4].set_title('LPA Outlet Flow', fontdict={'fontsize': 24})
-    ax[5].plot(rpa['time'].to_numpy()[ltc:], rpa['flow_in'].to_numpy()[ltc:])
+    ax[5].plot(rpa['time'].to_numpy()[ltc:], rpa['flow_out'].to_numpy()[ltc:])
     ax[5].set_title('RPA Outlet Flow', fontdict={'fontsize': 24})
     
     for i in range(3, 6):

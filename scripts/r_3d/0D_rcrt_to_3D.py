@@ -1,10 +1,10 @@
-# File: 3d_rcrt_to_1d.py
+# File: 0D_rcrt_to_3D.py
 # File Created: Monday, 31st October 2022 8:47:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th November 2022 1:07:45 pm
+# Last Modified: Monday, 23rd January 2023 7:45:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Converts a 0D rcrt file (after tuning) to 3D rcrt file
+# Description: Converts a 0D rcrt file to 3D rcrt file.
 
 
 import re
@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.parser.add_argument("-o", dest = "out_dir", help = "output dir to write rcrt.dat")
     parser.parser.add_argument("-svpre", dest = "svpre_file", help = "svpre file for 3D simulation")
     parser.parser.add_argument("-inp", dest = "inp_file", help = "inp file used in 3D simulation")
+    parser.parser.add_argument("-mm", action = 'store_true', default = False, help = 'units of original 3D model')
 
     args = parser.parse_args()
     
@@ -51,6 +52,8 @@ if __name__ == '__main__':
     
     # read the 0D rcrt
     bc.read_rcrt_file(args.rcrt_file, three_d=False)
+    if args.mm:
+        bc.cm_to_mm()
     bc_map = bc.get_bc_map()
     
     # parse files
@@ -58,10 +61,11 @@ if __name__ == '__main__':
     id_to_name = parse_svpre(Path(args.svpre_file))
     
     assert rcrt_num == len(bc.bc_list), "Number of RCR Surfaces doesn't match number of BC's listed. "
-    # REORGANIZE BC_LIST
+    # order bc_list
     bc.bc_list = []
     for id in rcrt_list:
         bc.bc_list.append(bc_map[id_to_name[id]])
-        
+    
+    # write file out
     bc.write_rcrt_file(dirpath = args.out_dir, three_d=True)
     

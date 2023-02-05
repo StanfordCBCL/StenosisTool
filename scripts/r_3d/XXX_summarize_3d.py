@@ -1,10 +1,10 @@
 # File: summarize_3d.py
 # File Created: Sunday, 24th July 2022 1:39:38 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
+# Last Modified: Monday, 23rd January 2023 7:42:06 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Turns a 3D simulation with array timesteps into arrays with actual time. Furthermore, summarizes mean, sys and dia, pressures
+#! Description: Turns a 3D simulation with array timesteps into arrays with actual time. Furthermore, summarizes mean, sys and dia, pressures
 
 
 

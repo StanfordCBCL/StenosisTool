@@ -115,4 +115,18 @@ class BoundaryConditions(object):
             for bc in self.bc_list:
                 bc_map[bc['faceID']] = bc
             return bc_map
+
+        def cm_to_mm(self):
+            '''convert cm RCRs to mm
+            '''
+            for bc in self.bc_list:
+                if bc['type'] == self.BC_TYPE_RCR:
+                    bc['Rp'] /= 10**3
+                    bc['Rd'] /= 10**3
+                    bc['C'] *= 10**3
+                    bc['Pd'] /= 10**2
+                elif bc['type'] == self.BC_TYPE_RESISTANCE:
+                    bc['resistance'] /= 10**3
+                else:
+                    pass
             

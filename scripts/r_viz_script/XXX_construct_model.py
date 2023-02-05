@@ -1,3 +1,11 @@
+# File: construct_model.py
+# File Created: Monday, 17th October 2022 3:15:12 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Monday, 23rd January 2023 7:38:42 pm
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# !Description:! ? I don't think this works
+
 
 
 import numpy as np

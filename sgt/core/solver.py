@@ -2,10 +2,13 @@
 import numpy as np
 import pandas as pd  
 from .lpn import LPN
+from collections import defaultdict
 from svzerodsolver.runnercpp import run_from_config
 import matplotlib.pyplot as plt
 from pathlib import Path
 from sgt.utils.misc import d2m
+from scipy.interpolate import interp1d
+from vtk.util.numpy_support import numpy_to_vtk as n2v
 
 class Solver0Dcpp():
     ''' Interface to 0D C++ Solver
@@ -64,15 +67,17 @@ class Solver0Dcpp():
             # reset back to avoid future issue
             self.lpn.simulation_params['output_last_cycle_only'] = True
 
-    
+        # save csv
         if save_csv:
             print("Saving csv...", end = '\t', flush = True)
             results.save_csv(str(out_dir / 'branch_results.csv'))
             print("Done")
-    
+
+        # save branch results
         if save_branch:
             print("Converting to python branch results...", end = '\t', flush = True)
-            results.convert_to_python(self.lpn, str(out_dir / 'branch_results.npy'))
+            branch_results = results.convert_to_python(self.lpn)
+            np.save(str(out_dir / 'branch_results.npy'), branch_results, allow_pickle = True)
             print("Done")
         return results
 
@@ -89,6 +94,12 @@ class SolverResults():
         df = df[df['time'] >= df['time'].max() - tc].copy()
         df['time'] -= df['time'].min()
         return SolverResults(df)
+    
+    def convert_to_mmHg(self):
+        '''Performs conversion on all pressures to mmHg (will cause errors when applied multiple times)
+        '''
+        self.result_df['pressure_in'] = d2m(self.result_df['pressure_in'])
+        self.result_df['pressure_out'] = d2m(self.result_df['pressure_out'])
     
     def validate_results(self, lpn: LPN, outfile, targets = None ):
         ''' plots the inlet pressure for last 3 cycles
@@ -189,13 +200,13 @@ class SolverResults():
         tmp = self.result_df.groupby('name').max()
         return list(tmp.index)
     
-    def convert_to_python(self, lpn: LPN, out_file):
+    def convert_to_python(self, lpn: LPN):
         ''' Convert the c results into python branch_results (not sorted)
         '''
         branch_results = {}
         
         # write time
-        branch_results['time'] = np.array(list(self.vessel_df('V0')['time']))
+        branch_results['time'] = self.result_df['time'].unique()
         
         branch_results['distance'] = {}
         branch_results['flow'] = {}
@@ -209,7 +220,7 @@ class SolverResults():
             vess_Q = []
             vess_P = []
             vess_D = [0.0]
-            vess_df = self.vessel_df('V' + str(node.vess_id[0]))
+            vess_df = self.vessel_df(node.vessel_info[0]['vessel_name'])
             vess_Q.append(list(vess_df['flow_in']))
             vess_Q.append(list(vess_df['flow_out']))
             vess_P.append(list(vess_df['pressure_in']))
@@ -219,8 +230,8 @@ class SolverResults():
             # if longer than just 1 vessel segment per branch
             if len(node.vess_id) > 1:
                 cur_idx = 1
-                for vess_id in node.vess_id[1:]:
-                    vess_df = self.vessel_df('V' + str(vess_id))
+                for vessel in node.vessel_info[1:]:
+                    vess_df = self.vessel_df(vessel['vessel_name'])
                     vess_Q.append(list(vess_df['flow_out']))
                     vess_P.append(list(vess_df['pressure_out']))
                     vess_D.append(vess_D[-1] + node.vessel_info[cur_idx]['vessel_length'])
@@ -229,12 +240,135 @@ class SolverResults():
             branch_results['distance'][branch_id] = np.array(vess_D)
             branch_results['flow'][branch_id] = np.array(vess_Q)
             branch_results['pressure'][branch_id] = np.array(vess_P)
-        np.save(out_file, branch_results, allow_pickle=True)
-    
+        return branch_results
     
     def save_csv(self, out_file):
         ''' save as a csv
         '''
         self.result_df.to_csv(out_file, sep = ',', header = True, index = False)
         
+    def project_to_centerline(self, lpn, centerlines):
+        """
+        Project rom results onto the centerline
+        Modified from: https://github.com/SimVascular/SimVascular/blob/master/Python/site-packages/sv_rom_extract_results/post.py
+        """
+        
+        # convert c++ to python results
+        results = self.convert_to_python(lpn)
+        
+        # assemble output dict
+        rec_dd = lambda: defaultdict(rec_dd)
+        arrays = rec_dd()
 
+        # extract point arrays from geometries
+        arrays_cent = {}
+        for arr_name in centerlines.get_pointdata_arraynames():
+            arrays_cent[arr_name] = centerlines.get_pointdata_array(arr_name)
+        
+        # add centerline arrays
+        for name, data in arrays_cent.items():
+            arrays[name] = data
+
+        # centerline points
+        points = centerlines.get_points()
+
+        # all branch ids in centerline
+        ids_cent = np.unique(arrays_cent['BranchId']).tolist()
+        ids_cent.remove(-1)
+        
+        # retrieve time
+        times = self.result_df['time'].unique()
+
+        # loop all result fields
+        for f in ['flow', 'pressure']:
+            if f not in results:
+                continue
+
+            # check if ROM branch has same ids as centerline
+            ids_rom = list(results[f].keys())
+            ids_rom.sort()
+            assert ids_cent == ids_rom, 'Centerline and ROM results have different branch ids'
+
+            # initialize output arrays
+            array_f = np.zeros((arrays_cent['Path'].shape[0], len(times)))
+            n_outlet = np.zeros(arrays_cent['Path'].shape[0])
+
+            # loop all branches
+            for br in results[f].keys():
+                # results of this branch
+                res_br = results[f][br]
+
+                # get centerline path
+                path_cent = arrays_cent['Path'][arrays_cent['BranchId'] == br]
+
+                # get node locations from 0D results
+                path_0d_res = results['distance'][br]
+                f_res = res_br
+            
+                assert np.isclose(path_0d_res[0], 0.0), 'ROM branch path does not start at 0'
+                assert np.isclose(path_cent[0], 0.0), 'Centerline branch path does not start at 0'
+                msg = 'ROM results and centerline have different branch path lengths'
+                assert np.isclose(path_0d_res[-1], path_cent[-1]), msg
+
+                # interpolate ROM onto centerline
+                # limit to interval [0,1] to avoid extrapolation error interp1d due to slightly incompatible lenghts
+                f_cent = interp1d(path_0d_res / path_0d_res[-1], f_res.T)(path_cent / path_cent[-1]).T
+
+                # store results of this path
+                array_f[arrays_cent['BranchId'] == br] = f_cent[:, range(len(times))]
+
+                # add upstream part of branch within junction
+                if br == 0:
+                    continue
+
+                # first point of branch
+                ip = np.where(arrays_cent['BranchId'] == br)[0][0]
+
+                # centerline that passes through branch (first occurence)
+                cid = np.where(arrays_cent['CenterlineId'][ip])[0][0]
+
+                # id of upstream junction
+                jc = arrays_cent['BifurcationId'][ip - 1]
+
+                # centerline within junction
+                is_jc = arrays_cent['BifurcationId'] == jc
+                jc_cent = np.where(np.logical_and(is_jc, arrays_cent['CenterlineId'][:, cid]))[0]
+
+                # length of centerline within junction
+                jc_path = np.append(0, np.cumsum(np.linalg.norm(np.diff(points[jc_cent], axis=0), axis=1)))
+                jc_path /= jc_path[-1]
+
+                # results at upstream branch
+                res_br_u = results[f][arrays_cent['BranchId'][jc_cent[0] - 1]]
+
+                # results at beginning and end of centerline within junction
+                f0 = res_br_u[-1][range(len(times))]
+                f1 = res_br[0][range(len(times))]
+               
+                # map 1d results to centerline using paths
+                array_f[jc_cent] += interp1d([0, 1], np.vstack((f0, f1)).T)(jc_path).T
+
+                # count number of outlets of this junction
+                n_outlet[jc_cent] += 1
+
+            # normalize results within junctions by number of junction outlets
+            is_jc = n_outlet > 0
+            array_f[is_jc] = (array_f[is_jc].T / n_outlet[is_jc]).T
+
+            # assemble time steps
+            for i, t in enumerate(times):
+                arrays[f + '_' + str(t)] = array_f[:, i]
+                
+            # compute summary statistics
+            avg = np.trapz( array_f, times, axis = 1) / (times[-1] - times[0])
+            arrays['avg_' + f] = avg
+            sys_tidx = np.where(abs(times - lpn.inflow.max_inflow_t) < 1e-10)[0][0]
+            arrays['sys_' + f + '_' + str(times[sys_tidx])] = array_f[:, sys_tidx]
+            dia_tidx = np.where(abs(times - lpn.inflow.min_inflow_t) < 1e-10)[0][0]
+            arrays['dia_' + f + '_' + str(times[dia_tidx])] = array_f[:, dia_tidx]
+            
+        # add arrays to centerline and write to file
+        for f, a in arrays.items():
+            centerlines.add_pointdata(array=a, array_name=f)
+        
+        return centerlines

@@ -1,10 +1,11 @@
-# File: extract_3D_centerlines.py
+# File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 3rd November 2022 2:12:40 pm
+# Last Modified: Saturday, 4th February 2023 5:32:04 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: A Very long running code (2+ hrs) where given a 3D vtu and its corresponding centerlines, the flows and pressures can be mapped back onto the 0D (Individual script that can be run on compute cluster)
+# Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
+# (Individual script that can be run on compute cluster)
 
 
 
@@ -265,12 +266,15 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
     gid = v2n(reader_1d.GetPointData().GetArray('GlobalNodeId'))
 
     # initialize output
-    for name in res_names + ['area']:
+    for name in res_names + ['area', 'valid']:
         array = vtk.vtkDoubleArray()
+        if name == 'valid':
+            array = vtk.vtkIntArray()
         array.SetName(name)
         array.SetNumberOfValues(reader_1d.GetNumberOfPoints())
         array.Fill(0)
         reader_1d.GetPointData().AddArray(array)
+    
 
     # move points on caps slightly to ensure nice integration
     ids = vtk.vtkIdList()
@@ -301,6 +305,7 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
         for name in res_names:
             reader_1d.GetPointData().GetArray(name).SetValue(i, integral.evaluate(name))
         reader_1d.GetPointData().GetArray('area').SetValue(i, integral.area())
+        reader_1d.GetPointData().GetArray('valid').SetValue(i, 1)
 
     write_geo(fpath_out, reader_1d)
 
@@ -314,11 +319,12 @@ if __name__ == '__main__':
     parser.add_argument('-c', dest = 'centerlines', help = 'centerlines file')
     parser.add_argument('-v', dest = 'volume', help = 'vtu file of results')
     parser.add_argument('-o', dest = 'outfile', help = 'output vtp file')
+    parser.add_argument('--caps', dest = 'caps', default = False, action = 'store_true', help = 'whether to save caps only')
     
     args = parser.parse_args()
     
     try:
-        extract_results(args.centerlines, args.volume, args.outfile)
+        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps)
     except Exception as e:
         print(e)
         

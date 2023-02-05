@@ -1,10 +1,10 @@
 # File: sv_dev_centerline_gen.py
 # File Created: Thursday, 28th July 2022 3:28:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 11th November 2022 12:38:35 pm
+# Last Modified: Monday, 23rd January 2023 7:40:34 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Using Simvascular VMTK, generate centerlines for a particular 3D geometry
+# Description: Using Simvascular VMTK, generate centerlines for a particular 3D geometry. Centerlines are used to generate 0D Model.
 
 
 import sys

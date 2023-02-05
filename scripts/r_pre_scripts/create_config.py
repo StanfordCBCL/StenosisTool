@@ -1,10 +1,10 @@
 # File: create_config.py
 # File Created: Tuesday, 1st November 2022 1:18:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 1st November 2022 1:57:28 pm
+# Last Modified: Monday, 23rd January 2023 7:40:16 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Creates a config.json in the file with the initial format
+# Description: Creates a template config.json in the file with the initial format for the pipeline. Ran before to ensure all files exist in the pipeline.
 
 from sgt.core.manager import Manager
 from sgt.utils.parser import Parser

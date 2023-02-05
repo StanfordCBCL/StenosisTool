@@ -2,7 +2,8 @@
     "metadata": {
         "diseased": true,
         "inlet": "",
-        "model_name": ""
+        "model_name": "",
+        "units": "cm"
     },
     "workspace": {
         "centerlines": ".vtp",
@@ -10,11 +11,13 @@
         "mdl_mapping": ".mdl",
         "rcrt_file": "rcrt.dat",
         "root": "",
-        "surface_model": ".vtp"
-        "capinfo": "",
+        "surface_model": ".vtp",
+        "capinfo": ""
     },
     "options": {
-        "tune": false
+        "tune": true
+    },
+    "tune_params": {
+
     }
-    
 }

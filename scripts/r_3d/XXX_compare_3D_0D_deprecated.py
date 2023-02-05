@@ -1,10 +1,10 @@
 # File: compare_3D_0D.py
 # File Created: Sunday, 31st July 2022 5:32:43 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 18th October 2022 9:14:12 pm
+# Last Modified: Monday, 23rd January 2023 7:45:21 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Computes error measurements for a 0D and a 3D model
+#! Description: Computes error measurements for a 0D and a 3D model
 
 
 from src.misc import create_tool_parser, get_solver_path, get_solver_name, get_basename
