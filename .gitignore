@@ -1,0 +1,6 @@
+# ignore misc files
+__pycache__/
+*.icloud
+*.DS_Store
+*.egg-info
+*.pyc
