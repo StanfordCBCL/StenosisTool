@@ -5,9 +5,11 @@ import numpy as np
 from typing import Generator, Union
 from pathlib import Path
 from copy import deepcopy
+from scipy.interpolate import interp1d
 
 from svinterface.utils.io import write_json
-from svinterface.core.general.bc import Inflow
+from svinterface.core.bc import Inflow
+from svinterface.core.polydata import Centerlines
 from abc import ABC, abstractclassmethod
 
 
@@ -430,12 +432,17 @@ class LPN(OriginalLPN):
             self.vessel_info = vessel_info
             self.parent = None
             self.children = []
-            self.metadata = defaultdict(None)
             
         def last_vessel(self):
             ''' get the last vessel
             '''
             return self.ids[-1], self.vessel_info[-1]
+        
+        def set_metadata(self, key, value):
+            ''' sets metadata for all vessels at once'''
+            for vess in self.vessel_info:
+                vess[key] = value
+            
         
         @abstractclassmethod
         def type(self):
@@ -446,11 +453,8 @@ class LPN(OriginalLPN):
             pass
         
         @abstractclassmethod
-        def __len__():
+        def length():
             pass
-        
-        def __getattr__(self, item):
-            return self.metadata[item]
 
     class BranchNode(Node):
         ''' node for branch tree
@@ -467,7 +471,7 @@ class LPN(OriginalLPN):
             """Branch ID"""
             return int(self.vessel_info[-1]['vessel_name'].split('_')[0][6:])
         
-        def __len__(self):
+        def length(self):
             ''' compute total length of the branch
             '''
             length = 0
@@ -489,13 +493,14 @@ class LPN(OriginalLPN):
             """Junction ID"""
             return int(self.vessel_info[-1]['junction_name'][1:])
     
-        def __len__(self):
+        def length(self):
             ''' all lengths of the junction
             '''
             return self.vessel_info[-1]['lengths']
         
     # flags we use for additional data
-    FLAGS_PRESET = {"rcrt_map": False}
+    FLAGS_PRESET = {"rcrt_map": False,
+                    "sides": False}
     
     
     def __init__(self):
@@ -528,25 +533,26 @@ class LPN(OriginalLPN):
         for idx, face in enumerate(self.bc_data):
             self.bc_data[face]['face_name'] = outlet_faces[idx]
         self.flags['rcrt_map'] = True
-        
-     #!
-    def _det_lpa_rpa(self, head_node):
+            
+    def det_lpa_rpa(self, head_node: Node):
         ''' Determine whether a node is an LPA or an RPA
         '''
-        if self.bc_map is None:
-            return
+        # needs to have rcrt_map
+        if not self.flags['rcrt_map']:
+            print("rcrt_map flag must be set to true: try running add_rcrt_map first.")
+            return 
         
         # sides of PA
-        head_node.side = 'mpa'
-        while (len(head_node.children) == 1):
-            head_node = head_node.children[0]
-            head_node.side = 'mpa'
+        head_node.set_metadata('side', 'MPA')
         
+        junc1 = head_node.children[0]
+        junc1.set_metadata('side', 'MPA')
+        if len(junc1.children) != 2:
+            print("MPA can only have 2 children, LPA and RPA. Please refine your mesh/centerlines.")
+            return
         
-        assert len(head_node.children) == 2, "MPA can only have 2 children, LPA and RPA"
-        
-        side1 = head_node.children[0]
-        side2 = head_node.children[1]
+        side1 = junc1.children[0]
+        side2 = junc1.children[1]
         
         # iterate down until first child is reached
         cur_branch = side1
@@ -554,35 +560,101 @@ class LPN(OriginalLPN):
             cur_branch = cur_branch.children[0]
 
         # Check if rcr contains 'lpa' or 'rpa' & fill appropriately
-        rcr_name = self.bc_map[cur_branch.vessel_info[-1]['boundary_conditions']['outlet']]
+        rcr_name = self.bc_data[cur_branch.vessel_info[-1]['boundary_conditions']['outlet']]['face_name']
         if 'lpa' in rcr_name.lower():
             for node in self.tree_bfs_iterator(side1):
-                node.side = 'lpa'
+                node.set_metadata('side', 'LPA')
             for node in self.tree_bfs_iterator(side2):
-                node.side = 'rpa'
+                node.set_metadata('side', 'RPA')
         elif 'rpa' in rcr_name.lower():
             for node in self.tree_bfs_iterator(side1):
-                node.side = 'rpa'
+                node.set_metadata('side', 'RPA')
             for node in self.tree_bfs_iterator(side2):
-                node.side = 'lpa'
+                node.set_metadata('side', 'LPA')
         else:
-            raise ValueError(rcr_name + ' does not contain lpa or rpa, so a side could not be determined.')
+            print('Outlet names must all contain "lpa" and "rpa", so a side could not be determined.')
+            return 
         
-    #!
-    def flush_metadata(self, head: Node):
-        """Flushes metadata from a tree to the underlying dictionary
+        self.flags['sides'] = True
+        
 
-        Args:
-            head (Node): Head node of a tree
-        """     
-        # for each node
-        for node in self.tree_bfs_iterator(head):
-            # for each point in the metadata
-            for key, value in node.metadata:
-                # insert into each vessel
-                for vessel_info in node.vessel_info:
-                    vessel_info[key] = value
-                    
+    def find_gids(self, cent: Centerlines):
+        """ Finds the global node ID's of where the junctions are on centerlines.
+        #! Centerlines MUST be the same as the ones used to create the LPN, otherwise the ids will be off
+        """
+        tree = self.get_tree()
+        # get array data.
+        br_id = cent.get_pointdata_array(cent.PointDataFields.BRANCHID)
+        c_id = cent.get_pointdata_array(cent.PointDataFields.CENTID)
+        bif_id = cent.get_pointdata_array(cent.PointDataFields.BIFURCATIONID)
+        g_id = cent.get_pointdata_array(cent.PointDataFields.NODEID)
+        paths = cent.get_pointdata_array(cent.PointDataFields.PATH)
+        
+        
+        valid_junctions = np.zeros(g_id.shape[0], dtype=int) - 1
+        valid_vessels = np.zeros(g_id.shape[0], dtype=int) - 1
+        valid_caps = np.zeros(g_id.shape[0],dtype=int) - 1
+        
+        for node in self.tree_bfs_iterator(tree, allow="branch"):
+            
+            # branch node
+            br = node.id
+            br_gid = g_id[br_id == br]
+            br_paths = paths[br_id == br]
+        
+            
+            # initial vessel
+            vess_in = 0
+            vess_out = node.vessel_info[0]['vessel_length']
+            gid_in = br_gid[np.argmin(abs(br_paths - vess_in))]
+            gid_out = br_gid[np.argmin(abs(br_paths - vess_out))]
+            # append gid in and out
+            node.vessel_info[0]['gid'] = [gid_in, gid_out]
+            valid_vessels[gid_in] = node.vessel_info[0]['vessel_id']
+            valid_vessels[gid_out] = node.vessel_info[0]['vessel_id']
+            
+            
+            
+            for vess in node.vessel_info[1:]:
+                # following vessels
+                vess_in = vess_out
+                vess_out += vess['vessel_length']
+                # allow for slight inaccuracies
+                gid_in = br_gid[np.argmin(abs(br_paths - vess_in))]
+                gid_out = br_gid[np.argmin(abs(br_paths - vess_out))]
+                # append gid in and out
+                vess['gid'] = [gid_in, gid_out]
+                valid_vessels[gid_in] = vess['vessel_id']
+                valid_vessels[gid_out] = vess['vessel_id']
+
+            # add corresponding vessel the cap belongs to.
+            last_vess = node.vessel_info[-1]
+            if 'boundary_conditions' in last_vess:
+                if 'outlet' in last_vess['boundary_conditions']:
+                    valid_caps[last_vess['gid'][-1]] = last_vess['vessel_id']
+                
+        # once all branches have been resolved
+        for node in self.tree_bfs_iterator(tree, allow = "junction"):
+            jc = node.id
+            
+            # upstream vessel's out gid
+            gid_in = node.parent.vessel_info[-1]['gid'][-1]
+            # downstream vessel's in gid
+            gid_out = [c.vessel_info[0]['gid'][0] for c in node.children]
+            
+            # downstream vessels
+            node.vessel_info[0]['gid'] = [gid_in, gid_out]
+            
+            print(gid_in, gid_out)
+            # update valid junctions
+            valid_junctions[gid_in] = node.id
+            valid_junctions[gid_out] = node.id
+        
+        cent.add_pointdata(valid_junctions, "Junctions_0D")
+        cent.add_pointdata(valid_caps, "Caps_0D")
+        cent.add_pointdata(valid_vessels, "Vessels_0D")
+        return cent
+    
     #####################
     # Tree Construction #
     #####################
@@ -643,7 +715,7 @@ class LPN(OriginalLPN):
                 for child_node in cur_node.children:
                     child_node.parent = cur_node
                     bfs_queue.append(child_node)
-            
+        
         return head_node
     
     def get_mpa_branch(self) -> BranchNode:
@@ -676,31 +748,4 @@ class LPN(OriginalLPN):
                 bfs_queue.append(child_node)
             if allow == "all" or cur_node.type == allow:
                 yield cur_node
-
-    
-    #################
-    # Mapping to 1D #
-    #################
-    
-    def find_junctions(self):
-        """ Finds the global node ID's of where the junctions are
-        """
-        pass
-        
-    def find_caps(self):
-        """ Finds the global node ID's of where the caps are
-        """
-        pass
-    
-
-    
-    @property
-    def bc_map(self):
-        return self._bc_map
-
-    @bc_map.setter
-    def bc_map(self, val):
-        self._bc_map = val
-        self.lpn_data[self.BC_MAP] = val
-        
         

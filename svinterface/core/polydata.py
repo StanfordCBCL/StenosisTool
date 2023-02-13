@@ -2,7 +2,9 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
 import numpy as np
+from pathlib import Path
 from svinterface.utils.io import parse_mdl
+import subprocess
 
 #from .file_io import parse_mdl
 
@@ -55,7 +57,7 @@ class LegacyVTK():
 class Polydata():
     """Base Polydata Class
     """
-    def __init__(self, polydata):
+    def __init__(self, polydata = None):
         self.polydata = polydata
     
     def convert_from_parasolid(self, parasolid_file):
@@ -93,7 +95,13 @@ class Polydata():
             reader.SetFileName(input_file)
             reader.Update()
             return cls(reader.GetOutput())
-            
+        
+    def read_polydata(self, input_file):
+        reader = vtk.vtkXMLPolyDataReader()
+        reader.SetFileName(input_file)
+        reader.Update()
+        return reader.GetOutput()
+    
     @classmethod
     def create_new(cls):
         """Creates a new polydata
@@ -184,8 +192,8 @@ class Centerlines(Polydata):
         NODEID = "GlobalNodeId"
         NORMAL = "CenterlineSectionNormal"
         
-    def __init__(self):
-        super().__init__()
+    def __init__(self, centerlines = None):
+        super().__init__(centerlines)
         self.centerlines = self.polydata
 
     @classmethod
@@ -209,43 +217,37 @@ class Centerlines(Polydata):
         return True
 
     
-    def generate_centerlines(self, mdl, vtp, inlet, use_entire_tree = True, outlet_names = []):
-        ''' Generates centerlines #!(Requires sv and will likely be moved in the future)
+    def generate_centerlines(self, mdl, vtp, inlet, outfile):
+        ''' Generates centerlines by creating a subprocess and calling sv.
         
         mdl:    (str) file path to the .mdl file
         vtp:    (vtp) file path to the model .vtp file
+        
              
         '''
-    
-        try:
-            import sv
-        except ImportError as e:
-            print(e, ': please run using simvascular --python -- this_script.py')
-            exit(1)
         
-        # Create a modeler.
-        kernel = sv.modeling.Kernel.POLYDATA
-        modeler = sv.modeling.Modeler(kernel)
-
-        # Read model geometry.
-        print('Generating centerlines from:', vtp)
-        model = modeler.read(vtp)
-        
+                
         # parse mdl for mapping
         face_mappings = parse_mdl(mdl)
-        model_polydata = model.get_polydata()
 
-        ## Calculate centelines. 
-        # generate centerlines for entire model
-        if use_entire_tree:
-            inlet_ids = [face_mappings[inlet]]
-            del face_mappings[inlet]
-            outlet_ids = [face_mappings[key] for key in sorted(list(face_mappings.keys()))] #! there is an unavoidable ordering bug, so this fixes it.
-        # only generate centerlines for part of the model.
-        else:
-            inlet_ids = [face_mappings[inlet]]
-            outlet_ids = [face_mappings[name] for name in sorted(outlet_names)]
-
-        self.polydata = sv.vmtk.centerlines(model_polydata, inlet_ids, outlet_ids, use_face_ids=True)
-
-    
+        # get face ids.
+        inlet_ids = [face_mappings[inlet]]
+        del face_mappings[inlet]
+        ordered_outlets = sorted(list(face_mappings.keys()))
+        outlet_ids = [face_mappings[key] for key in ordered_outlets] #! there is an unavoidable ordering bug, so this fixes it.
+        
+        
+        try:
+            x = subprocess.run(["simvascular", "--python", "--",  str(Path(__file__).parent / "svScripts" / "sv_centerline_gen.py"), vtp, str(inlet_ids[0]), '|'.join([str(idx) for idx in outlet_ids]), outfile])
+            if x.returncode!= 0:
+                raise Exception("Centerlines could not be generated.")
+        except FileNotFoundError:
+            print("Simvascular is likely not installed on your machine.")
+        
+        self.polydata = self.read_polydata(outfile)
+        
+        
+        
+        
+        
+        

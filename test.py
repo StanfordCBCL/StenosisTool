@@ -130,8 +130,8 @@ RPA_9
     slow.write_lpn_file("test2.out")
 
     new_slow = LPN.from_file("test2.out")
-    print(slow.get_outlet_bc("RCR_0"))
-    print(slow.get_vessel(0))
+    print(new_slow.get_outlet_bc("RCR_0"))
+    print(new_slow.get_vessel(0))
     mpa = slow.get_tree()
     
     counter = 0
@@ -151,3 +151,17 @@ RPA_9
         print(node)
         counter+=1
     print("Total:", counter)
+        
+        
+    slow.det_lpa_rpa(mpa)
+    slow.write_lpn_file("test3.out")
+    for node in slow.tree_bfs_iterator(mpa):
+        for vess in node.vessel_info:
+            print(vess['side'])
+    
+
+    new_slow = LPN.from_file("test3.out")
+    new_mpa = new_slow.get_tree()
+    print(new_mpa.vessel_info[0]['side'])
+    
+    

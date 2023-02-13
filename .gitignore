@@ -4,3 +4,12 @@ __pycache__/
 *.DS_Store
 *.egg-info
 *.pyc
+
+
+# ignore the solver
+svZeroDPlus
+
+# Other files
+Models
+test*
+0080_0001_centerlines.vtp
