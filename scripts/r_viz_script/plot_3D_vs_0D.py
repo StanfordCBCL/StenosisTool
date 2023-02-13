@@ -59,7 +59,7 @@ def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
                 time.append(float(arr_name.split('_')[1]))
                 pressure.append(c_1d.polydata.GetPointData().GetArray(arr_name).GetValue(point_id))
         
-        results_3d[oidx] = {'time': time,
+        results_1d[oidx] = {'time': time,
                             'pressure': pressure,
                             'flow': flow,
                             'point_id': point_id}
@@ -69,15 +69,34 @@ def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
     # save each outlet
     for i in range(len(outlets)):
         fig, ax = plt.subplots(1,1)
-        ax.plot(results_3d[i]['time'], results_3d[i]['pressure'])
+        ax.plot(results_3d[i]['time'], results_3d[i]['pressure'], label = '3d')
+        ax.plot(results_1d[i]['time'], results_1d[i]['pressure'], label = '1d')
         ax.set_ylabel("Pressure (mmHg)")
         ax.set_xlabel("Time (seconds)")
         fig.suptitle(f"Cap {i}: Point {results_3d[i]['point_id']}")
+        fig.legend()
 
         # save
         fig.savefig(str(save_dir / f"cap_{i}.png"))
-        del fig
-        
+        plt.close(fig)
+    
+    
+    # means
+    fig, ax = plt.subplots(1, 1)
+    oned_means = []
+    threed_means = []
+    for i in range(len(outlets)):
+        oned_means.append(np.trapz(results_1d[i]['pressure'], results_1d[i]['time']) / (results_1d[i]['time'][-1] - results_1d[i]['time'][0]))
+        threed_means.append(np.trapz(results_3d[i]['pressure'], results_3d[i]['time']) / (results_3d[i]['time'][-1] - results_3d[i]['time'][0]))
+    ax.scatter(range(len(outlets)), oned_means, label = '1d')
+    ax.scatter(range(len(outlets)), threed_means, label = '3d')
+    fig.legend()
+    fig.suptitle("Mean of outlets")
+    ax.set_ylabel("Mean Pressure (mmHg)")
+    ax.set_xlabel("Outlets")
+    
+    fig.savefig(str(save_dir / "outlet_means.png"))
+    plt.close(fig)
         
     
     
@@ -87,10 +106,14 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description = "Plots the differences between 3D and 0D")
     parser.add_argument("-3d", dest = 'three_d', help = '3d results in centerline form (caps only is fine).')
+    parser.add_argument("-1d", dest = 'one_d', help = '1d results in centerline form (caps only is fine).')
     args = parser.parse_args()
     
     
     c_3d = Centerlines()
     c_3d.load_polydata(args.three_d)
+    
+    c_1d = Centerlines()
+    c_1d.load_polydata(args.one_d)
    
-    plot_outlets(c_3d, None, Path('results/healthy/0080_0001/3D_vs_1D/'))
+    plot_outlets(c_3d, c_1d, Path('results/healthy/0080_0001_base/3D_vs_1D/'))

@@ -4,6 +4,8 @@ broken_data/**
 !data/data.xlsx
 # ignore the zero D solver
 svZeroDPlus
+svZeroDInterface
+
 # ignore expensive files
 *.npy
 *.vtp
@@ -19,6 +21,7 @@ pptx/pptx_img
 *.icloud
 *.DS_Store
 *.egg-info
+*.pyc
 
 # ignore presonal scripts
 scripts/load_env.sh
@@ -26,5 +29,4 @@ scripts/pipeline.sh
 
 # ignore all scripts
 *.sh
-
-*/__pycache__/*
+**/__pycache__/

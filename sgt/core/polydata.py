@@ -188,7 +188,7 @@ class Centerlines(Polydata):
     @classmethod
     def from_file(cls, centerlines_file):
         c = cls()
-        c.read_polydata(centerlines_file)
+        c.load_polydata(centerlines_file)
         return c
         
     def check_centerlines_data(self):

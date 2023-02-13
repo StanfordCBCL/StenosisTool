@@ -1,7 +1,7 @@
 # File: map_0D_to_centerlines.py
 # File Created: Monday, 23rd January 2023 7:16:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 26th January 2023 5:54:20 pm
+# Last Modified: Sunday, 5th February 2023 3:02:53 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes 0D results csv file and corresponding centerlines used to construct 0D LPN, maps a 0D model's results to centerlines.
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument("-c", dest = 'centerlines', required = True, help = 'Centerlines file')
     parser.add_argument("-r", dest = "results",required = True, help = 'results csv file')
     parser.add_argument("-lpn", required = True, help = "Lumped Param Network")
-    parser.add_argument("-o", required = True, help = 'output file of centerlines')
+    parser.add_argument("-o", required = True, help = 'output directory for centerlines')
     # flags
     parser.add_argument("--mmHg", action = 'store_true', default = False, help ='converts all values to mmHg')
     parser.add_argument("--s", dest = 'summary', action = 'store_true', default = False, help ='only reports summary values only')

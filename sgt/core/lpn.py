@@ -9,6 +9,7 @@ from copy import deepcopy
 from sgt.utils.io import write_json
 from .flow import Inflow
 from .bc import BoundaryConditions
+from .polydata import Centerlines
         
 class LPN():
     ''' LPN File modification '''
@@ -281,6 +282,7 @@ class LPN():
     
     
     # Tree Operations
+    
 
     def _det_lpa_rpa(self, head_node):
         ''' Determine whether a node is an LPA or an RPA
@@ -418,6 +420,54 @@ class LPN():
             vessel_list.append(node)
                 
         return vessel_list      
+    
+    def find_junctions_on_centerlines(self, cent: Centerlines):
+        """ Updates internal junctions with GID's and creates a Junctions array in centerlines. """
+        
+        btree = self.get_branch_tree()
+        br_id = cent.get_pointdata_array(cent.PointDataFields.BRANCHID)
+        c_id = cent.get_pointdata_array(cent.PointDataFields.CENTID)
+        bif_id = cent.get_pointdata_array(cent.PointDataFields.BIFURCATIONID)
+        
+        
+        valid_junctions = np.zeros(bif_id.shape[0])
+        
+        for node in self.tree_bfs_iterator(btree):
+            br = node.branch_id
+            
+            if br == 0:
+                continue
+            # first point of branch
+            ip = np.where(br_id == br)[0][0]
+
+            # centerline that passes through branch (first occurence)
+            cid = np.where(c_id[ip])[0][0]
+
+            # id of upstream junction
+            jc = bif_id[ip - 1]
+
+            # centerline within junction
+            is_jc = bif_id == jc
+            jc_cent = np.where(np.logical_and(is_jc, c_id[:, cid]))[0]
+            
+            # set the first and last points as valid locations
+            valid_junctions[jc_cent[0]] = 1
+            valid_junctions[jc_cent[-1]] = 1
+            
+            # add a value in junctions
+            self.junctions[jc]['gid_in'] = [int(jc_cent[0])]
+            
+            if 'gid_out' in self.junctions[jc]:
+                self.junctions[jc]['gid_out'] += [int(jc_cent[-1])]
+            else:
+                self.junctions[jc]['gid_out'] = [int(jc_cent[-1])]
+                
+
+        cent.add_pointdata(valid_junctions, "Junctions")
+        return cent
+        
+    
+    
     
     # Properties to update the internal dict storage.
     

@@ -333,11 +333,11 @@ class SolverResults():
                 # centerline within junction
                 is_jc = arrays_cent['BifurcationId'] == jc
                 jc_cent = np.where(np.logical_and(is_jc, arrays_cent['CenterlineId'][:, cid]))[0]
-
+                
                 # length of centerline within junction
                 jc_path = np.append(0, np.cumsum(np.linalg.norm(np.diff(points[jc_cent], axis=0), axis=1)))
                 jc_path /= jc_path[-1]
-
+                
                 # results at upstream branch
                 res_br_u = results[f][arrays_cent['BranchId'][jc_cent[0] - 1]]
 

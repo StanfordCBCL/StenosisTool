@@ -1,7 +1,7 @@
 # File: convert_to_jc.py
 # File Created: Tuesday, 1st November 2022 1:28:49 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 23rd January 2023 7:47:39 pm
+# Last Modified: Monday, 6th February 2023 12:12:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Postprocess a 0D model to add Junction coefficients.
@@ -26,13 +26,14 @@ def convert_to_jc(lpn: LPN):
             outlet_areas = list(zip(outlets, s_outlets))
             
             density = lpn.simulation_params['density']
+            # rename
+            junc['junction_type'] = "BloodVesselJunction"
+            # update
+            junc['junction_values'] = {"stenosis_coefficient": []}
             for out, S1 in outlet_areas:
-                out_vess = lpn.get_vessel(out)
-                
-                # update with stenosis coefficient of junction
-                out_vess['junction_coefficient'] = 1.52 * density * ( (S0/S1 - 1) **2) / (2 * S0**2)
-                out_vess['zero_d_element_values']['stenosis_coefficient'] += out_vess['junction_coefficient']
-
+                jc = 1.52 * density * ( (S0/S1 - 1) **2) / (2 * S0**2)
+                junc['junction_values']['stenosis_coefficient'].append(jc)
+           
 
 if __name__ == '__main__':
     parser = ToolParser(desc = "Convert a normal LPN to a JC model version.")
@@ -64,6 +65,5 @@ if __name__ == '__main__':
     lpn_jc.write_lpn_file(M.lpn)
     
     ## Cleanup
-    
 
     print('Done')

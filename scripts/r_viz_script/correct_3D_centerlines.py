@@ -1,7 +1,7 @@
 # File: correct_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 27th January 2023 10:08:50 am
+# Last Modified: Sunday, 5th February 2023 2:30:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
@@ -46,6 +46,8 @@ def modify_centerlines(centerlines: Polydata, inflow: Inflow):
                 array_f.append(func(centerlines.get_pointdata_array(arr_name)))
                 cur_ts = int(x[1])
                 centerlines.add_pointdata(func(centerlines.get_pointdata_array(arr_name)), arr_name)
+                if f == 'velocity':
+                    f = 'flow'
                 centerlines.rename_pointdata_array(arr_name, f"{f}_{inflow.t[cur_ts - ts[0]]:.5f}")
 
         array_f = np.array(array_f)

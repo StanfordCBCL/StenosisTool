@@ -1,7 +1,7 @@
 # File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 4th February 2023 5:32:04 pm
+# Last Modified: Monday, 6th February 2023 3:42:58 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
@@ -242,7 +242,7 @@ def get_integral(inp_3d, origin, normal):
     return Integration(inp)
 
 
-def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
+def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=False):
     """
     Extract 3d results at 1d model nodes (integrate over cross-section)
     Args:
@@ -264,6 +264,9 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
     points = v2n(reader_1d.GetPoints().GetData())
     normals = v2n(reader_1d.GetPointData().GetArray('CenterlineSectionNormal'))
     gid = v2n(reader_1d.GetPointData().GetArray('GlobalNodeId'))
+    
+    if only_juncs:
+        juncs = v2n(reader_1d.GetPointData().GetArray('Junctions'))
 
     # initialize output
     for name in res_names + ['area', 'valid']:
@@ -284,6 +287,7 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
     for i in tqdm(range(reader_1d.GetNumberOfPoints())):
         # check if point is cap
         reader_1d.GetPointCells(i, ids)
+        skip = False
         if ids.GetNumberOfIds() == 1:
             if gid[i] == 0:
                 # inlet
@@ -293,7 +297,11 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False):
                 points[i] -= eps_norm * normals[i]
         else:
             if only_caps:
-                continue
+                skip = True
+            if only_juncs and juncs[i] == 0:
+                skip = True
+        if skip:
+            continue
 
         # create integration object (slice geometry at point/normal)
         try:
@@ -320,11 +328,12 @@ if __name__ == '__main__':
     parser.add_argument('-v', dest = 'volume', help = 'vtu file of results')
     parser.add_argument('-o', dest = 'outfile', help = 'output vtp file')
     parser.add_argument('--caps', dest = 'caps', default = False, action = 'store_true', help = 'whether to save caps only')
+    parser.add_argument('--juncs', dest = 'juncs', default = False, action = 'store_true', help = 'whether to save junctions only')
     
     args = parser.parse_args()
     
     try:
-        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps)
+        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps, only_juncs = args.juncs)
     except Exception as e:
         print(e)
         
