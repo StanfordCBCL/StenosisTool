@@ -119,7 +119,7 @@ class SolverResults():
         last_three_cycles = -3 *  num_pts
         
         # find mpa
-        mpa = lpn.get_mpa()
+        mpa = lpn.get_mpa_branch()
         mpa_name = mpa.vessel_info[0]['vessel_name']
     
         v0 = self.vessel_df(mpa_name)

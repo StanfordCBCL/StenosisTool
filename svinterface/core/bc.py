@@ -33,7 +33,7 @@ class RCR(object):
         sort_for_3d can be used prior to writing to ensure ordering.
         '''
         # check there are BC
-        num_bcs = sum([bc['type'] == self.BC_TYPE_RCR for bc in self.bc_list])
+        num_bcs = sum([bc['type'] == self.BC_TYPE_RCR for _,bc in self.bc_list.items()])
         if num_bcs == 0:
             return
         
@@ -46,7 +46,7 @@ class RCR(object):
         newline = os.linesep 
         with open(bc_path + os.sep + self.RCR_FILE_NAME, "w") as rcr_file:
             rcr_file.write('2' + newline)
-            for bc in self.bc_list:
+            for _, bc in self.bc_list.items():
                 if bc['type'] != self.BC_TYPE_RCR:
                     continue
                 rcr_file.write('2' + newline)

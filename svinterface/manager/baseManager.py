@@ -25,8 +25,8 @@ class Manager():
         with open(out_file, 'w') as yfile:
             yaml.safe_dump(self.yaml, yfile)
     
-    def _update(self):
-        """Private method to update yaml file.
+    def update(self):
+        """Method to update yaml file.
         """
         self.write(self.yaml_file)
     
@@ -38,51 +38,28 @@ class Manager():
     ###############################
     
     def __getitem__(self, key: str):
-        """Retrieve a valid registered filepath
+        return self.yaml[key]
+        
+    def register(self, key: str, value, depth: list = []):
+        """unregisters an item from yaml
 
         Args:
-            key (str): name of registered filepath
-
-        Raises:
-            ValueError: Value is not a string.
+            key (str): key to register
+            depth (list): depth at which to register
 
         Returns:
-            str: requested filepath
+            str: filepath of unregistered key
         """
-        # try to find key
-        if key not in self.yaml:
-            return None
-        # key found
-        rez = self.yaml[key]
-        if not rez:
-            # key empty
-            return None
-        elif type(rez) == str:
-            # valid filepath
-            return str(self.root / rez)
-        else:
-            # somehow reached invalid value
-            raise ValueError(f"{rez} should be a string.")
+        # walk down
+        final = self.yaml
+        for d in depth:
+            if d not in final:
+                final[d] = {}
+            final = final[d]
+        
+        final[key] = value
     
-    def __setitem__(self, key: str, value: Union[Path, str]):
-        """registers an item in yaml.
-
-        Args:
-            key (str): key to set
-            value (Union[Path, str]): file path to insert
-
-        Raises:
-            ValueError: value is not a string or Path object
-        """
-
-        if type(value) in [Path, str]: 
-            # feeding a str -> new filepath
-            self.yaml[key] = str(value)
-        else:
-            raise ValueError("Value must be of Path or str.")
-        self._update()
-    
-    def unregister(self, key: str):
+    def unregister(self, key: str, depth: list = []):
         """unregisters an item from yaml
 
         Args:
@@ -91,9 +68,13 @@ class Manager():
         Returns:
             str: filepath of unregistered key
         """
-        if key in self.yaml:
-            tmp = self.yaml.pop(key)
-            self._update()
+        # walk down
+        final = self.yaml
+        for d in depth:
+            final = final[d]
+        #
+        if key in final:
+            tmp = final.pop(key)
             return tmp
     
     def register_many(self, items: dict):

@@ -1,4 +1,4 @@
-from baseManager import Manager
+from .baseManager import Manager
 
 
 class svManager(Manager):

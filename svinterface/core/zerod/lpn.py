@@ -8,7 +8,7 @@ from copy import deepcopy
 from scipy.interpolate import interp1d
 
 from svinterface.utils.io import write_json
-from svinterface.core.bc import Inflow
+from svinterface.core.bc import Inflow, RCR
 from svinterface.core.polydata import Centerlines
 from abc import ABC, abstractclassmethod
 
@@ -26,7 +26,7 @@ class FastLPN():
     
     
     def __init__(self, lpn_data):
-        self.data = lpn_data
+        self.lpn_data = lpn_data
         
     @classmethod
     def from_file(cls, lpn_file):
@@ -41,7 +41,7 @@ class FastLPN():
         Returns:
             FastLPN: a copy of this LPN
         """
-        return FastLPN(deepcopy(self.data))
+        return FastLPN(deepcopy(self.lpn_data))
 
     def get_junction(self, id):
         """Gets junction according to ordering
@@ -49,7 +49,7 @@ class FastLPN():
         Args:
             id (int): junction id
         """
-        return self.data[self.JUNC][id]
+        return self.lpn_data[self.JUNC][id]
         
     def get_vessel(self, id):
         """Retrieves vessel
@@ -60,7 +60,7 @@ class FastLPN():
         Returns:
             dict: vessel dictionary values to be modified.
         """
-        return self.data[self.VESS][id]
+        return self.lpn_data[self.VESS][id]
     
     def change_vessel(self, vessel_id: int, R: float = None, C: float = None, L: float = None, S: float = None):
         """Changing Vessel
@@ -201,6 +201,14 @@ class OriginalLPN():
         """Initializes a full LPN
         """
         return LPN.from_dict(deepcopy(self.lpn_data))
+    
+    def to_cpp(self):
+        """Converts to cpp by adding junction_values to BloodVesselJunctions
+        """
+        for junc in self.junctions:
+            if junc['junction_type'] == 'BloodVesselJunction':
+                junc['junction_type'] = 'NORMAL_JUNCTION'
+
     
     ##########
     # IO Ops #
@@ -500,7 +508,8 @@ class LPN(OriginalLPN):
         
     # flags we use for additional data
     FLAGS_PRESET = {"rcrt_map": False,
-                    "sides": False}
+                    "sides": False,
+                    "gid": False}
     
     
     def __init__(self):
@@ -518,6 +527,9 @@ class LPN(OriginalLPN):
     def flags(self):
         return self.lpn_data[self.FLAGS]
     
+    def update(self):
+        self.write_lpn_file(self.lpn_file)
+    
     ###################
     # Additional Data #
     ###################
@@ -533,10 +545,30 @@ class LPN(OriginalLPN):
         for idx, face in enumerate(self.bc_data):
             self.bc_data[face]['face_name'] = outlet_faces[idx]
         self.flags['rcrt_map'] = True
+        
+    def update_rcrs(self, rcrs: RCR):
+        """ Updates RCRs from an rcr class"""
+        if not self.flags['rcrt_map']:
+            raise ValueError("RCR_map must be set before rcrs can be used")
+        
+        for bc in self.bc:
+            if 'face_name' in bc:
+                updated_bc = rcrs.bc_list[bc['face_name']]
+                bc['bc_values']['Rp'] = updated_bc['Rp']
+                bc['bc_values']['C'] = updated_bc['C']
+                bc['bc_values']['Rd'] = updated_bc['Rd']
+                bc['bc_values']['Pd'] = updated_bc['Pd']
+                
+        
             
-    def det_lpa_rpa(self, head_node: Node):
+    def det_lpa_rpa(self, head_node: Node, overwrite = True):
         ''' Determine whether a node is an LPA or an RPA
         '''
+        # check if run already
+        if self.flags['sides'] and not overwrite:
+            print("Sides has already been run. To overwrite, use overwrite = True")
+            return
+        
         # needs to have rcrt_map
         if not self.flags['rcrt_map']:
             print("rcrt_map flag must be set to true: try running add_rcrt_map first.")
@@ -578,10 +610,15 @@ class LPN(OriginalLPN):
         self.flags['sides'] = True
         
 
-    def find_gids(self, cent: Centerlines):
+    def find_gids(self, cent: Centerlines, overwrite= True):
         """ Finds the global node ID's of where the junctions are on centerlines.
         #! Centerlines MUST be the same as the ones used to create the LPN, otherwise the ids will be off
         """
+          # check if run already
+        if self.flags['gid'] and not overwrite:
+            print("Gid has already been run. To overwrite, use overwrite = True")
+            return
+        
         tree = self.get_tree()
         # get array data.
         br_id = cent.get_pointdata_array(cent.PointDataFields.BRANCHID)
@@ -606,8 +643,8 @@ class LPN(OriginalLPN):
             # initial vessel
             vess_in = 0
             vess_out = node.vessel_info[0]['vessel_length']
-            gid_in = br_gid[np.argmin(abs(br_paths - vess_in))]
-            gid_out = br_gid[np.argmin(abs(br_paths - vess_out))]
+            gid_in = br_gid[np.argmin(abs(br_paths - vess_in))].item()
+            gid_out = br_gid[np.argmin(abs(br_paths - vess_out))].item()
             # append gid in and out
             node.vessel_info[0]['gid'] = [gid_in, gid_out]
             valid_vessels[gid_in] = node.vessel_info[0]['vessel_id']
@@ -620,8 +657,8 @@ class LPN(OriginalLPN):
                 vess_in = vess_out
                 vess_out += vess['vessel_length']
                 # allow for slight inaccuracies
-                gid_in = br_gid[np.argmin(abs(br_paths - vess_in))]
-                gid_out = br_gid[np.argmin(abs(br_paths - vess_out))]
+                gid_in = br_gid[np.argmin(abs(br_paths - vess_in))].item()
+                gid_out = br_gid[np.argmin(abs(br_paths - vess_out))].item()
                 # append gid in and out
                 vess['gid'] = [gid_in, gid_out]
                 valid_vessels[gid_in] = vess['vessel_id']
@@ -645,7 +682,6 @@ class LPN(OriginalLPN):
             # downstream vessels
             node.vessel_info[0]['gid'] = [gid_in, gid_out]
             
-            print(gid_in, gid_out)
             # update valid junctions
             valid_junctions[gid_in] = node.id
             valid_junctions[gid_out] = node.id
@@ -653,6 +689,8 @@ class LPN(OriginalLPN):
         cent.add_pointdata(valid_junctions, "Junctions_0D")
         cent.add_pointdata(valid_caps, "Caps_0D")
         cent.add_pointdata(valid_vessels, "Vessels_0D")
+        
+        self.flags['gid'] = True
         return cent
     
     #####################

@@ -246,6 +246,7 @@ class Centerlines(Polydata):
         
         self.polydata = self.read_polydata(outfile)
         
+        return ordered_outlets
         
         
         
