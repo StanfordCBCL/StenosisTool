@@ -1,13 +1,13 @@
 # File: run_lpn.py
 # File Created: Thursday, 3rd November 2022 12:44:51 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:09:26 am
+# Last Modified: Thursday, 26th January 2023 3:36:02 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Solves an LPN
 
-from svinterface.core.zerod.solver import Solver0Dcpp
-from svinterface.core.zerod.lpn import LPN
+from sgt.core.solver import Solver0Dcpp
+from sgt.core.lpn import LPN
 
 from pathlib import Path
 import argparse

@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 12:35:39 am
+# Last Modified: Wednesday, 1st February 2023 12:53:42 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
@@ -9,19 +9,23 @@
 
 
 
-from svinterface.core.zerod.solver import SolverResults, Solver0Dcpp
-from svinterface.core.zerod.lpn import FastLPN, LPN
-from svinterface.core.bc import Inflow, RCR
-from svinterface.manager import Manager
-from svinterface.utils.misc import m2d, d2m
-from svinterface.utils.io import write_json
+from sgt.core.solver import SolverResults, Solver0Dcpp
+from sgt.utils.parser import ToolParser
+from sgt.core.manager import TuningManager
+from sgt.core.flow import Inflow
+from sgt.core.bc import BoundaryConditions
+from sgt.core.lpn import LPN
+from sgt.utils.misc import m2d, d2m
+from sgt.utils.io import write_json
 
 from pathlib import Path
 import numpy as np
-import argparse
 import shutil
 from copy import deepcopy
 from scipy import optimize
+from scipy.interpolate import interp1d
+from tqdm import tqdm
+from functools import partial
 import matplotlib.pyplot as plt
 
 
@@ -45,10 +49,6 @@ class TuneParams():
         ## for tracking
         self.iter = 0
         self.full_sim_res = None
-        
-        ## for RPA & LPA resistances
-        self.r_RPA = 0
-        self.r_LPA = 0
 
 ##############
 # Tuning LPN #
@@ -141,7 +141,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
     ]
     
     ## vessels
-    mpa_branch = main_lpn.get_mpa_branch()
+    mpa_branch = main_lpn.get_mpa()
     
     ## mpa_junctions
     r = 0
@@ -172,14 +172,16 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
         }
            ]
     
-
+    
+    
+    lpa_res, rpa_res = compute_lpa_rpa_resistances(main_lpn)
     lpa =  [{
             "vessel_id": 1,
             "vessel_length": 10.0,
             "vessel_name": "branch_lpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille":  params.r_LPA,
+                "R_poiseuille":  lpa_res,
             }
         },
             {
@@ -209,7 +211,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_rpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": params.r_RPA,
+                "R_poiseuille": rpa_res,
             }
         }, 
             { 
@@ -235,7 +237,140 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
         }]
     tuning_lpn.vessel = mpa + lpa + rpa
     
+    # check that the results are within reasonable bounds
+    approximate_pdrop(main_lpn, None)
+
+    
     return tuning_lpn
+
+def approximate_pdrop(main_lpn: LPN, results: SolverResults = None):
+    ''' approximates pressure drop accross LPN by computing total resistance in tree as one element'''
+    tree = main_lpn.get_branch_tree()
+    tree_val = compute_total_vals(tree, results)
+    print('Approximate Pressure Drop from R values alone = ~', d2m(main_lpn.inflow.mean_inflow * tree_val[0]))
+
+def compute_lpa_rpa_resistances(main_lpn: LPN, results: SolverResults = None):
+    ''' computes LPA and RPA resistances from each branch, using resistances in series and parallel
+    '''
+    mpa = main_lpn.get_vessel_tree()
+    while len(mpa.children) == 1:
+        mpa = mpa.children[0]
+        
+    assert len(mpa.children) == 2, 'MPA should only branch into 2 sections, LPA and RPA'
+        
+    # determine which side child is.
+    if mpa.children[0].side == 'lpa':
+        lpa = mpa.children[0]
+        rpa = mpa.children[1]
+    else:
+        lpa = mpa.children[1]
+        rpa = mpa.children[0]
+    
+    # Compute RCL for each side.
+    lpa_val = compute_total_vals(lpa, results)
+    rpa_val = compute_total_vals(rpa, results)
+
+    return lpa_val[0], rpa_val[0]
+
+def compute_lpa_rpa_resistances2(main_lpn: LPN, results: SolverResults = None):
+    ''' computes LPA and RPA resistances from each using mean pressure diff and flow.
+    '''
+    mpa = main_lpn.get_vessel_tree()
+    while len(mpa.children) == 1:
+        mpa = mpa.children[0]
+        
+    assert len(mpa.children) == 2, 'MPA should only branch into 2 sections, LPA and RPA'
+        
+    # determine which side child is.
+    if mpa.children[0].side == 'lpa':
+        lpa = mpa.children[0]
+        rpa = mpa.children[1]
+    elif mpa.children[0].side == 'rpa':
+        lpa = mpa.children[1]
+        rpa = mpa.children[0]
+
+    # compute LPA approx
+    mPAP_lpa = results.get_avg_val(lpa.vessel_info[0]['vessel_name'], 'pressure_in')
+    Q_lpa = results.get_avg_val(lpa.vessel_info[0]['vessel_name'], 'flow_in')
+    total_dP = []
+    for node in main_lpn.tree_bfs_iterator(lpa):
+        # boundary condition
+        if "boundary_conditions" in node.vessel_info[-1]:
+            tmp_mPAP_out = results.get_avg_val(node.vessel_info[-1]['vessel_name'], 'pressure_out')
+            total_dP.append(mPAP_lpa - tmp_mPAP_out)
+    print("LPA mean Inlet Pressure:", d2m(mPAP_lpa), "; LPA Average Pressure Drop:", d2m(np.array(total_dP).mean()))
+    lpa_res = np.array(total_dP).mean() / Q_lpa
+    
+    # compute RPA approx
+    mPAP_rpa = results.get_avg_val(rpa.vessel_info[0]['vessel_name'], 'pressure_in')
+    Q_rpa = results.get_avg_val(rpa.vessel_info[0]['vessel_name'], 'flow_in')
+    total_dP = []
+    for node in main_lpn.tree_bfs_iterator(rpa):
+        # boundary condition
+        if "boundary_conditions" in node.vessel_info[-1]:
+            tmp_mPAP_out = results.get_avg_val(node.vessel_info[-1]['vessel_name'], 'pressure_out')
+            total_dP.append(mPAP_rpa - tmp_mPAP_out)
+    print("RPA mean Inlet Pressure:", d2m(mPAP_rpa), "; RPA Average Pressure Drop:", d2m(np.array(total_dP).mean()))
+    rpa_res = np.array(total_dP).mean() / Q_rpa
+    
+    return lpa_res, rpa_res
+
+
+def compute_total_vals(cur_node: LPN.BranchNode, results: SolverResults = None):
+    ''' computes total RCL coefficients of a tree recursively 
+    Includes stenosis coefficients if results is not None
+    '''
+    if not cur_node.children:
+        
+        r = 0
+        c = 0
+        l = 0
+        for vess in cur_node.vessel_info:
+            
+            # resistance factor
+            r += vess['zero_d_element_values']['R_poiseuille']
+            if results:
+                # R expansion factor
+                r += vess['zero_d_element_values']['stenosis_coefficient'] * abs(results.get_avg_val(vess['vessel_name'], 'flow_in'))
+            
+            # CL
+            c += 1/vess['zero_d_element_values']['C']
+            l += vess['zero_d_element_values']['L']
+        
+        c = 1/c
+        return r, c, l
+    
+    r = 0
+    c = 0
+    l = 0
+    # compute RCL in parallel for children.
+    for child_node in cur_node.children:
+        r_child, c_child, l_child = compute_total_vals(child_node, results)
+        if r_child != 0:
+            r += 1/r_child
+        if c_child != 0:
+            c += c_child
+        if l_child != 0:
+            l += 1/l_child
+    r = 1/r
+    l = 1/l
+    c = 1/c
+    
+    for vess in cur_node.vessel_info:
+            
+        # resistance factor
+        r += vess['zero_d_element_values']['R_poiseuille']
+        if results:
+            # R expansion factor
+            r += vess['zero_d_element_values']['stenosis_coefficient'] * abs(results.get_avg_val(vess['vessel_name'], 'flow_in'))
+        
+        # CL
+        c += 1/vess['zero_d_element_values']['C']
+        l += vess['zero_d_element_values']['L']
+    
+    c = 1/c
+    
+    return r, c, l
 
 ############
 # Opt Func #
@@ -261,7 +396,7 @@ def opt_function(x, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams):
     
     
     params.iter += 1
-    print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15f}")
+    print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15.5f}")
     
     return loss
 
@@ -318,18 +453,33 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
 # Split RCR #
 #############
 
-def split_rcrs(TM: Manager, x, PCWP):
+def split_rcrs(TM: TuningManager, x, PCWP):
     ''' splits rcr driver '''
-    capinfo = load_area_file(str(TM['workspace']['capinfo']))
-    del capinfo[TM['metadata']['inlet']]
+    capinfo = load_area_file(str(TM.capinfo))
+    del capinfo[TM.inlet]
     
     rcrs = split_bc(capinfo, x)
     
-    bcs = RCR()
+    bcs = BoundaryConditions()
     
     for name, vals in rcrs.items():
         bcs.add_rcr(face_name=name, Rp = vals['Rp'], C = vals['C'], Rd = vals['Rd'], Pd = PCWP)
     return bcs
+
+
+def add_rcrs(main_lpn: LPN, bcs: BoundaryConditions):
+    ''' Adds appropriate rcrs to the main lpn
+    '''
+    
+    bc_inv_map = bcs.get_bc_map()
+    
+    for bc in main_lpn.bc:
+        if bc['bc_type'] == 'RCR':
+            bc_values = bc_inv_map[main_lpn.bc_map[bc['bc_name']]]
+            bc['bc_values']['Rp'] = bc_values['Rp']
+            bc['bc_values']['Rd'] = bc_values['Rd']
+            bc['bc_values']['C'] = bc_values['C']
+            bc['bc_values']['Pd'] = bc_values['Pd']
     
 def split_bc(areas,  x):
     
@@ -400,70 +550,151 @@ def total_area(areas):
     '''
     return sum(list(areas.values()))
 
+#####################
+# Update Tuning LPN #
+#####################
+
+def update_tuning_lpn(tuning_lpn: LPN, main_lpn: LPN, main_results: SolverResults):
+    ''' updates the tuning param with new resistances include stenosis coefficients'''
+    #approximate_pdrop(main_lpn, main_results)
+
+    lpa_res, rpa_res = compute_lpa_rpa_resistances2(main_lpn, main_results)
+    
+    tuning_lpn._construct_vessel_map()
+    lpa = tuning_lpn.get_vessel(1)
+    lpa['zero_d_element_values']['R_poiseuille'] =  lpa_res
+
+    rpa = tuning_lpn.get_vessel(4)
+    rpa['zero_d_element_values']['R_poiseuille'] =  rpa_res
     
 ###############
 # Tune Driver #
 ###############
 
-def tune(TM: Manager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, tuning_dir: Path):
+def tune(TM: TuningManager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, store_intermediate = False):
     ''' Tuning Steps
     '''
     # setup initial conditions
     x0 = get_initial_cond(params, main_lpn, tuning_lpn)
     modify_params(tuning_lpn, x0)
-    tuning_lpn_file = tuning_dir / (TM['metadata']['model_name'] + '_tuning.in')
-    tuning_lpn.write_lpn_file(str(tuning_lpn_file))
+    tuning_lpn.write_lpn_file(TM.tuning_lpn)
+    
+    # split rcrs
+    x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+    bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
+    add_rcrs(main_lpn, bcs)
+
+    # run a simulation on the main lpn
+    main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=True, debug = True)
+    main_results = main_solver.run_sim()
+        
+    # update Tuning LPN accordingly
+    update_tuning_lpn(tuning_lpn, main_lpn, main_results)
+    
     
     # bounds
     bounds = optimize.Bounds([0,0,0,0], [ np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
     
-    # run optimizer
-    print(f"{'Iteration':^15}|{'mPAP Loss':^15}|{'maxPAP Loss':^15}|{'minPAP Loss':^15}|{'qRPA Loss':^15}|{'Total Loss':^15}")
-    print("-" * 15 * 7 + "-" * 6)
-    
-    results = optimize.minimize(fun = opt_function,
-                                x0 = x0,
-                                args = (main_lpn,
-                                        tuning_lpn, params),
-                                method='Nelder-Mead',
-                                bounds=bounds,
-                                options = {'disp': True})
+    # run it max epoch # of times or till stable.
+    diff_tol = .01 # 1 %
+    max_epochs = 10
+    epoch = 1
+    diff = 1
+    prev = None
+    cur = None
+    while epoch < max_epochs:
+        # run optimizer
+        params.iter = 0 
+        print(f"{'Iteration':^15}|{'mPAP Loss':^15}|{'maxPAP Loss':^15}|{'minPAP Loss':^15}|{'qRPA Loss':^15}|{'Total Loss':^15}")
+        print("-" * 15 * 7 + "-" * 6)
+        results = optimize.minimize(fun = opt_function,
+                                    x0 = x0,
+                                    args = (main_lpn,
+                                            tuning_lpn, params),
+                                    method='Nelder-Mead',
+                                    bounds=bounds,
+                                    options = {'disp': True,
+                                               'maxiter': 200})
             
-    # set prev x0 as start point
-    x0 = results.x
-    # split using 1:4 ratio
-    x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+        # set prev x0 as start point
+        x0 = results.x
+        # split using 1:4 ratio
+        x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
         
-    # split rcrs
-    bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
-    bcs.write_rcrt_file(TM['workspace']['lpn_dir'])
-    
-    main_lpn.update_rcrs(bcs)
-    # update on disk
-    main_lpn.update()
-    
+        
+        # track difference.
+        prev = cur
+        cur = x0
+        print("Curr", cur)
+        if prev is not None and cur is not None:
+            print("Prev:", prev)
+            diff = np.nan_to_num(abs(prev - cur) / prev, nan =0 ).sum()
+            print("Difference from previous Epoch: ", diff)
+            if diff <= diff_tol:
+                break
+            
 
+        # store intermediate x values if requested
+        if store_intermediate:
+            epoch_dir = TM.intermediate_dir / f'epoch{epoch}'
+            epoch_dir.mkdir(exist_ok = True)
+            # save x
+            np.save(str(epoch_dir / 'results.npy'), results.x, allow_pickle=True)
+            # save tuning file
+            modify_params(tuning_lpn, results.x)
+            tuning_lpn.write_lpn_file(epoch_dir / 'tuner.in')
+            # validate results
+            validate_results(params,
+                             main_lpn,
+                             tuning_lpn,
+                             x_new,
+                             epoch_dir,
+                             TM.tune_params
+                             )
+                    
+        
+        # split rcrs
+        bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
+        add_rcrs(main_lpn, bcs)
+    
+        # run a simulation on the main lpn
+        main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=True, debug = True)
+        main_results = main_solver.run_sim()
+            
+        # update Tuning LPN accordingly
+        update_tuning_lpn(tuning_lpn, main_lpn, main_results)
+        epoch += 1
+   
+        
+    
     # store final
-    np.save(str(tuning_dir / 'results.npy'), results.x, allow_pickle=True)
+    np.save(str(TM.tuning_dir / 'results.npy'), results.x, allow_pickle=True)
     # save tuning file
     modify_params(tuning_lpn, results.x)
-    tuning_lpn.update()
+    tuning_lpn.write_lpn_file(TM.tuning_lpn)
+    
+    x0 = results.x
+    x_new = np.array([.2*x0[1],x0[0], .8*x0[1],.2*x0[3],x0[2], .8*x0[3] ])
+    # split rcrs
+    bc = split_rcrs(TM, x_new, params.cap_wedge_pressure)
+    add_rcrs(main_lpn, bc)
     
     # run a simulation on the main lpn
-    # main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=False, debug = True)
-    # main_results = main_solver.run_sim()
-    # main_results.validate_results(main_lpn, outfile=str(tuning_dir / "full_inlet_waveform.png"), targets = TM['tune_params'])
+    main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=False, debug = True)
+    main_results = main_solver.run_sim()
+    main_results.validate_results(main_lpn, outfile=str(TM.tuning_dir / "full_inlet_waveform.png"), targets = TM.tune_params)
     
     # validate results
     validate_results(params,
                         main_lpn,
                         tuning_lpn,
                         x_new,
-                        tuning_dir,
-                        TM['tune_params'])
+                        TM.tuning_dir,
+                        TM.tune_params)
     
-    print(x_new)
     print("Optimization Complete.")
+    
+    return bc
     
     
     
@@ -661,57 +892,96 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
         
 #         fig.savefig(os.path.join(sensitivity_dir, f'{var_name}_change.png'))
 #         print('Done')
+        
+###############
+# Main Driver #
+###############
+
+def main(TM: TuningManager, args):
     
+    print("Tuning Model " + TM.model_name + "...")
+    
+    # load the main LPN
+    main_lpn = LPN.from_file(str(TM.lpn))
+    
+    #? Implement Config here if necessary
+    tuning_params = TuneParams()
+    #add_config(tuning_params, args)
+    add_config(tuning_params, TM)
+    
+    # set up tuning lpn
+    tuning_lpn = construct_tuning_lpn(tuning_params, main_lpn)
+    
+    # run optimizer
+    bc = tune(TM, main_lpn, tuning_lpn, tuning_params, args.store_intermediate)
+    # write the BC
+    bc.write_rcrt_file(str(TM.rcrt.parent))
+    # write lpn dir
+    main_lpn.write_lpn_file(TM.lpn)
+    
+    # set tune to false
+    TM.config_add(['options', 'tune'], False)
+    TM.write_config()
+    
+# def add_config(params: TuneParams, args):
+    
+#     if args.PCWP:
+#         params.cap_wedge_pressure = m2d(args.PCWP)
+#     if args.minPAP:
+#         params.minPAP_meas = [m2d(args.minPAP), m2d(args.minPAP)]
+#     if args.maxPAP:
+#         params.maxPAP_meas = [m2d(args.maxPAP), m2d(args.maxPAP)]
+#     if args.rpa_split:
+#         params.rpa_flow_split = args.rpa_split
+#     if args.mPAP:
+#         params.mPAP_meas = [m2d(args.mPAP), m2d(args.mPAP)]
+def add_config(params: TuneParams, TM: TuningManager):
+    
+    params.cap_wedge_pressure = m2d(TM.tune_params['PCWP'])
+    params.minPAP_meas = [m2d(TM.tune_params["minPAP"][0]), m2d(TM.tune_params["minPAP"][1])]
+    params.maxPAP_meas = [m2d(TM.tune_params["maxPAP"][0]), m2d(TM.tune_params["maxPAP"][1])]
+    params.rpa_flow_split = TM.tune_params["rpa_split"]
+    params.mPAP_meas = [m2d(TM.tune_params["mPAP"][0]), m2d(TM.tune_params["mPAP"][1])] 
+
+
+
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description = 'Tunes a model if necessary')
+    tool = ToolParser(desc = 'Tunes a model if necessary')
     
-    parser.add_argument('-i', dest = 'config', help = 'Config.yaml file')
     # dev params
-    parser.add_argument('--f', dest = 'force', action = 'store_true', default = False, help = 'Whether to run an optimization even if tuning is set to false.')
-    parser.add_argument('--s', dest = 'sensitivity_test', action = 'store_true', default = False, help = 'flag to run sensitivity tests or not')
+    tool.parser.add_argument('-f', dest = 'force', action = 'store_true', default = False, help = 'Whether to run an optimization even if tuning is set to false.')
+    tool.parser.add_argument('-i', dest = 'store_intermediate', action = 'store_true', default = False, help = 'save intermediate results')
+    tool.parser.add_argument('-s', dest = 'sensitivity_test', action = 'store_true', default = False, help = 'flag to run sensitivity tests or not')
     
-    args = parser.parse_args()
+    tool.parser.add_argument('-PCWP', type = float, default = None, help = 'Capillary Wedge pressure (mmHg)')
+    tool.parser.add_argument('-mPAP', type = float, default = None, help = 'Mean Pulmonary Arterial pressure (mmHg)')
+    tool.parser.add_argument('-maxPAP', type = float, default = None, help = 'Systolic Pulmonary Arterial Pressure (mmHg)')
+    tool.parser.add_argument('-minPAP', type = float, default = None, help = 'Diastolic Pulmonary Arterial Pressure (mmHg)')
+    tool.parser.add_argument('-rpa_split', type = float, default = None, help = 'fraction of flow going to Right Pulmonary Artery (0-1)')
     
-    # manager
-    TM = Manager(args.config)
+    args = tool.parse_args()
+    
+    
+    TM = TuningManager(args.config)
     
     if args.sensitivity_test:
         raise NotImplementedError("Sensitivity Tests not implemented. Please remove the -s flag.")
     
-    # check tune
-    if not TM['options']['tune']:
-        print('Tune option was set to false.')
-        exit(1)
-        
-    # Create tuning directory
-    tuning_dir = Path(TM['workspace']['lpn_dir']) / 'tuning'
-    if args.force and tuning_dir.exists():
-        shutil.rmtree(str(tuning_dir))
-
-    try:
-        tuning_dir.mkdir()
-    except FileExistsError:
-        print("Tuning dir already exists. Use --f flag to retune forcefully.")
-        exit(1)
+    if not TM.tune:
+        if args.force:
+            # clear previous TM values
+            print("Removing previous existing tuning results...", end = '\t', flush = True)
+            shutil.rmtree(str(TM.tuning_dir))
+            print("Done")
+            # recreate dirs
+            TM = TuningManager(args.config)
+        else:
+            raise ValueError('Tune was set to false. Use -f if you wish to tune anyways.')
+    
+    main(TM, args)
         
         
-    print("Tuning Model " + TM['metadata']['model_name'] + "...")
     
-    # load the main LPN
-    main_lpn = LPN.from_file(str(TM['workspace']['lpn']))
-    # add arguments to params
-    params = TuneParams()
-    P = TM['tune_params']
-    params.cap_wedge_pressure = m2d(P['PCWP'])
-    params.minPAP_meas = [m2d(P["minPAP"][0]), m2d(P["minPAP"][1])]
-    params.maxPAP_meas = [m2d(P["maxPAP"][0]), m2d(P["maxPAP"][1])]
-    params.rpa_flow_split = P["rpa_split"]
-    params.mPAP_meas = [m2d(P["mPAP"][0]), m2d(P["mPAP"][1])] 
     
-    # set up tuning lpn
-    tuning_lpn = construct_tuning_lpn(params, main_lpn)
-    
-    # run optimizer
-    tune(TM, main_lpn, tuning_lpn, params, tuning_dir)

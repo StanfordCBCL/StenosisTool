@@ -1,7 +1,7 @@
 # File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:05:21 am
+# Last Modified: Monday, 6th February 2023 3:42:58 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
@@ -242,7 +242,7 @@ def get_integral(inp_3d, origin, normal):
     return Integration(inp)
 
 
-def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=False, only_vessels=False):
+def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=False):
     """
     Extract 3d results at 1d model nodes (integrate over cross-section)
     Args:
@@ -265,14 +265,9 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
     normals = v2n(reader_1d.GetPointData().GetArray('CenterlineSectionNormal'))
     gid = v2n(reader_1d.GetPointData().GetArray('GlobalNodeId'))
     
-    # get valid array
-    if only_caps:
-        valid = v2n(reader_1d.GetPointData().GetArray('Caps_0D'))
-    elif only_juncs:
-        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D'))
-    elif only_vessels:
-        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + v2n(reader_1d.GetPointData().GetArray('Vessels_0D')) + v2n(reader_1d.GetPointData().GetArray('Caps_0D'))
-        
+    if only_juncs:
+        juncs = v2n(reader_1d.GetPointData().GetArray('Junctions'))
+
     # initialize output
     for name in res_names + ['area', 'valid']:
         array = vtk.vtkDoubleArray()
@@ -293,7 +288,6 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
         # check if point is cap
         reader_1d.GetPointCells(i, ids)
         skip = False
-        # shift points at caps for better integration
         if ids.GetNumberOfIds() == 1:
             if gid[i] == 0:
                 # inlet
@@ -302,10 +296,12 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
                 # outlets
                 points[i] -= eps_norm * normals[i]
         else:
-            # skip if an only flag is set and the point is invalid.
-            if (only_caps or only_juncs or only_vessels) and valid[i] == 0:
-                continue
-
+            if only_caps:
+                skip = True
+            if only_juncs and juncs[i] == 0:
+                skip = True
+        if skip:
+            continue
 
         # create integration object (slice geometry at point/normal)
         try:
@@ -331,15 +327,13 @@ if __name__ == '__main__':
     parser.add_argument('-c', dest = 'centerlines', help = 'centerlines file')
     parser.add_argument('-v', dest = 'volume', help = 'vtu file of results')
     parser.add_argument('-o', dest = 'outfile', help = 'output vtp file')
-    flags = parser.add_mutually_exclusive_group(required=False)
-    flags.add_argument('--caps', dest = 'caps', default = False, action = 'store_true', help = 'whether to save caps only')
-    flags.add_argument('--juncs', dest = 'juncs', default = False, action = 'store_true', help = 'whether to save junctions only')
-    flags.add_argument('--0D', dest = 'all', default = False, action = 'store_true', help = 'whether to save 0D vessels')
+    parser.add_argument('--caps', dest = 'caps', default = False, action = 'store_true', help = 'whether to save caps only')
+    parser.add_argument('--juncs', dest = 'juncs', default = False, action = 'store_true', help = 'whether to save junctions only')
     
     args = parser.parse_args()
     
     try:
-        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps, only_juncs=args.juncs, only_vessels=args.all)
+        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps, only_juncs = args.juncs)
     except Exception as e:
         print(e)
         
