@@ -1,7 +1,7 @@
 # File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:05:21 am
+# Last Modified: Tuesday, 14th February 2023 1:50:40 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
@@ -192,6 +192,8 @@ def get_res_names(inp, res_fields):
 
         # check if field should be added to output
         if field in res_fields:
+            
+            
             try:
                 float(num)
                 res += [res_name]
@@ -267,11 +269,11 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
     
     # get valid array
     if only_caps:
-        valid = v2n(reader_1d.GetPointData().GetArray('Caps_0D'))
+        valid = v2n(reader_1d.GetPointData().GetArray('Caps_0D')) + 1
     elif only_juncs:
-        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D'))
+        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + 1
     elif only_vessels:
-        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + v2n(reader_1d.GetPointData().GetArray('Vessels_0D')) + v2n(reader_1d.GetPointData().GetArray('Caps_0D'))
+        valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + v2n(reader_1d.GetPointData().GetArray('Vessels_0D')) + v2n(reader_1d.GetPointData().GetArray('Caps_0D')) + 3
         
     # initialize output
     for name in res_names + ['area', 'valid']:

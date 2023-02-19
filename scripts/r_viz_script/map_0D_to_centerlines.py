@@ -1,14 +1,14 @@
 # File: map_0D_to_centerlines.py
 # File Created: Monday, 23rd January 2023 7:16:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 5th February 2023 3:02:53 pm
+# Last Modified: Tuesday, 14th February 2023 2:25:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes 0D results csv file and corresponding centerlines used to construct 0D LPN, maps a 0D model's results to centerlines.
 
-from sgt.core.lpn import LPN
-from sgt.core.polydata import Polydata
-from sgt.core.solver import SolverResults
+from svinterface.core.zerod.lpn import LPN
+from svinterface.core.polydata import Polydata
+from svinterface.core.zerod.solver import SolverResults
 import argparse
 from pathlib import Path
 import numpy as np
@@ -35,8 +35,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # load original centerlines
-    c = Polydata()
-    c.load_polydata(args.centerlines)
+    c = Polydata.load_polydata(args.centerlines)
     
     # load LPN
     lpn = LPN.from_file(args.lpn)

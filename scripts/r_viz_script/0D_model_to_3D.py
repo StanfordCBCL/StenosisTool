@@ -1,19 +1,19 @@
 # File: 0D_model_to_3D.py
 # File Created: Thursday, 26th January 2023 8:49:44 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 28th January 2023 4:56:33 pm
+# Last Modified: Tuesday, 14th February 2023 1:22:39 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes a 0D LPN model and reconstructs in 3D what the 0D represents as a legacy vtk file
-
+#! Untested
 
 import argparse
 import numpy as np
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
-from sgt.core.lpn import LPN
-from sgt.core.polydata import Polydata, LegacyVTK
+from svinterface.core.zerod.lpn import LPN
+from svinterface.core.polydata import Polydata, LegacyVTK
 
 
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     
     # get lpn branch tree
     lpn = LPN.from_file(args.lpn)
-    lpn_root = lpn.get_branch_tree()
+    lpn_root = lpn.get_tree()
     
     # centerlines
     c = Polydata()
@@ -83,8 +83,8 @@ if __name__ == '__main__':
 
     # iterate through each branch
     tracked_segments = 0
-    for branch_node in lpn.tree_bfs_iterator(lpn_root):
-        bidx = branch_node.branch_id
+    for branch_node in lpn.tree_bfs_iterator(lpn_root, "branch"):
+        bidx = branch_node.id
         
         # retrieve branch specific points
         branch_pointidx = np.where(branch_ids == bidx)[0]

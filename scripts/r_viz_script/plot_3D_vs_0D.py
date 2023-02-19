@@ -5,7 +5,7 @@ import vtk
 import numpy as np
 from pathlib import Path
 
-from sgt.core.polydata import Centerlines
+from svinterface.core.polydata import Centerlines
 
 
 def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
@@ -88,8 +88,8 @@ def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
     for i in range(len(outlets)):
         oned_means.append(np.trapz(results_1d[i]['pressure'], results_1d[i]['time']) / (results_1d[i]['time'][-1] - results_1d[i]['time'][0]))
         threed_means.append(np.trapz(results_3d[i]['pressure'], results_3d[i]['time']) / (results_3d[i]['time'][-1] - results_3d[i]['time'][0]))
-    ax.scatter(range(len(outlets)), oned_means, label = '1d')
     ax.scatter(range(len(outlets)), threed_means, label = '3d')
+    ax.scatter(range(len(outlets)), oned_means, label = '0d')
     fig.legend()
     fig.suptitle("Mean of outlets")
     ax.set_ylabel("Mean Pressure (mmHg)")
@@ -106,14 +106,15 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description = "Plots the differences between 3D and 0D")
     parser.add_argument("-3d", dest = 'three_d', help = '3d results in centerline form (caps only is fine).')
-    parser.add_argument("-1d", dest = 'one_d', help = '1d results in centerline form (caps only is fine).')
+    parser.add_argument("-0d", dest = 'zero_d', help = '-0d results in centerline form (caps only is fine).')
     args = parser.parse_args()
     
     
-    c_3d = Centerlines()
-    c_3d.load_polydata(args.three_d)
+    c_3d = Centerlines.load_polydata(args.three_d)
     
-    c_1d = Centerlines()
-    c_1d.load_polydata(args.one_d)
+    c_1d = Centerlines.load_polydata(args.zero_d)
+    
+    tmp = Path('data/healthy/0080_0001/results/0080_0001/LPN_DIR/0080_0001.sim.0/3D_vs_1D/')
+    tmp.mkdir(parents=True, exist_ok = True)
    
-    plot_outlets(c_3d, c_1d, Path('results/healthy/0080_0001_base/3D_vs_1D/'))
+    plot_outlets(c_3d, c_1d, tmp)

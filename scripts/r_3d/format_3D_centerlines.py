@@ -1,17 +1,17 @@
-# File: correct_3D_centerlines.py
+# File: format_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 5th February 2023 2:30:09 pm
+# Last Modified: Tuesday, 14th February 2023 2:04:59 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
 
-from sgt.core.polydata import Polydata
-from sgt.core.flow import Inflow
+from svinterface.core.polydata import Polydata
+from svinterface.core.bc import Inflow
 import argparse
 import re
 import numpy as np
-from sgt.utils.misc import d2m
+from svinterface.utils.misc import d2m
 
 def modify_centerlines(centerlines: Polydata, inflow: Inflow):
     '''maps ts to actual times, as well as change pressures to mmHg
@@ -40,15 +40,17 @@ def modify_centerlines(centerlines: Polydata, inflow: Inflow):
             func = lambda x: x
         
         for arr_name in centerlines.get_pointdata_arraynames():
-            x = re.search(f"{f}_([0-9]*)", arr_name)
+            
+            x = re.search(f"{f}_([0-9]+)", arr_name)
             #! assumes in order
             if x:
                 array_f.append(func(centerlines.get_pointdata_array(arr_name)))
                 cur_ts = int(x[1])
                 centerlines.add_pointdata(func(centerlines.get_pointdata_array(arr_name)), arr_name)
                 if f == 'velocity':
-                    f = 'flow'
-                centerlines.rename_pointdata_array(arr_name, f"{f}_{inflow.t[cur_ts - ts[0]]:.5f}")
+                    centerlines.rename_pointdata_array(arr_name, f"flow_{inflow.t[cur_ts - ts[0]]:.5f}")
+                else:
+                    centerlines.rename_pointdata_array(arr_name, f"{f}_{inflow.t[cur_ts - ts[0]]:.5f}")
 
         array_f = np.array(array_f)
         # compute summary statistics
@@ -76,8 +78,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # centerlines
-    c = Polydata()
-    c.load_polydata(args.centerlines)
+    c = Polydata.load_polydata(args.centerlines)
     
     # load inflow
     inflow = Inflow.from_file(args.inflow, inverse = True, smooth = False)

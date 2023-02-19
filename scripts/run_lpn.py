@@ -1,7 +1,7 @@
 # File: run_lpn.py
 # File Created: Thursday, 3rd November 2022 12:44:51 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:09:26 am
+# Last Modified: Tuesday, 14th February 2023 2:52:58 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Solves an LPN
@@ -14,7 +14,7 @@ import argparse
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description = 'Solves an LPN')
+    parser = argparse.ArgumentParpser(description = 'Solves an LPN')
     
     parser.add_argument('-i', dest = 'lpn', help = 'path to input lpn')
     parser.add_argument('-c', dest = 'csv', action = 'store_true', default = False, help = 'save csv file: Default = False')

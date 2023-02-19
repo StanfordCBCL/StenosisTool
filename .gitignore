@@ -16,6 +16,12 @@ svZeroDInterface
 scratch
 results
 pptx/pptx_img
+test
+sgt
+old_scripts
+notebooks
+
+
 
 # ignore misc files
 *.icloud
