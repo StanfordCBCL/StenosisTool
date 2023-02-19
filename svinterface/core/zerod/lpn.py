@@ -202,13 +202,25 @@ class OriginalLPN():
         """
         return LPN.from_dict(deepcopy(self.lpn_data))
     
-    def to_cpp(self):
-        """Converts to cpp by adding junction_values to BloodVesselJunctions
+    def to_cpp(self, normal = True):
+        """Converts to cpp by converting to NORMAL_JUNCTIONS. normal=False adds junction_values to BloodVesselJunctions
         """
         for junc in self.junctions:
             if junc['junction_type'] == 'BloodVesselJunction':
                 junc['junction_type'] = 'NORMAL_JUNCTION'
+        
+        if not normal:
+            self.normal_to_bvj()
+                    
 
+    def normal_to_bvj(self):
+        """ Converts Normal junctions to BVJ junctions"""
+        for junc in self.junctions:
+            if junc['junction_type'] == 'NORMAL_JUNCTION':
+                junc['junction_values'] = {"R_poiseuille": [0 for i in range(len(junc['outlet_vessels']))],
+                                            "C": [0 for i in range(len(junc['outlet_vessels']))],
+                                            "L": [0 for i in range(len(junc['outlet_vessels']))],
+                                            "stenosis_coefficient": [0 for i in range(len(junc['outlet_vessels']))]}
     
     ##########
     # IO Ops #
@@ -622,8 +634,6 @@ class LPN(OriginalLPN):
         tree = self.get_tree()
         # get array data.
         br_id = cent.get_pointdata_array(cent.PointDataFields.BRANCHID)
-        c_id = cent.get_pointdata_array(cent.PointDataFields.CENTID)
-        bif_id = cent.get_pointdata_array(cent.PointDataFields.BIFURCATIONID)
         g_id = cent.get_pointdata_array(cent.PointDataFields.NODEID)
         paths = cent.get_pointdata_array(cent.PointDataFields.PATH)
         
