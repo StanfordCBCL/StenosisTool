@@ -217,6 +217,7 @@ class OriginalLPN():
         """ Converts Normal junctions to BVJ junctions"""
         for junc in self.junctions:
             if junc['junction_type'] == 'NORMAL_JUNCTION':
+                junc['junction_type'] = 'BloodVesselJunction'
                 junc['junction_values'] = {"R_poiseuille": [0 for i in range(len(junc['outlet_vessels']))],
                                             "C": [0 for i in range(len(junc['outlet_vessels']))],
                                             "L": [0 for i in range(len(junc['outlet_vessels']))],
@@ -342,13 +343,13 @@ class OriginalLPN():
         assert junc['junction_type'] == "BloodVesselJunction", f"Selected Junction {junction_id_or_name} is not a BloodVesselJunction."
         vals = junc['junction_values']
         if R is not None:
-            vals[which]['R_poiseuille'] = R
+            vals['R_poiseuille'][which] = R
         if C is not None:
-            vals[which]['C'] = C
+            vals['C'][which] = C
         if L is not None:
-            vals[which]['L'] = L
+            vals['L'][which] = L
         if S is not None:
-            vals[which]['stenosis_coefficient'] = S
+            vals['stenosis_coefficient'][which] = S
     
     def occlude_vessel(self, vessel_id_or_name: int, occlusion: float):
         ''' creates an occlusion in a vessel
