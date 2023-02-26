@@ -1,19 +1,20 @@
 # File: 0D_model_to_3D.py
 # File Created: Thursday, 26th January 2023 8:49:44 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:22:39 am
+# Last Modified: Sunday, 26th February 2023 4:52:11 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Takes a 0D LPN model and reconstructs in 3D what the 0D represents as a legacy vtk file
-#! Untested
+# Description: Takes a 0D LPN model and reconstructs in 3D what the 0D represents as a legacy vtk file. Does not compute junctions
 
 import argparse
 import numpy as np
 import vtk
+from pathlib import Path
 from vtk.util.numpy_support import vtk_to_numpy as v2n
 from vtk.util.numpy_support import numpy_to_vtk as n2v
 from svinterface.core.zerod.lpn import LPN
-from svinterface.core.polydata import Polydata, LegacyVTK
+from svinterface.core.polydata import Centerlines, LegacyVTK
+from svinterface.manager.baseManager import Manager
 
 
 
@@ -57,21 +58,22 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Takes a 0D LPN model and reconstructs in 3D what the 0D represents")
     
-    parser.add_argument("-c", dest = 'centerlines', help = 'centerlines file to figure out what the 0D is modeling.')
-    parser.add_argument("-lpn", help = '0D LPN network to convert')
-    parser.add_argument("-o", help = "output file destination")
+    parser.add_argument("-i", help = 'Yaml config file')
     parser.add_argument("--ntheta", type = int, default = 100, help = "number of circumference points for each slice" )
     parser.add_argument("--nsegments", type = int, default = 1, help = "Number of triangular segments to split vessel lengthwise into.")
     
     args = parser.parse_args()
     
+    M = Manager(args.i)
+    
+    lpn_file = M['workspace']['lpn']
     # get lpn branch tree
-    lpn = LPN.from_file(args.lpn)
+    lpn = LPN.from_file(lpn_file)
     lpn_root = lpn.get_tree()
     
     # centerlines
-    c = Polydata()
-    c.load_polydata(args.centerlines)
+    c_file = M['workspace']['centerlines']
+    c = Centerlines.load_centerlines(c_file)
     
     # new 3D model
     three_d = LegacyVTK()
@@ -129,7 +131,12 @@ if __name__ == '__main__':
             tracked_segments = n_segments + 1
             
     
-    three_d.write_vtk(args.o)
+    
+    outfile = Path(M['workspace']['lpn_dir']) / (Path(lpn_file).stem + '_3D.vtk')
+    M.register(key = 'lpn_3d', value = str(outfile), depth = ['workspace'])
+    
+    three_d.write_vtk(outfile, desc = '3D representation of LPN')
+    M.update()
         
             
             
