@@ -1,13 +1,14 @@
 # File: format_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 2:04:59 pm
+# Last Modified: Sunday, 26th February 2023 11:52:29 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
 
 from svinterface.core.polydata import Polydata
 from svinterface.core.bc import Inflow
+from svinterface.manager.baseManager import Manager
 import argparse
 import re
 import numpy as np
@@ -71,11 +72,16 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.")
     
+    parser.add_argument("-i", dest = 'config', help= 'Config file for project')
     parser.add_argument("-c", dest = 'centerlines', help = "3D extracted centerlines")
     parser.add_argument("-f", dest = "inflow", help = '3D inflow used to compute simulation')
     parser.add_argument("-o", help = "output destination")
     
     args = parser.parse_args()
+    
+    # manager
+    M = Manager(args.config)
+    
     
     # centerlines
     c = Polydata.load_polydata(args.centerlines)
@@ -87,3 +93,5 @@ if __name__ == '__main__':
     modify_centerlines(c, inflow)
     
     c.write_polydata(args.o)
+    M.register("3D", args.o, depth = ['workspace'])
+    M.update()

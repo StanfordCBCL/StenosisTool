@@ -1,7 +1,7 @@
 # File: sv_lpn_segmentation.py
 # File Created: Monday, 31st October 2022 7:20:33 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 13th February 2023 9:18:37 pm
+# Last Modified: Sunday, 26th February 2023 8:00:08 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Utilize Simvascular to construct a 0D LPN from centerlines using Martin's automated pipeline.
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     
     # material (only allows linear for now.)
     params.material_model = 'LINEAR'
-    params.linear_material_ehr = 1.2e6
+    params.linear_material_ehr = 2.5e6
     params.linear_material_pressure = 0
     params.uniform_material = True
     
