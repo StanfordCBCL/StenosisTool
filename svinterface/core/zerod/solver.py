@@ -21,9 +21,10 @@ class Solver0Dcpp():
         self.use_steady = use_steady
         self.last_cycle_only = last_cycle_only
         self.mean_only = mean_only
-        self.lpn.simulation_params['steady_initial'] = use_steady
-        self.lpn.simulation_params['output_last_cycle_only'] = last_cycle_only
-        self.lpn.simulation_params['output_mean_only'] = mean_only
+    
+        self.lpn.lpn_data['simulation_parameters']['steady_initial'] = use_steady
+        self.lpn.lpn_data['simulation_parameters']['output_last_cycle_only'] = last_cycle_only
+        self.lpn.lpn_data['simulation_parameters']['output_mean_only'] = mean_only
         self.debug = debug
 
     def _print(self, s, end = '\n', flush = False):

@@ -83,7 +83,7 @@ class FastLPN():
         if S is not None:
             vals['stenosis_coefficient'] = S
     
-    def change_junction_outlet(self, junction_id: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None):
+    def change_junction_outlet(self, junction_id_or_name: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None):
         """Changing Junction Outlets
 
         Args:
@@ -94,17 +94,17 @@ class FastLPN():
             L (float, optional): inductance. Defaults to None.
             S (float, optional): stenosis coefficient. Defaults to None.
         """
-        junc = self.get_junction(junction_id)
+        junc = self.get_junction(junction_id_or_name)
         assert which < len(junc['outlet_vessels']), f"Selected outlet {which} is out of bounds"
         vals = junc['junction_values']
         if R is not None:
-            vals[which]['R_poiseuille'] = R
+            vals['R_poiseuille'][which] = R
         if C is not None:
-            vals[which]['C'] = C
+            vals['C'][which] = C
         if L is not None:
-            vals[which]['L'] = L
+            vals['L'][which] = L
         if S is not None:
-            vals[which]['stenosis_coefficient'] = S
+            vals['stenosis_coefficient'][which] = S
     
     def occlude_vessel(self, vessel_id: int, occlusion: float):
         ''' creates an occlusion in a vessel
