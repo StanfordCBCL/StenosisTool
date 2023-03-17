@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 17th March 2023 5:45:52 pm
+# Last Modified: Sunday, 26th February 2023 3:13:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
@@ -467,14 +467,12 @@ def modify_params(lpn: LPN, x ):
     vess = lpn.vessel
 
     # LPA
-    vess[2]['zero_d_element_values']['R_poiseuille'] = .1 * x[1]
     vess[2]['zero_d_element_values']['C'] = x[0]
-    vess[3]['zero_d_element_values']['R_poiseuille'] = .9 * x[1]
+    vess[3]['zero_d_element_values']['R_poiseuille'] = x[1]
     
     # RPA
-    vess[5]['zero_d_element_values']['R_poiseuille'] = .1 * x[2]
     vess[5]['zero_d_element_values']['C'] = x[0]
-    vess[6]['zero_d_element_values']['R_poiseuille'] = .9 * x[2]
+    vess[6]['zero_d_element_values']['R_poiseuille'] = x[2]
 
 def convert_to_dict(opt_results: optimize.OptimizeResult):
     rez = {}

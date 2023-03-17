@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 17th March 2023 5:45:52 pm
+# Last Modified: Friday, 17th March 2023 5:20:12 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
@@ -270,11 +270,11 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     '''
     
     mpa = results.vessel_df('branch_mpa')
-    rpa = results.vessel_df('branch_rpa_rd')
+    rpa = results.vessel_df('branch_rpa_tree')
     
     
     # qRPA
-    qRPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
+    qRPA_sim = np.trapz(rpa['flow_in'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
     qRPA_meas = inflow.mean_inflow * tune_params.rpa_flow_split
     qRPA_loss = squared_error(qRPA_meas, qRPA_sim ) #+ squared_error(rpa['flow_out'].to_numpy().max(), inflow.max_inflow * tune_params.rpa_flow_split)+ squared_error(rpa['flow_out'].to_numpy().min(), inflow.min_inflow * tune_params.rpa_flow_split)
 
@@ -397,7 +397,7 @@ def tune(TM: Manager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, tuning
     tuning_lpn.write_lpn_file(str(tuning_lpn_file))
     
     # bounds
-    bounds = optimize.Bounds([0,0,0], [ np.inf, np.inf, np.inf], keep_feasible=True)
+    bounds = optimize.Bounds([0,0,0,0], [np.inf, np.inf, np.inf, np.inf], keep_feasible=True)
     
     # run optimizer
     print(f"{'Iteration':^15}|{'mPAP Loss':^15}|{'maxPAP Loss':^15}|{'minPAP Loss':^15}|{'qRPA Loss':^15}|{'Total Loss':^15}")
@@ -414,7 +414,7 @@ def tune(TM: Manager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, tuning
     # set prev x0 as start point
     x0 = results.x
     # split using 1:9 ratio
-    x_new = np.array([.1*x0[1],x0[0], .9*x0[1],.1*x0[2],x0[0], .9*x0[2] ])
+    x_new = np.array([.1*x0[1],x0[0], .9*x0[1],.1*x0[3],x0[2], .9*x0[3] ])
         
     # split rcrs
     bcs = split_rcrs(TM, x_new, params.cap_wedge_pressure)
@@ -458,6 +458,7 @@ def get_initial_cond(params: TuneParams, main_lpn: LPN, tuning_lpn: LPN):
     x0 = np.array([
                     1e-3,
                     PVR,
+                    1e-3,
                     PVR]
                     )
     return x0
@@ -467,14 +468,12 @@ def modify_params(lpn: LPN, x ):
     vess = lpn.vessel
 
     # LPA
-    vess[2]['zero_d_element_values']['R_poiseuille'] = .1 * x[1]
     vess[2]['zero_d_element_values']['C'] = x[0]
-    vess[3]['zero_d_element_values']['R_poiseuille'] = .9 * x[1]
+    vess[3]['zero_d_element_values']['R_poiseuille'] = x[1]
     
     # RPA
-    vess[5]['zero_d_element_values']['R_poiseuille'] = .1 * x[2]
-    vess[5]['zero_d_element_values']['C'] = x[0]
-    vess[6]['zero_d_element_values']['R_poiseuille'] = .9 * x[2]
+    vess[5]['zero_d_element_values']['C'] = x[2]
+    vess[6]['zero_d_element_values']['R_poiseuille'] = x[3]
 
 def convert_to_dict(opt_results: optimize.OptimizeResult):
     rez = {}

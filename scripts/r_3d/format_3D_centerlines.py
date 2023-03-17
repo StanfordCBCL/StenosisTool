@@ -1,7 +1,7 @@
 # File: format_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 26th February 2023 11:52:29 pm
+# Last Modified: Saturday, 11th March 2023 12:21:17 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
@@ -55,16 +55,19 @@ def modify_centerlines(centerlines: Polydata, inflow: Inflow):
 
         array_f = np.array(array_f)
         # compute summary statistics
+        print(array_f.shape)
         # avg
         avg = np.trapz(array_f, time, axis = 0) / (time[-1] - time[0])
         centerlines.add_pointdata(avg, 'avg_' + f)
         diff = abs(time - inflow.max_inflow_t)
         # systolic
-        sys_tidx = np.where(diff == min(diff))[0][0]
+        sys_tidx = np.argmax(array_f[:, 0])
+        #sys_tidx = np.where(diff == min(diff))[0][0]
         centerlines.add_pointdata(array_f[sys_tidx], 'sys_' + f + f'_{time[sys_tidx]:.5f}')
         diff = abs(time - inflow.min_inflow_t)
         # diastolic
-        dia_tidx = np.where(diff == min(diff))[0][0]
+        dia_tidx = np.argmin(array_f[:, 0])
+        #dia_tidx = np.where(diff == min(diff))[0][0]
         centerlines.add_pointdata(array_f[dia_tidx], 'dia_' + f + f'_{time[dia_tidx]:.5f}')
         
         
@@ -85,7 +88,6 @@ if __name__ == '__main__':
     
     # centerlines
     c = Polydata.load_polydata(args.centerlines)
-    
     # load inflow
     inflow = Inflow.from_file(args.inflow, inverse = True, smooth = False)
     

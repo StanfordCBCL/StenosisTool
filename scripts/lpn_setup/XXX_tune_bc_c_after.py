@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 17th March 2023 5:45:52 pm
+# Last Modified: Wednesday, 15th March 2023 4:59:37 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
@@ -70,17 +70,12 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
               'bc_values': {'Q': list(inflow.Q),
                             't': list(inflow.t)}}
     # outlets
-    lpa_bc = {'bc_name': 'LPA_BC',
+    lpa_bc = {'bc_name': 'BC',
               'bc_type': 'RESISTANCE',
               "bc_values": {"Pd": params.cap_wedge_pressure,
                             "R": 0}}
     
-    rpa_bc = {'bc_name': 'RPA_BC',
-              'bc_type': 'RESISTANCE',
-              "bc_values": {"Pd": params.cap_wedge_pressure,
-                            "R": 0}}
-    
-    tuning_lpn.bc = [inflow_bc, lpa_bc, rpa_bc]
+    tuning_lpn.bc = [inflow_bc, lpa_bc]
     
     ## simulation_parameters
     tuning_lpn.simulation_params = deepcopy(main_lpn.simulation_params)
@@ -95,7 +90,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "junction_type": "NORMAL_JUNCTION",
             "outlet_vessels": [
                 1,
-                4
+                3
             ]
         }, 
         {
@@ -110,32 +105,23 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
         },
         {
             "inlet_vessels": [
-                2
+                3
             ],
             "junction_name": "J2",
             "junction_type": "internal_junction",
             "outlet_vessels": [
-                3
+                4
             ]
         },
         {
             "inlet_vessels": [
+                2,
                 4
             ],
             "junction_name": "J3",
-            "junction_type": "internal_junction",
+            "junction_type": "NORMAL_JUNCTION",
             "outlet_vessels": [
                 5
-            ]
-        },
-        {
-            "inlet_vessels": [
-                5
-            ],
-            "junction_name": "J4",
-            "junction_type": "internal_junction",
-            "outlet_vessels": [
-                6
             ]
         },
     ]
@@ -168,18 +154,6 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             {
             "vessel_id": 2,
             "vessel_length": 10.0,
-            "vessel_name": "branch_lpa_rp_c",
-            "zero_d_element_type": "BloodVessel",
-            "zero_d_element_values": {
-                "C": 0,
-                "R_poiseuille": 0,
-            }
-        },
-            { "boundary_conditions": {
-                "outlet": "LPA_BC"
-            },
-            "vessel_id": 3,
-            "vessel_length": 10.0,
             "vessel_name": "branch_lpa_rd",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
@@ -187,28 +161,15 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             }
         }]
     rpa =  [{ 
-            "vessel_id": 4,
+            "vessel_id": 3,
             "vessel_length": 10.0,
             "vessel_name": "branch_rpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
                 "R_poiseuille": params.r_RPA
             }
-        }, 
-            { 
-            "vessel_id": 5,
-            "vessel_length": 10.0,
-            "vessel_name": "branch_rpa_rp_c",
-            "zero_d_element_type": "BloodVessel",
-            "zero_d_element_values": {
-                'C': 0,
-                "R_poiseuille": 0,
-            }
-        }, 
-            { "boundary_conditions": {
-                "outlet": "RPA_BC"
-            },
-            "vessel_id": 6,
+        },  {
+            "vessel_id": 4,
             "vessel_length": 10.0,
             "vessel_name": "branch_rpa_rd",
             "zero_d_element_type": "BloodVessel",
@@ -216,7 +177,21 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
                 "R_poiseuille": 0,
             }
         }]
-    tuning_lpn.vessel = mpa + lpa + rpa
+    
+    la = [
+            { "boundary_conditions": {
+                "outlet": "BC"
+            },
+            "vessel_id": 5,
+            "vessel_length": 10.0,
+            "vessel_name": "branch_la",
+            "zero_d_element_type": "BloodVessel",
+            "zero_d_element_values": {
+                "R_poiseuille": 0,
+                "C": 0
+            }
+        }]
+    tuning_lpn.vessel = mpa + lpa + rpa + la
     
     return tuning_lpn
 
@@ -270,11 +245,11 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     '''
     
     mpa = results.vessel_df('branch_mpa')
-    rpa = results.vessel_df('branch_rpa_rd')
+    rpa = results.vessel_df('branch_rpa_tree')
     
     
     # qRPA
-    qRPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
+    qRPA_sim = np.trapz(rpa['flow_in'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
     qRPA_meas = inflow.mean_inflow * tune_params.rpa_flow_split
     qRPA_loss = squared_error(qRPA_meas, qRPA_sim ) #+ squared_error(rpa['flow_out'].to_numpy().max(), inflow.max_inflow * tune_params.rpa_flow_split)+ squared_error(rpa['flow_out'].to_numpy().min(), inflow.min_inflow * tune_params.rpa_flow_split)
 
@@ -467,14 +442,11 @@ def modify_params(lpn: LPN, x ):
     vess = lpn.vessel
 
     # LPA
-    vess[2]['zero_d_element_values']['R_poiseuille'] = .1 * x[1]
-    vess[2]['zero_d_element_values']['C'] = x[0]
-    vess[3]['zero_d_element_values']['R_poiseuille'] = .9 * x[1]
+    vess[2]['zero_d_element_values']['R_poiseuille'] = x[1]
     
     # RPA
-    vess[5]['zero_d_element_values']['R_poiseuille'] = .1 * x[2]
     vess[5]['zero_d_element_values']['C'] = x[0]
-    vess[6]['zero_d_element_values']['R_poiseuille'] = .9 * x[2]
+    vess[4]['zero_d_element_values']['R_poiseuille'] = x[2]
 
 def convert_to_dict(opt_results: optimize.OptimizeResult):
     rez = {}
