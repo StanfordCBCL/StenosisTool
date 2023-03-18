@@ -1,7 +1,7 @@
 # File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 14th February 2023 1:50:40 pm
+# Last Modified: Saturday, 18th March 2023 2:28:13 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
@@ -60,7 +60,9 @@ class Integration:
             int_name = res_name
 
         # evaluate integral
-        integral = v2n(self.integrator.GetOutput().GetPointData().GetArray(int_name))[0]
+        integral = v2n(self.integrator.GetOutput().GetPointData().GetArray(int_name))
+        integral = integral[0]
+        
 
         # choose if integral should be divided by area
         if field == 'velocity':
@@ -155,6 +157,13 @@ def connectivity(inp, origin):
     con.Update()
     return con
 
+def get_pointdata_arraynames(pointdata):
+    ''' get pointdata array names
+    '''
+    array_num = pointdata.GetNumberOfArrays()
+    array_names = [pointdata.GetArrayName(i) for i in range(array_num)]
+    return array_names
+    
 def calculator(inp, function, inp_arrays, out_array):
     """
     Function to add vtk calculator
@@ -192,6 +201,7 @@ def get_res_names(inp, res_fields):
 
         # check if field should be added to output
         if field in res_fields:
+            #print(field)
             
             
             try:
@@ -199,7 +209,6 @@ def get_res_names(inp, res_fields):
                 res += [res_name]
             except ValueError:
                 pass
-
     return res
 
 def slice_vessel(inp_3d, origin, normal):
@@ -236,10 +245,12 @@ def get_integral(inp_3d, origin, normal):
     inp = slice_vessel(inp_3d, origin, normal)
 
     # recursively add calculators for normal velocities
-    for v in get_res_names(inp_3d, 'velocity'):
+    for v in get_res_names(inp_3d, ['velocity']):
         fun = 'dot((iHat*'+repr(normal[0])+'+jHat*'+repr(normal[1])+'+kHat*'+repr(normal[2])+'),' + v + ')'
+        #fun = 'dot(Normals,' + v + ')'
         #fun = '(iHat*'+repr(normal[0])+'+jHat*'+repr(normal[1])+'+kHat*'+repr(normal[2])+').' + v 
         inp = calculator(inp, fun, [v], 'normal_' + v)
+    print(v2n(inp.GetOutput().GetPointData().GetArray("normal_velocity_05150")))
 
     return Integration(inp)
 
@@ -312,7 +323,8 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
         # create integration object (slice geometry at point/normal)
         try:
             integral = get_integral(reader_3d, points[i], normals[i])
-        except Exception:
+        except Exception as e:
+            print(e)
             continue
 
         # integrate all output arrays
