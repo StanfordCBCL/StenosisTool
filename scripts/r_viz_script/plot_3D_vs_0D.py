@@ -175,6 +175,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description = "Plots the differences between 3D and 0D")
     parser.add_argument("-i", dest = 'config', help = 'config.yaml file (must contain a simulation)')
+    parser.add_argument('-mode', default = None, help = 'Mode: None, AS, R')
     parser.add_argument("-sim", type = int, dest = 'sim', help = '0d simulation results desired to compare')
     parser.add_argument("--caps", action = "store_true", default = False, help = "caps only")
     parser.add_argument("--junctions", action = "store_true", default = False, help = "junctions only")
@@ -183,9 +184,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     M = Manager(args.config)
+    
+    sims = 'simulations'
+    if args.mode == 'AS':
+        sims = 'as_simulations'
+    elif args.mode == 'R':
+        sims = 'r_simulations'
+    else:
+        raise ValueError("-mode must be AS or R or not set")
+        
+    
     three_d = M['workspace']['3D']
     try:
-        zero_d_sim = Path(M['simulations'][args.sim]['dir'])
+        zero_d_sim = Path(M[sims][args.sim]['dir'])
     except IndexError:
         print(f"Simulation {args.sim} not found")
         exit(1)
@@ -198,7 +209,7 @@ if __name__ == '__main__':
         exit(1)
     r_0d = SolverResults.from_csv(str(csv_0d))
     
-    c_0d = Centerlines.load_centerlines(M['simulations'][args.sim]['centerlines'])
+    c_0d = Centerlines.load_centerlines(M[sims][args.sim]['centerlines'])
     
     comp_folder = zero_d_sim / "3D_vs_0D"
     comp_folder.mkdir(exist_ok=True, parents=True)

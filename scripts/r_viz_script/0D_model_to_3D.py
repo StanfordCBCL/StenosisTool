@@ -1,7 +1,7 @@
 # File: 0D_model_to_3D.py
 # File Created: Thursday, 26th January 2023 8:49:44 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 26th February 2023 4:52:11 pm
+# Last Modified: Monday, 3rd April 2023 2:15:08 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes a 0D LPN model and reconstructs in 3D what the 0D represents as a legacy vtk file. Does not compute junctions
@@ -17,7 +17,7 @@ from svinterface.core.polydata import Centerlines, LegacyVTK
 from svinterface.manager.baseManager import Manager
 
 
-
+#! CONVERT TO SIM SPECIFIC
 def get_ref_frame(vec):
   """
   Generate a reference frame given an axial vector vec
@@ -129,9 +129,8 @@ if __name__ == '__main__':
             three_d.add_polydata(new_points, connectivity)
             
             tracked_segments = n_segments + 1
-            
-    
-    
+        
+
     outfile = Path(M['workspace']['lpn_dir']) / (Path(lpn_file).stem + '_3D.vtk')
     M.register(key = 'lpn_3d', value = str(outfile), depth = ['workspace'])
     

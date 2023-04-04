@@ -1,7 +1,7 @@
 # File: run_lpn.py
 # File Created: Thursday, 3rd November 2022 12:44:51 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 4th March 2023 2:53:09 pm
+# Last Modified: Monday, 3rd April 2023 1:48:31 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Solves an LPN
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     
     M = Manager(args.config)
     
-    if 'simulations' not in M.yaml:
+    if 'simulations' not in M.yaml or M['simulations'] is None:
         M.register('simulations', {})
     
 
@@ -42,22 +42,25 @@ if __name__ == '__main__':
     
     lpn = LPN.from_file(str(lpn_file))
     
-    # get dir to save it in
     counter = 0
+    # get dir to save it in
     while True:
         rez_dir = lpn_file.parent / (lpn_file.stem + f'.sim.{counter}')
         if rez_dir.exists():
             counter += 1
+            pass
         else:
             rez_dir.mkdir()
             break
+        
+
     
     M.register(key = counter, value = {}, depth = ['simulations'])
     
     solver = Solver0Dcpp(lpn, last_cycle_only=args.last_cycle, mean_only=args.mean_only, debug = True)
     
     results = solver.run_sim_pipeline(validate = args.validate, save_csv = args.csv, save_branch = args.branch, out_dir = rez_dir)
-    M.register(key = "dir", value = str(rez_dir), depth = ['simulations', counter])
+    M.register(key = "dir", value = str(rez_dir), depth = ['simulations',counter])
     
     if args.csv:
         M.register(key = "csv", value = str(rez_dir / "branch_results.csv"), depth = ['simulations', counter])    

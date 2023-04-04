@@ -1,7 +1,7 @@
 # File: map_0D_to_centerlines.py
 # File Created: Monday, 23rd January 2023 7:16:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 27th February 2023 12:50:25 am
+# Last Modified: Monday, 3rd April 2023 2:14:17 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes 0D results csv file and corresponding centerlines used to construct 0D LPN, maps a 0D model's results to centerlines.
@@ -26,6 +26,8 @@ if __name__ == '__main__':
     
     # files
     parser.add_argument("-i", dest = 'config', required = True, help = 'config file')
+    
+    parser.add_argument('-mode', default = None, help = 'Mode: None, AS, R')
     parser.add_argument("-sim", type = int, help = "Simulation number to use")
 
     # flags
@@ -41,11 +43,19 @@ if __name__ == '__main__':
     # load original centerlines
     c = Polydata.load_polydata(M['workspace']['centerlines'])
     
+    sims = 'simulations'
+    if args.mode == 'AS':
+        sims = 'as_simulations'
+    elif args.mode == 'R':
+        sims = 'r_simulations'
+    else:
+        raise ValueError("-mode must be AS or R or not set")
+        
     # load LPN
-    lpn = LPN.from_file(M['simulations'][args.sim]['lpn'])
+    lpn = LPN.from_file(M[sims][args.sim]['lpn'])
     
     # load results
-    results = SolverResults.from_csv(M['simulations'][args.sim]['csv'])
+    results = SolverResults.from_csv(M[sims][args.sim]['csv'])
     if args.mmHg:
         results.convert_to_mmHg()
 
@@ -60,8 +70,8 @@ if __name__ == '__main__':
         output_file = 'centerline_projection.summary.vtp'
         
     # write polydata
-    out_poly = str(Path(M['simulations'][args.sim]['dir']) / output_file)
+    out_poly = str(Path(M[sims][args.sim]['dir']) / output_file)
     c.write_polydata(out_poly)
     
-    M.register(key = 'centerlines', value = out_poly, depth = ['simulations', args.sim])
+    M.register(key = 'centerlines', value = out_poly, depth = [sims, args.sim])
     M.update()
