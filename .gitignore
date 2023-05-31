@@ -21,8 +21,6 @@ sgt
 old_scripts
 notebooks
 
-
-
 # ignore misc files
 *.icloud
 *.DS_Store

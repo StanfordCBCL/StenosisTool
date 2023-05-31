@@ -1,7 +1,7 @@
 # File: 0D_model_to_3D.py
 # File Created: Thursday, 26th January 2023 8:49:44 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 3rd April 2023 2:15:08 pm
+# Last Modified: Tuesday, 4th April 2023 12:20:30 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes a 0D LPN model and reconstructs in 3D what the 0D represents as a legacy vtk file. Does not compute junctions
@@ -58,15 +58,27 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Takes a 0D LPN model and reconstructs in 3D what the 0D represents")
     
-    parser.add_argument("-i", help = 'Yaml config file')
+    parser.add_argument("-i", dest = 'config', help = 'Yaml config file')
+    parser.add_argument('-mode', default = None, help = 'Mode: None, AS, R')
+    parser.add_argument("-sim", type = int, help = "Simulation number to use")
+    
     parser.add_argument("--ntheta", type = int, default = 100, help = "number of circumference points for each slice" )
     parser.add_argument("--nsegments", type = int, default = 1, help = "Number of triangular segments to split vessel lengthwise into.")
+        
     
     args = parser.parse_args()
     
-    M = Manager(args.i)
+    M = Manager(args.config)
+    if not args.mode:
+      sims = 'simulations'
+    elif args.mode == 'AS':
+        sims = 'as_simulations'
+    elif args.mode == 'R':
+        sims = 'r_simulations'
+    else:
+        raise ValueError("-mode must be AS or R or not set")
     
-    lpn_file = M['workspace']['lpn']
+    lpn_file = M[sims][args.sim]['lpn']
     # get lpn branch tree
     lpn = LPN.from_file(lpn_file)
     lpn_root = lpn.get_tree()
@@ -131,8 +143,8 @@ if __name__ == '__main__':
             tracked_segments = n_segments + 1
         
 
-    outfile = Path(M['workspace']['lpn_dir']) / (Path(lpn_file).stem + '_3D.vtk')
-    M.register(key = 'lpn_3d', value = str(outfile), depth = ['workspace'])
+    outfile = Path(M[sims][args.sim]['dir']) / (Path(lpn_file).stem + '_3D.vtk')
+    M.register(key = 'lpn_3d', value = str(outfile), depth = [sims,args.sim])
     
     three_d.write_vtk(outfile, desc = '3D representation of LPN')
     M.update()

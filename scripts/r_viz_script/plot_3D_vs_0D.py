@@ -190,8 +190,8 @@ if __name__ == '__main__':
         sims = 'as_simulations'
     elif args.mode == 'R':
         sims = 'r_simulations'
-    else:
-        raise ValueError("-mode must be AS or R or not set")
+    # else:
+    #     raise ValueError("-mode must be AS or R or not set")
         
     
     three_d = M['workspace']['3D']

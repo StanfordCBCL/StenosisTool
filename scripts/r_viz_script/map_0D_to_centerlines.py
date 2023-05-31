@@ -1,7 +1,7 @@
 # File: map_0D_to_centerlines.py
 # File Created: Monday, 23rd January 2023 7:16:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 3rd April 2023 2:14:17 pm
+# Last Modified: Tuesday, 23rd May 2023 4:09:53 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes 0D results csv file and corresponding centerlines used to construct 0D LPN, maps a 0D model's results to centerlines.
@@ -48,8 +48,8 @@ if __name__ == '__main__':
         sims = 'as_simulations'
     elif args.mode == 'R':
         sims = 'r_simulations'
-    else:
-        raise ValueError("-mode must be AS or R or not set")
+    # else:
+    #     raise ValueError("-mode must be AS or R or not set")
         
     # load LPN
     lpn = LPN.from_file(M[sims][args.sim]['lpn'])

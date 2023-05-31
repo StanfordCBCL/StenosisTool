@@ -1,44 +1,43 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Saturday, 3rd December 2022 2:34:10 pm
+# Last Modified: Monday, 3rd April 2023 9:38:33 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to retrieve a distribution of potential diameter changes for a particular healthy model. Takes in an artificial stenosis directory.
 
 import tqdm
-import ray
+import concurrent.futures 
 import os
 import pandas as pd
 import numpy as np
 from scipy.stats.qmc import Sobol, scale
 import copy
 from pathlib import Path
+import argparse
+from concurrent.futures import ProcessPoolExecutor
 
 
-from sgt.core.solver import Solver0Dcpp, SolverResults
-from sgt.core.lpn import LPN
-from sgt.utils.parser import ToolParser
-from sgt.core.manager import DataGenerationManager
-from sgt.utils.io import read_json
+from svinterface.core.zerod.solver import Solver0Dcpp
+from svinterface.core.zerod.lpn import LPN, FastLPN
+from svinterface.manager.baseManager import Manager
+from svinterface.utils.io import read_json
 
-@ray.remote
-def proc_func(pbatch, changed_vessels, original_data: LPN, targets):
+
+def proc_func(data, changed_vessels, lpn: FastLPN, targets):
     results = []
-    total = len(pbatch)
-    
     # compute
-    for pidx, p in enumerate(pbatch):
+    for didx, d in enumerate(data):
         # create copy of original solver
-        pLPN = original_data.deep_copy()
+        tmpLPN = lpn.copy()
         # fill psolver with correct modifications
         for idx, branch in enumerate(changed_vessels):
             for vidx in branch:
-                pLPN.repair_vessel(vidx, p[idx]**2 ) # repair by rad^2
+                tmpLPN.repair_vessel(vidx, d[idx]**2) # repair by rad^2
             
-        print(f'Running sample {pidx + 1} / {total}', flush = True)
+        print(f'Running sample {didx + 1} / {len(data)}', flush = True)
         # solve
-        solver = Solver0Dcpp(lpn=pLPN,
+        solver = Solver0Dcpp(lpn=tmpLPN,
                              last_cycle_only=True,
                              mean_only=True,
                              debug=False)
@@ -46,127 +45,134 @@ def proc_func(pbatch, changed_vessels, original_data: LPN, targets):
         
 
         # retrieve results
+        in_target, out_target = targets
         internal_results = []
         
         #! Modify this depending on what is desired (Currently only mean location after)
-        for (in_target, out_target) in list(targets):
-            temp_df = solver_results.vessel_df(out_target)
-            internal_results.append(temp_df['pressure_out'][0])
-            internal_results.append(temp_df['flow_out'][0])
+        for vess_list in in_target:
+            results.append(solver_results.result_df.iloc[vess_list[0]]['pressure_in'])
+            results.append(solver_results.result_df.iloc[vess_list[0]]['flow_in'])
             
-            
-            
+        for vess_list in out_target:
+            results.append(solver_results.result_df.iloc[vess_list[-1]]['pressure_out'])
+            results.append(solver_results.result_df.iloc[vess_list[-1]]['flow_out'])
+                 
         results.append(internal_results)
-        del pLPN
-    return pbatch, np.array(results)
+        del tmpLPN
+    return np.array(results)
 
 
 
-def data_gen(dims, max_repairs, num_samples, seed, lower_offset = 0.05):
+def data_gen( max_repairs, num_samples, seed, lower_offset = 0.05):
     
     # generate sampler
     bits = 30 # means 2^30 max number of points... should be sufficient. Can go up to 64
     if num_samples > 2**bits:
         raise ValueError(f'num_samples > {2**bits}, resulting in duplicates')
-    sobol_sampler = Sobol(d= dims, scramble = True, bits = bits, seed = seed)
+    sobol_sampler = Sobol(d= len(max_repairs), scramble = True, bits = bits, seed = seed)
     
-    lbound = [1 - lower_offset for i in range(len(max_repairs))]
+    lbound = np.ones(len(max_repairs)) - lower_offset
     ubound = max_repairs
     
     # create data
     return scale(sobol_sampler.random(num_samples), l_bounds=lbound, u_bounds=ubound)
+    
+def main(args):
+    
+    M = Manager(args.config)
+    
+    
+    if args.mode == 'AS':
+        sims = 'as_simulations'
+    elif args.mode == 'R':
+        sims = 'r_simulations'
+    else:
+        raise ValueError("-mode must be AS or R")
 
-def get_targets(vessels):
-    ''' gets various targets '''
-    in_targets = []
-    out_targets = []
-    for v in vessels:
-        in_targets.append(data_lpn.get_vessel(v[0])['vessel_name'])
-        out_targets.append(data_lpn.get_vessel(v[-1])['vessel_name'])
+    S = M[sims][args.sim]
+    register_main = lambda key, val: M.register(key, val, depth = [sims, args.sim])
+    
+    # dir
+    main_dir = Path(S['dir'])
+    # lpn
+    lpn = LPN.from_file(S['lpn'])
+    
+    ## read param and parse into two arrays
+    stenp = read_json(Path(S['sten_p']))
+    vessels, max_repairs = zip(*stenp)
+    vessels, max_repairs = list(vessels), list(max_repairs)
+    
+    
+    ## get targets
+    in_targets = [[0]]
+    out_targets = vessels
+    
+    
+    ## create directories for data
+    register_main('model_data', {})
+    
+    # main data dir
+    data_dir = main_dir / 'model_data'
+    data_dir.mkdir(exist_ok=True)
+    register_data = lambda key, val: M.register(key, val, depth = [sims, args.sim, 'model_data'])
+    register_data('dir', str(data_dir))    
+
+    # subdirs
+    train_dir = data_dir / 'train_data'
+    val_dir = data_dir / 'val_data'
+    test_dir = data_dir / 'test_data'
+    
+    for idx, (mode, mode_dir, num_samples ) in enumerate([('train',train_dir, args.num_train_samples), ('val', val_dir, args.num_val_samples), ('test', test_dir, args.num_test_samples)]):
         
-    return zip(in_targets, out_targets)
-
-def parse_parametrization(parametrization):
-    ''' parses the parametrization file '''
-    max_repair = []
-    vessels = []
-    for i in range( len(parametrization) ):
-        p = parametrization[str(i)]
-        # get the targets for each vessel to save
+        # make dir
+        mode_dir.mkdir(exist_ok=True)
         
-        # get vess id
-        vessels.append(p[0])
-        # get max repair
-        max_repair.append(p[1])
-
-    return  vessels,max_repair
-    
-
-if __name__ == '__main__':
-    
-    parser = ToolParser(desc = 'Use Multi-threading to create data samples in numpy array for machine learning ')
-    
-    parser.parser.add_argument('-ntrain', dest = 'num_train_samples', default = 1024, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, type = int, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.parser.add_argument('-p', dest = 'num_proc', default = 4, type = int, help = 'number of processes to use')
-    
-    args = parser.parse_args()
-    
-    M = DataGenerationManager(args.config)
-    
-    # LPN
-    data_lpn = LPN.from_file(str(M.data_gen_lpn))
-    
-    # parametrization
-    parametrization = read_json(str(M.stenosis_parametrization))
-    
-    vessels, max_repairs = parse_parametrization(parametrization)
-    
-    targets = get_targets(vessels)
-    
-    # start ray
-    ray.init(num_cpus=args.num_proc)
+        # compute an offset for train
+        if mode == 'train':
+            lower_offset = 0.05
+        else:
+            lower_offset = 0
         
-    for idx, (mode, num_samples) in enumerate([('train', args.num_train_samples), ('val',args.num_val_samples), ('test', args.num_test_samples)]):
-            
-            mode_dir = M.data_dir / mode
-            mode_dir.mkdir(exists_ok = True)
-            
-            # change offset 
-            if mode == 'train':
-                lower_offset = 0.05
-            else:
-                lower_offset = 0
-                
-            # get data (with different seeds)
-            data = data_gen(num_samples=num_samples, 
-                            dims = len(parametrization), 
+        # sobol sample data
+        data = data_gen(num_samples=num_samples, 
                             max_repairs = max_repairs,
                             seed = 42 + idx,
                             lower_offset=lower_offset)
-            
-            # divide data
-            chunk_size = int(np.ceil(len(data) / args.num_proc))
-            start = 0
-            results = []
-            
-            for i in range(args.num_proc):
-                # split data
-                chunked_data = data[start:start + chunk_size]
-                results.append(proc_func.remote(chunked_data, vessels, data_lpn, targets))
-                start+=chunk_size
-            results = ray.get(results)
-            
-            i = []
-            o = []
-            for input, output in results:
-                i.append(input)
-                o.append(output)
+        
+        # split data
+        chunked_data = [[] for i in range(args.p)]
+        for idx, d in enumerate(data):
+            chunked_data[idx % args.p].append(d)
 
+        # pass to each process
+        with ProcessPoolExecutor(max_workers=args.p) as executor:
+            futures = executor.map(proc_func, chunked_data, [vessels for i in range(args.p)], [lpn.get_fast_lpn() for i in range(args.p)], [(in_targets, out_targets) for i in range(args.p)] )
+        
+        # get x, y's
+        x = np.concatenate(chunked_data)
+        y = []
+        for f in futures:
+            y.append(f.result())
+        y = np.concatenate(y)
+        
+        np.save(mode_dir / 'input.npy', x)
+        np.save(mode_dir / 'output.npy', y)
+        
+        
 
-            
-            np.save(mode_dir / 'input.npy', np.array(np.concatenate(i, axis = 0)))
-            np.save(mode_dir / 'output.npy', np.array(np.concatenate(o, axis = 0)))
-            
-    ray.shutdown()
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser(description = 'Use Multi-threading to create data samples in numpy array for machine learning ')
+    
+    parser.add_argument('-i', dest = 'config', required = True, help = 'yaml file for confit')
+    parser.add_argument('-mode', required=True, help = 'Mode: AS, R')
+    parser.add_argument("-sim", type = int, help = "Simulation number to use")
+    parser.add_argument('-ntrain', dest = 'num_train_samples', default = 1024, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, type = int, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-p', default = 4, type = int, help = 'number of processes to use')
+    
+    args = parser.parse_args()
+    
+    main(args)
+    

@@ -98,6 +98,7 @@ class LightningNN(pl.LightningModule):
     
     
 class Dataset0D(tdata.Dataset):
+    """Dataset for input and outputs"""
     
     def __init__(self, input_file, output_file, output_transformation = None, revert_map = None):
         self.input = np.load(input_file)
