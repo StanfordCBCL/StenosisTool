@@ -1,0 +1,3 @@
+[submodule "svInterface"]
+	path = svInterface
+	url = https://github.com/JohnDLee/svInterface
