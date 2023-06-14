@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 4th June 2023 2:35:58 pm
+# Last Modified: Monday, 5th June 2023 1:35:57 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on the junctions
@@ -42,21 +42,44 @@ def conc_sim(lpn: OriginalLPN, vess: int, junc_id: int, which: int, junction_out
     # undo change
     lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = 0)
 
-    return r, pressures_cur       
-        
-def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
+    return r, pressures_cur     
 
+def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
+    
     # get relevant positions
     tree = zerod_lpn.get_tree()
+
+    counter = 0
+    while True:
+        if not linear_transform_side(zerod_lpn, threed_c, M, counter): break
+        counter += 1
+        
+        
+def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, max_gen: int):
+
+    # get relevant positions
+
+    # determine generations
+    gens = zerod_lpn.group_tree_by_generation(type_='junction')
+    
+    # exit if max gen is too large
+    if max_gen > max(gens.keys()): return False
+
     # collect
     junction_outlet_vessels = []
     junction_gids = []
     junction_nodes = []
-    for junc_node in zerod_lpn.tree_bfs_iterator(tree, allow='junction'):
-        junction_outlet_vessels += junc_node.vessel_info[0]['outlet_vessels']
-        junction_gids += junc_node.vessel_info[0]['gid'][1] # out gids
-        junction_nodes.append(junc_node)
- 
+    
+    for key, value in gens.items():
+        # only get it if within the max generations
+        if key == max_gen:
+            for junc_node in value:
+                junction_outlet_vessels += junc_node.vessel_info[0]['outlet_vessels']
+                junction_gids += junc_node.vessel_info[0]['gid'][1] # out gids
+                junction_nodes.append(junc_node)
+                
+    
+    
         
     
     assert len(junction_gids) == len(junction_outlet_vessels), "Number of junction ids on 3D data will not match the number of outlet vessels in the 0D"
@@ -78,7 +101,7 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
     # iterate through each junction outlet (submit futures)
     futures = []
     with ProcessPoolExecutor() as executor:
-        for junc_node in zerod_lpn.tree_bfs_iterator(tree, allow = 'junction'):
+        for junc_node in junction_nodes:
             for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
                 print(f"Changing junction {junc_node.id} vessel {idx}.")
                 futures.append(executor.submit(conc_sim, zerod_lpn.get_fast_lpn(), vess, junc_node.id, idx, junction_outlet_vessels + [0]))
@@ -103,17 +126,17 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
     # get target pressure differences
     target_pressures_diff = target_pressures - pressures_init
     
+    # compute alpha values
     aT = press_inv @ target_pressures_diff
     
     
-    #! SAVING STUFF FOR DEBUGGING
+    
     print(target_pressures_diff)
     print(aT)
-    # np.save("transform.dat", {'aT': aT, 'target_pressures': target_pressures, 'pressures_init': pressures_init, 'pressures': pressures}, allow_pickle=True)
     
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
-    for junc_node in zerod_lpn.tree_bfs_iterator(tree, allow = 'junction'):
+    for junc_node in junction_nodes:
         for idx in range(len(junc_node.vessel_info[0]['outlet_vessels'])):
             if aT[counter] > -10: # physical
                 zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter] * jcs[counter])
@@ -148,7 +171,7 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
     
     # save the lpn.
     zerod_lpn.update()
-    
+    return True
     
 
     

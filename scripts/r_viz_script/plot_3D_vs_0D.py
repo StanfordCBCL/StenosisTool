@@ -57,6 +57,8 @@ def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
     save_dir.mkdir(parents = True, exist_ok=True)
     # save each outlet
     for i in range(len(outlets)):
+        if i == 0:
+            print(max(results_3d[i]['pressure']))
         fig, ax = plt.subplots(1,1)
         ax.plot(results_3d[i]['time'], results_3d[i]['pressure'], label = '3d')
         ax.plot(results_1d[i]['time'], results_1d[i]['pressure'], label = '0d')

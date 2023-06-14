@@ -1,3 +1,11 @@
+# File: scale_flow_sine.py
+# File Created: Monday, 22nd May 2023 12:02:17 am
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Wednesday, 31st May 2023 2:58:18 pm
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Scales inflow to be appropriate using 2 sinusoids. Does not shift systolic
+
 from svinterface.core.bc import Inflow
 from svinterface.plotting.plot_flow import plot_flow
 
@@ -12,7 +20,7 @@ if __name__ == '__main__':
     
     parser.add_argument("-i", help = 'inflow waveform')
     parser.add_argument("-o", help = "inflow waveform scaled out file")
-    parser.add_argument("-co", type=float, help = "cardiac outflow")
+    parser.add_argument("--co", dest = "co", type=float, help = "cardiac outflow")
     
     args = parser.parse_args()
 
@@ -54,10 +62,10 @@ if __name__ == '__main__':
     t1_idx = np.where(inflow.t < midpoint)[0]
     t1 = inflow.t[t1_idx]
     t2_idx = np.where((inflow.t >= midpoint) & (inflow.t <= endpoint))[0]
-    print(t1_idx)
     t2_idx = np.insert(t2_idx, 0, t1_idx[-1])
     t2 = inflow.t[t2_idx]
     print(t1_idx, t2_idx)
+    
     
     # sinusoid 1
     y1 = co_diff1 * (np.pi / (2 * (midpoint-startpoint)))  * np.sin((np.pi/(midpoint - startpoint)) * t1)
