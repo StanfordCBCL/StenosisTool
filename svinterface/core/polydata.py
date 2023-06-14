@@ -100,7 +100,7 @@ class Polydata():
         reader = vtk.vtkXMLPolyDataReader()
         reader.SetFileName(input_file)
         reader.Update()
-        return reader.GetOutput()
+        self.polydata = reader.GetOutput()
     
     @classmethod
     def create_new(cls):
