@@ -1,3 +1,11 @@
+# File: centerline_gen_manual.py
+# File Created: Tuesday, 13th June 2023 6:07:27 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Wednesday, 14th June 2023 5:10:53 pm
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Used to generate centerlines for prestent models.
+
 from svinterface.core.polydata import Centerlines
 from svinterface.manager import Manager
 import argparse

@@ -15,9 +15,11 @@ from svinterface.utils.io import write_json
 def plot_outlets(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
     
     # use valid array
-    valid = c_3d.get_pointdata_array("Caps_0D")
-    outlets = np.where(valid != -1)[0]
-    outlets = np.array([0] + list(outlets))
+    caps = c_3d.get_pointdata_array("Caps_0D")
+    juncs = c_3d.get_pointdata_array("Junctions_0D") 
+    vess = c_3d.get_pointdata_array("Vessels_0D") 
+    #! pull out which outlet it actually is
+    outlets = np.array(list(set([0] + list(np.where(caps != -1)[0]) + list(np.where(juncs != -1)[0]) + list(np.where(vess != -1)[0]))))
     
     results_3d = {}
     # iterate through each outlet
