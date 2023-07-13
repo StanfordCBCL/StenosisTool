@@ -195,6 +195,18 @@ class SolverResults():
         flow = np.array(df[val])
         time = np.array(df['time'])
         return np.trapz(flow, time) / (time[-1] - time[0])
+    
+    def get_max_val(self,vessel_name, val = 'flow_in'):
+        ''' get the max value of a result '''
+        assert val in {'flow_in', 'flow_out', 'pressure_in', 'pressure_out'}, "Must be one of flow_in, flow_out, pressure_in, pressure_out"
+        df = self.vessel_df(vessel_name)
+        return np.array(df[val]).max()
+    
+    def get_min_val(self,vessel_name, val = 'flow_in'):
+        ''' get the max value of a result '''
+        assert val in {'flow_in', 'flow_out', 'pressure_in', 'pressure_out'}, "Must be one of flow_in, flow_out, pressure_in, pressure_out"
+        df = self.vessel_df(vessel_name)
+        return np.array(df[val]).min()
 
     def get_vessel_names(self):
         ''' get a list of all vessel names

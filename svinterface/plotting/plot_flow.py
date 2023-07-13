@@ -1,4 +1,4 @@
-from svinterfaccore.bc import Inflow
+from svinterface.core.bc import Inflow
 import matplotlib.pyplot as plt
 
 def plot_flow(inflow: Inflow,  save = False, output_file = None):

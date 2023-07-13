@@ -785,6 +785,30 @@ class LPN(OriginalLPN):
                 break
         return mpa
 
+    def group_tree_by_generation(self, type_ = 'branch'):
+        ''' groups tree by generation'''
+        gens = defaultdict(list)
+        
+        def _dfs(root, g):
+            if root.type == 'junction':
+                if type_ == 'junction' or type_ == 'all':
+                    gens[g].append(root)
+                for child in root.children:
+                    _dfs(child, g + 1)
+            elif root.type == 'branch' or type_ == 'all':
+                if type_ == 'branch':
+                    gens[g].append(root)
+                if len(root.children) == 1: # internal node, don't increase generations
+                    _dfs(root.children[0], g)
+            
+            return
+
+        tree = self.get_tree()
+        _dfs(tree, 0)
+        return gens
+    
+    
+
     def tree_bfs_iterator(self, tree, allow = "all") -> Generator[Union[BranchNode,JunctionNode], None, None]:
         ''' Tree BFS Iterator for going through the entire tree with a filter.
         '''
