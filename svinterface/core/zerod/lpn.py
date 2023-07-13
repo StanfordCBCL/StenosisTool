@@ -62,7 +62,7 @@ class FastLPN():
         """
         return self.lpn_data[self.VESS][id]
     
-    def change_vessel(self, vessel_id: int, R: float = None, C: float = None, L: float = None, S: float = None):
+    def change_vessel(self, vessel_id: int, R: float = None, C: float = None, L: float = None, S: float = None, mode: str = 'replace'):
         """Changing Vessel
 
         Args:
@@ -71,19 +71,20 @@ class FastLPN():
             C (float, optional): capacitance. Defaults to None.
             L (float, optional): inductance. Defaults to None.
             S (float, optional): stenosis coefficient. Defaults to None.
+            mode (str, optional): replace or add. Defaults to replace
         """
         vess = self.get_vessel(vessel_id)
         vals = vess['zero_d_element_values']
         if R is not None:
-            vals['R_poiseuille'] = R
+            vals['R_poiseuille'] = R if mode == 'replace' else R + vals['R_poiseuille']
         if C is not None:
-            vals['C'] = C
+            vals['C'] = C if mode == 'replace' else C + vals['C']
         if L is not None:
-            vals['L'] = L
+            vals['L'] = L if mode == 'replace' else L + vals['L']
         if S is not None:
-            vals['stenosis_coefficient'] = S
+            vals['stenosis_coefficient'] = S if mode == 'replace' else S + vals['stenosis_coefficient']
     
-    def change_junction_outlet(self, junction_id_or_name: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None):
+    def change_junction_outlet(self, junction_id_or_name: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None, mode: str = 'replace'):
         """Changing Junction Outlets
 
         Args:
@@ -93,18 +94,19 @@ class FastLPN():
             C (float, optional): capacitance. Defaults to None.
             L (float, optional): inductance. Defaults to None.
             S (float, optional): stenosis coefficient. Defaults to None.
+            mode (str, optional): replace or add. Defaults to replace
         """
         junc = self.get_junction(junction_id_or_name)
         assert which < len(junc['outlet_vessels']), f"Selected outlet {which} is out of bounds"
         vals = junc['junction_values']
         if R is not None:
-            vals['R_poiseuille'][which] = R
+            vals['R_poiseuille'][which] = R if mode == 'replace' else R + vals['R_poiseuille'][which]
         if C is not None:
-            vals['C'][which] = C
+            vals['C'][which] = C if mode == 'replace' else C + vals['C'][which]
         if L is not None:
-            vals['L'][which] = L
+            vals['L'][which] = L if mode == 'replace' else L + vals['L'][which]
         if S is not None:
-            vals['stenosis_coefficient'][which] = S
+            vals['stenosis_coefficient'][which] = S if mode == 'replace' else S + vals['stenosis_coefficient'][which]
     
     def occlude_vessel(self, vessel_id: int, occlusion: float):
         ''' creates an occlusion in a vessel
@@ -306,7 +308,7 @@ class OriginalLPN():
         print('Error: an inlet bc does not exist.')
         return None
     
-    def change_vessel(self, vessel_id_or_name: int, R: float = None, C: float = None, L: float = None, S: float = None):
+    def change_vessel(self, vessel_id_or_name: int, R: float = None, C: float = None, L: float = None, S: float = None, mode: str = 'replace'):
         """Changing Vessel
 
         Args:
@@ -319,15 +321,15 @@ class OriginalLPN():
         vess = self.get_vessel(vessel_id_or_name)
         vals = vess['zero_d_element_values']
         if R is not None:
-            vals['R_poiseuille'] = R
+            vals['R_poiseuille'] = R if mode == 'replace' else R + vals['R_poiseuille']
         if C is not None:
-            vals['C'] = C
+            vals['C'] = C if mode == 'replace' else C + vals['C']
         if L is not None:
-            vals['L'] = L
+            vals['L'] = L if mode == 'replace' else L + vals['L']
         if S is not None:
-            vals['stenosis_coefficient'] = S
+            vals['stenosis_coefficient'] = S if mode == 'replace' else S + vals['stenosis_coefficient']
     
-    def change_junction_outlet(self, junction_id_or_name: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None):
+    def change_junction_outlet(self, junction_id_or_name: int, which: int, R: float = None, C: float = None, L: float = None, S: float = None, mode: str = 'replace'):
         """Changing Junction Outlets
 
         Args:
@@ -343,13 +345,13 @@ class OriginalLPN():
         assert junc['junction_type'] == "BloodVesselJunction", f"Selected Junction {junction_id_or_name} is not a BloodVesselJunction."
         vals = junc['junction_values']
         if R is not None:
-            vals['R_poiseuille'][which] = R
+            vals['R_poiseuille'][which] = R if mode == 'replace' else R + vals['R_poiseuille'][which]
         if C is not None:
-            vals['C'][which] = C
+            vals['C'][which] = C if mode == 'replace' else C + vals['C'][which]
         if L is not None:
-            vals['L'][which] = L
+            vals['L'][which] = L if mode == 'replace' else L + vals['L'][which]
         if S is not None:
-            vals['stenosis_coefficient'][which] = S
+            vals['stenosis_coefficient'][which] = S if mode == 'replace' else S + vals['stenosis_coefficient'][which]
     
     def occlude_vessel(self, vessel_id_or_name: int, occlusion: float):
         ''' creates an occlusion in a vessel

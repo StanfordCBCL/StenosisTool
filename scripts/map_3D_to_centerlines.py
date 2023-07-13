@@ -1,7 +1,7 @@
 # File: map_3D_to_centerlines.py
 # File Created: Monday, 25th July 2022 3:39:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 27th February 2023 1:50:43 am
+# Last Modified: Wednesday, 14th June 2023 7:07:14 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: A long running operation (2+ hrs) where given a 3D .vtu file and its corresponding centerlines, flows and pressures can be mapped back onto the 1D centerlines
@@ -242,7 +242,7 @@ def get_integral(inp_3d, origin, normal):
     return Integration(inp)
 
 
-def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=False, only_vessels=False):
+def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=False, all=False):
     """
     Extract 3d results at 1d model nodes (integrate over cross-section)
     Args:
@@ -270,7 +270,7 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
         valid = v2n(reader_1d.GetPointData().GetArray('Caps_0D')) + 1
     elif only_juncs:
         valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + 1
-    elif only_vessels:
+    elif all:
         valid = v2n(reader_1d.GetPointData().GetArray('Junctions_0D')) + v2n(reader_1d.GetPointData().GetArray('Vessels_0D')) + v2n(reader_1d.GetPointData().GetArray('Caps_0D')) + 3
         
     # initialize output
@@ -303,8 +303,9 @@ def extract_results(fpath_1d, fpath_3d, fpath_out, only_caps=False, only_juncs=F
                 points[i] -= eps_norm * normals[i]
         else:
             # skip if an only flag is set and the point is invalid.
-            if (only_caps or only_juncs or only_vessels) and valid[i] == 0:
+            if (only_caps or only_juncs or all) and valid[i] == 0:
                 continue
+            
 
 
         # create integration object (slice geometry at point/normal)
@@ -339,7 +340,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     try:
-        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps, only_juncs=args.juncs, only_vessels=args.all)
+        extract_results(args.centerlines, args.volume, args.outfile, only_caps=args.caps, only_juncs=args.juncs, all=args.all)
     except Exception as e:
         print(e)
         
