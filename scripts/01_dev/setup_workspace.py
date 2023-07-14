@@ -1,10 +1,10 @@
 # File: setup_workspace.py
 # File Created: Monday, 31st October 2022 6:47:53 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 13th February 2023 9:38:55 pm
+# Last Modified: Thursday, 13th July 2023 1:42:28 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Sets up a results workspace from a SV Model Directory
+# Description: Sets up a results workspace from a SV Model Directory. Requires a config file from generate_sv_config.py
 
 from svinterface.manager import Manager
 
@@ -22,28 +22,23 @@ def copy_item(sv, workspace, key, filename):
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description = 'Sets up workspace from SV Model Directory')
+    parser = argparse.ArgumentParser(description='Sets up a results workspace from a SV Model Directory. Requires a config file from generate_sv_config.py')
     
-    parser.add_argument("-i", dest = 'yaml', required = True, help = "SV Yaml file")
-    parser.add_argument("-o", dest = 'outdir', required = True, help = "Output directory to construct workspace in.")
-    parser.add_argument('--f', dest = 'force', action = 'store_true', default = False, help = 'force re-set up workspace')
+    parser.add_argument("-i", dest = 'config', required = True, help = "Config file from generate_sv_config.py")
+    parser.add_argument("-o", dest = 'outdir', required = True, help = "Path to the directory to construct workspace in. If it already exists, an error is thrown.")
     args = parser.parse_args()
     
     # Manager
-    sv = Manager(args.yaml)
+    sv = Manager(args.config)
     
     # outdir path
     outdir = Path(args.outdir)
-    
-    # if force is given, del old outdir if it exists
-    if args.force and outdir.exists():
-        shutil.rmtree(str(outdir))
         
     # construct dir, should not already exist
     try:
         outdir.mkdir(parents=True, exist_ok = False)
     except FileExistsError as e:
-        print("Workspace already exists. To overwrite, use --f flag.")
+        print("Workspace already exists, please remove it first.")
         exit(1)
         
     # add from workspace to file
@@ -53,7 +48,7 @@ if __name__ == '__main__':
     assert sv['metadata']['model_name'] != None, "Please add a model name to your yaml file."
     model_name = sv['metadata']['model_name']
 
-    # copy stuff over
+    ## Copy stuff over
     workspace = sv['workspace']
     
     # surface model
@@ -73,6 +68,7 @@ if __name__ == '__main__':
     # write root
     workspace['root'] = str(outdir)
     
+    # Complete
     print("Done")
     sv.write(str(outdir/'config.yaml'))
     print('Successfully constructed workspace:', args.outdir)

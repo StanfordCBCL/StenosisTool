@@ -1,0 +1,33 @@
+# SV Workspace
+workspace:
+  surface_model: "Models/AS1_SU0308_prestent.vtp"
+  mdl: "Models/AS1_SU0308_prestent.mdl"
+  flow_file: "flow_files/inflow_1D.flow"
+  rcrt_file: 
+  capinfo: "Models/AS1_SU0308_prestent_CapInfo"
+
+# Metadata about model
+metadata:
+  model_name: "AS1_SU0308"
+  diseased: true
+  inlet: "cap_RPA"
+
+# Options in pipeline
+options:
+  tune: true
+
+# Tuning Parameters
+tune_params:
+  PCWP: 18
+  R_LPA: 2.71955233706
+  R_RPA: 6.1566994701
+  mPAP:
+  - 42
+  - 42
+  maxPAP:
+  - 90
+  - 90
+  minPAP:
+  - 18
+  - 18
+  rpa_split: 0.52

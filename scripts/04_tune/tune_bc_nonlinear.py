@@ -1,16 +1,16 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 17th March 2023 5:45:52 pm
+# Last Modified: Thursday, 13th July 2023 2:10:28 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
+# Description: Tunes Boundary Conditions for a 0D model using a simplified nonlinear tuning model.
 #! Sensitivity Tests to be implemented & clean up code
 
 
 
 from svinterface.core.zerod.solver import SolverResults, Solver0Dcpp
-from svinterface.core.zerod.lpn import FastLPN, LPN
+from svinterface.core.zerod.lpn import LPN
 from svinterface.core.bc import Inflow, RCR
 from svinterface.manager import Manager
 from svinterface.utils.misc import m2d, d2m
@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 
 
 class TuneParams():
+    """ Tuning Parameter Defaults. """
     
     def __init__(self):
         ## optimizer targets defaults for a healthy model
@@ -162,7 +163,8 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_lpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": params.r_LPA,
+                "R_poiseuille": 0,
+                "stenosis_coefficient": params.r_LPA,
             }
         },
             {
@@ -192,7 +194,9 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_rpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": params.r_RPA
+                "R_poiseuille": 0,
+                "stenosis_coefficient": params.r_RPA
+                
             }
         }, 
             { 
@@ -235,13 +239,15 @@ def opt_function(x, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams):
                          last_cycle_only=True)
     rez = solver.run_sim()
     
+    # compute decomposed loss
     mPAP_loss, qRPA_loss, maxPAP_loss, minPAP_loss = loss_function(results = rez,
                          tune_params = params,
                          inflow = main_lpn.inflow,
                          )
-    
+    # aggregate
     loss = mPAP_loss + qRPA_loss + maxPAP_loss + minPAP_loss
     
+    # report
     params.iter += 1
     print(f"{params.iter:^15}|{mPAP_loss:^15.5f}|{maxPAP_loss:^15.5f}|{minPAP_loss:^15.5f}|{qRPA_loss:^15.5f}|{loss:^15f}")
     
@@ -276,7 +282,7 @@ def loss_function(results: SolverResults, tune_params: TuneParams, inflow: Inflo
     # qRPA
     qRPA_sim = np.trapz(rpa['flow_out'].to_numpy(), rpa['time'].to_numpy()) / inflow.tc
     qRPA_meas = inflow.mean_inflow * tune_params.rpa_flow_split
-    qRPA_loss = squared_error(qRPA_meas, qRPA_sim ) #+ squared_error(rpa['flow_out'].to_numpy().max(), inflow.max_inflow * tune_params.rpa_flow_split)+ squared_error(rpa['flow_out'].to_numpy().min(), inflow.min_inflow * tune_params.rpa_flow_split)
+    qRPA_loss = squared_error(qRPA_meas, qRPA_sim )
 
     # maxPAP
     maxPAP_sim = mpa['pressure_in'].to_numpy().max()
@@ -431,11 +437,6 @@ def tune(TM: Manager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, tuning
     modify_params(tuning_lpn, results.x)
     tuning_lpn.write_lpn_file(str(tuning_lpn_file))
     
-    # run a simulation on the main lpn
-    # main_solver = Solver0Dcpp(main_lpn, use_steady=True, last_cycle_only=False, debug = True)
-    # main_results = main_solver.run_sim()
-    # main_results.validate_results(main_lpn, outfile=str(tuning_dir / "full_inlet_waveform.png"), targets = TM['tune_params'])
-    
     # validate results
     validate_results(params,
                         main_lpn,
@@ -446,7 +447,6 @@ def tune(TM: Manager, main_lpn: LPN, tuning_lpn: LPN, params: TuneParams, tuning
     
     print(x_new)
     print("Optimization Complete.")
-    
     
     
 
@@ -465,7 +465,7 @@ def get_initial_cond(params: TuneParams, main_lpn: LPN, tuning_lpn: LPN):
 def modify_params(lpn: LPN, x ):
     ''' modifies the optimizer variables '''
     vess = lpn.vessel
-
+    
     # LPA
     vess[2]['zero_d_element_values']['R_poiseuille'] = .1 * x[1]
     vess[2]['zero_d_element_values']['C'] = x[0]
@@ -477,6 +477,8 @@ def modify_params(lpn: LPN, x ):
     vess[6]['zero_d_element_values']['R_poiseuille'] = .9 * x[2]
 
 def convert_to_dict(opt_results: optimize.OptimizeResult):
+    """Converts optimizer results to a dict
+    """
     rez = {}
     for key, val in opt_results.items():
         rez[key] = val
@@ -642,14 +644,28 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
 #         fig.savefig(os.path.join(sensitivity_dir, f'{var_name}_change.png'))
 #         print('Done')
     
+def load_tuning_params(TM: Manager):
+    
+    params = TuneParams()
+    P = TM['tune_params']
+    
+    # loads params
+    params.cap_wedge_pressure = m2d(P['PCWP'])
+    params.minPAP_meas = [m2d(P["minPAP"][0]), m2d(P["minPAP"][1])]
+    params.maxPAP_meas = [m2d(P["maxPAP"][0]), m2d(P["maxPAP"][1])]
+    params.rpa_flow_split = P["rpa_split"]
+    params.mPAP_meas = [m2d(P["mPAP"][0]), m2d(P["mPAP"][1])] 
+    params.r_LPA = P["R_LPA"]
+    params.r_RPA = P["R_RPA"]
+    
+    return params
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'Tunes a model if necessary')
     
     parser.add_argument('-i', dest = 'config', help = 'Config.yaml file')
-    # dev params
-    parser.add_argument('--f', dest = 'force', action = 'store_true', default = False, help = 'Whether to run an optimization even if tuning is set to false.')
+    parser.add_argument('--f', dest = 'force', action = 'store_true', default = False, help = 'Whether to restart tuning, even if tuning was already done once.')
     parser.add_argument('--s', dest = 'sensitivity_test', action = 'store_true', default = False, help = 'flag to run sensitivity tests or not')
     
     args = parser.parse_args()
@@ -657,8 +673,9 @@ if __name__ == '__main__':
     # manager
     TM = Manager(args.config)
     
+    #! To be modified
     if args.sensitivity_test:
-        raise NotImplementedError("Sensitivity Tests not implemented. Please remove the -s flag.")
+        raise NotImplementedError("Sensitivity Tests not implemented. Please remove the --s flag.")
     
     # check tune
     if not TM['options']['tune']:
@@ -671,7 +688,7 @@ if __name__ == '__main__':
         shutil.rmtree(str(tuning_dir))
 
     try:
-        tuning_dir.mkdir()
+        tuning_dir.mkdir(exist_ok=False)
     except FileExistsError:
         print("Tuning dir already exists. Use --f flag to retune forcefully.")
         exit(1)
@@ -681,16 +698,9 @@ if __name__ == '__main__':
     
     # load the main LPN
     main_lpn = LPN.from_file(str(TM['workspace']['lpn']))
+    
     # add arguments to params
-    params = TuneParams()
-    P = TM['tune_params']
-    params.cap_wedge_pressure = m2d(P['PCWP'])
-    params.minPAP_meas = [m2d(P["minPAP"][0]), m2d(P["minPAP"][1])]
-    params.maxPAP_meas = [m2d(P["maxPAP"][0]), m2d(P["maxPAP"][1])]
-    params.rpa_flow_split = P["rpa_split"]
-    params.mPAP_meas = [m2d(P["mPAP"][0]), m2d(P["mPAP"][1])] 
-    params.r_LPA = P["R_LPA"]
-    params.r_RPA = P["R_RPA"]
+    params = load_tuning_params(TM)
     
     # set up tuning lpn
     tuning_lpn = construct_tuning_lpn(params, main_lpn)

@@ -1,3 +1,11 @@
+# File: centerline_gen.py
+# File Created: Sunday, 19th February 2023 11:33:21 am
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Thursday, 13th July 2023 1:53:55 pm
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Centerline Generation for prestent model / main model provided in config. Automatically tracks and adds to workspace
+
 from svinterface.core.polydata import Centerlines
 from svinterface.manager import Manager
 import argparse
@@ -5,9 +13,8 @@ from pathlib import Path
 
 if __name__ == '__main__':
     
-    
-    parser = argparse.ArgumentParser(description="Generate centerlines")
-    parser.add_argument("-i", dest = 'config', help = 'config.yaml file')
+    parser = argparse.ArgumentParser(description="Centerline Generation for prestent model / main model provided in config. Automatically tracks and adds to workspace.")
+    parser.add_argument("-i", dest = 'config', help = 'Config file')
     parser.add_argument("--f", dest = 'force', action = "store_true", help = 'whether to recompute the centerlines')
     args = parser.parse_args()
     

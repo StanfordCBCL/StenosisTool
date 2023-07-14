@@ -1,10 +1,10 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 22nd May 2023 2:06:23 am
+# Last Modified: Thursday, 13th July 2023 2:04:24 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Tunes Boundary Conditions for a 0D model using a simplified tuning model.
+# Description: Tunes Boundary Conditions for a 0D model using a simplified linear tuning model.
 #! Sensitivity Tests to be implemented & clean up code
 
 
@@ -162,8 +162,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_lpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": 0,
-                "stenosis_coefficient": params.r_LPA,
+                "R_poiseuille": params.r_LPA,
             }
         },
             {
@@ -193,9 +192,7 @@ def construct_tuning_lpn(params: TuneParams, main_lpn: LPN):
             "vessel_name": "branch_rpa_tree",
             "zero_d_element_type": "BloodVessel",
             "zero_d_element_values": {
-                "R_poiseuille": 0,
-                "stenosis_coefficient": params.r_RPA
-                
+                "R_poiseuille": params.r_RPA
             }
         }, 
             { 
