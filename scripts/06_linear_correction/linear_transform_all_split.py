@@ -1,10 +1,11 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 10th July 2023 10:19:58 pm
+# Last Modified: Monday, 17th July 2023 5:12:36 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description:  Perform a linear transform on the junctions
+# Description:  Perform a linear transform on both junctions and vessels, but split between MPA, RPA, LPA
+#! Unused
 
 
 
@@ -25,14 +26,13 @@ from concurrent.futures import ProcessPoolExecutor, wait
 
 
 
-def junc_sim(lpn: OriginalLPN, dvess: int, junc_id: int, which: int, poi_0d):
+def junc_sim(lpn: OriginalLPN, junc_id: int, which: int, poi_0d):
     ''' To run simulations using multi-processing '''
     # get downstream vessel.
-    v = lpn.get_vessel(dvess)
     # compute a R as 10%
-    dr = .1 * v['zero_d_element_values']['R_poiseuille']
+    r = 1
     # change to JC
-    lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = dr, mode = 'add')
+    lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = r, mode='add')
     # Solver
     tmp = Solver0Dcpp(lpn, last_cycle_only=True, mean_only=True, debug = False)
     tmp_sim = tmp.run_sim()
@@ -41,16 +41,14 @@ def junc_sim(lpn: OriginalLPN, dvess: int, junc_id: int, which: int, poi_0d):
     tmp_sim.convert_to_mmHg()
     pressures_cur = pd.concat([tmp_sim.result_df.iloc[poi_0d[0]]['pressure_in'], tmp_sim.result_df.iloc[poi_0d[1]]['pressure_out'], tmp_sim.result_df.iloc[poi_0d[2]]['pressure_in']]).to_numpy()
     # undo change
-    lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = -dr, mode = 'add')
+    lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = -r, mode = 'add')
 
-    return dr, pressures_cur   
+    return pressures_cur   
 
 def vess_sim(lpn: OriginalLPN, vess: int, poi_0d):
     ''' To run simulations using multi-processing '''
-    # get downstream vessel.
-    v = lpn.get_vessel(vess)
     # compute a R as 10%
-    dr = .1 * v['zero_d_element_values']['R_poiseuille']
+    dr = 1
     # change to JC
     lpn.change_vessel(vessel_id = vess, R = dr, mode = 'add')
     # Solver
@@ -63,7 +61,7 @@ def vess_sim(lpn: OriginalLPN, vess: int, poi_0d):
     # undo change
     lpn.change_vessel(vessel_id = vess, R = -dr, mode = 'add')
 
-    return dr, pressures_cur       
+    return pressures_cur       
         
 def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
     
@@ -72,9 +70,10 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
     # determine sides
     zerod_lpn.det_lpa_rpa(tree)
     
-    for side in  'MPA', 'RPA', 'LPA':
-        print(f"Evaluating {side}.")
-        linear_transform_side(zerod_lpn, threed_c, M, side)
+    for i in range(5):
+        for side in  'MPA', 'RPA', 'LPA':
+            print(f"Evaluating {side}.")
+            linear_transform_side(zerod_lpn, threed_c, M, side)
         
 def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, side):
 
@@ -119,7 +118,6 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     init_sim.convert_to_mmHg()
     pressures_init = poi_0d(init_sim.result_df)
 
-    jcs = []
         
     # submit jobs
     futures = []
@@ -128,7 +126,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
         for junc_node in junction_nodes:
             for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
                 print(f"Changing junction {junc_node.id} downstream vessel {idx}.")
-                futures.append(executor.submit(junc_sim, zerod_lpn.get_fast_lpn(), vess, junc_node.id, idx, [junction_outlet_vessels, segment_vess_ids, [0]]))
+                futures.append(executor.submit(junc_sim, zerod_lpn.get_fast_lpn(), junc_node.id, idx, [junction_outlet_vessels, segment_vess_ids, [0]]))
         # iterate through vessel segments
         for vid in segment_vess_ids:
             print(f"Changing vessel {vid}.")
@@ -140,10 +138,9 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
         print("Retrieving results...")
         for idx, f in enumerate(futures):
             
-            dr, ps = f.result()
+            ps = f.result()
             # compute difference
             pressures.append( ps - pressures_init)
-            jcs.append(dr)
             print(f"\tRetrieved results for process {idx}/{len(futures)}")
             
     # convert to numpy
@@ -164,16 +161,23 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     print(aT)
     #np.save("transform.dat", {'aT': aT, 'target_pressures': target_pressures, 'pressures_init': pressures_init, 'pressures': pressures}, allow_pickle=True)
     
+    #! Could swap order of vessels then junctions, so we can always keep it physical
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
     for junc_node in junction_nodes:
         for idx in range(len(junc_node.vessel_info[0]['outlet_vessels'])):
-            if aT[counter] > 0: # physical
-                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter] * jcs[counter], mode = 'add')
+            if aT[counter] + junc_node.vessel_info[0]['junction_values']['R_poiseuille'][idx] > 0: # physical
+                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter], mode = 'add')
+            else:
+                # otherwise minimum which is 0
+                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = 0)
             counter += 1
     for vid in segment_vess_ids:
-        if aT[counter] > -10:
-            zerod_lpn.change_vessel(vessel_id_or_name=vid, R = aT[counter] * jcs[counter], mode = 'add')
+        v = zerod_lpn.get_vessel(vid)
+        if aT[counter] > -v['zero_d_element_values']['R_poiseuille']: # physical
+            zerod_lpn.change_vessel(vessel_id_or_name=vid, R = aT[counter], mode = 'add')
+        else:
+            zerod_lpn.change_vessel(vessel_id_or_name=vid, R = 0)
         counter += 1
             
     # Split Constant according to Murrays law into proximal resistance
@@ -201,7 +205,9 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     for name, bc in zerod_lpn.bc_data.items():
         add_r = Rpi(areas[bc['face_name']], A, global_const)
         print(add_r)
-        bc['bc_values']['Rp'] += add_r
+        rat = bc['bc_values']['Rp'] / (bc['bc_values']['Rd'] + bc['bc_values']['Rp'])
+        bc['bc_values']['Rp'] += add_r * rat
+        bc['bc_values']['Rd'] += add_r * (1-rat)
     
     # save the lpn.
     zerod_lpn.update()
@@ -225,19 +231,15 @@ if __name__ == '__main__':
     
     M = Manager(args.config)
     
-    zerod_file = M['workspace']['lpn']
+    zerod_file = M['workspace']['base_lpn']
     threed_file = M['workspace']['3D']
     
-    # get LPN and convert to BVJ
+    # reset lpn back to base
     zerod_lpn = LPN.from_file(zerod_file)
-    zerod_lpn.to_cpp(normal = False) # resets to all 0's
-    # reloads the rcrts from previously tuned
-    rcr = RCR()
-    rcr.read_rcrt_file(M['workspace']['rcrt_file'])
-    zerod_lpn.update_rcrs(rcr)
-    # write to disk
-    zerod_lpn.update()
-    
+    zerod_lpn.write_lpn_file(M['workspace']['lpn'])
+    # re-init LPN
+    zerod_lpn = LPN.from_file(M['workspace']['lpn'])
+
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
     

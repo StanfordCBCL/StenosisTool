@@ -1,7 +1,7 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 13th July 2023 2:10:28 pm
+# Last Modified: Monday, 17th July 2023 5:06:27 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified nonlinear tuning model.
@@ -707,3 +707,8 @@ if __name__ == '__main__':
     
     # run optimizer
     tune(TM, main_lpn, tuning_lpn, params, tuning_dir)
+    
+    # save a copy of the base lpn to main
+    base_lpn_path = Path(TM['workspace']['root']) / 'base_lpn.in'
+    TM.register('base_lpn', str(base_lpn_path), depth = ['workspace'])
+    main_lpn.write_lpn_file(str(base_lpn_path))

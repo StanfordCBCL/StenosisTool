@@ -1,41 +1,29 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 13th July 2023 1:05:54 pm
+# Last Modified: Monday, 17th July 2023 5:13:03 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description:  Perform a linear transform on the junctions
-#! ONLY SAVES POSITIVE OR PHYSICAL ONES
-
-
-
-#! Only apply global constant to the bc of the partition
-#! Change to LPA and RPA only and combine MPA in both
-#! Currently replace r in code, so it will overwrite if you try to retune a value.
-#! COuld modify resistance before first bifurcation.
-
-#! variable does not make sense, since 1 side gets drastically increased to account for the entire pulmonary increase
-#! Not stable, since swapping LPA and RPA order may result in failure.
+# Description:  Perform a linear transform on the junctions, but split between MPA, RPA, LPA. Only saves physical values
+#! Swapping LPA and RPA may result in failure.
 
 import argparse
 
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
 from svinterface.core.bc import RCR 
-from svinterface.core.zerod.solver import Solver0Dcpp, SolverResults
+from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 
 
 
-def conc_sim(lpn: OriginalLPN, vess: int, junc_id: int, which: int, junction_outlet_vessels: list):
+def conc_sim(lpn: OriginalLPN, junc_id: int, which: int, junction_outlet_vessels: list):
     ''' To run simulations using multi-processing '''
-    # get downstream vessel.
-    v = lpn.get_vessel(vess)
-    # compute a R as 10% and original value
-    r = .1 * v['zero_d_element_values']['R_poiseuille'] + lpn.get_junction(junc_id)['junction_values']['R_poiseuille'][which]
+    # compute a R as 1 and original value
+    r = 1 + lpn.get_junction(junc_id)['junction_values']['R_poiseuille'][which]
     # change to JC
     lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = r)
     # Solver
@@ -48,7 +36,7 @@ def conc_sim(lpn: OriginalLPN, vess: int, junc_id: int, which: int, junction_out
     # undo change
     lpn.change_junction_outlet(junction_id_or_name = junc_id, which = which, R = 0)
 
-    return r, pressures_cur     
+    return pressures_cur     
 
 def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
     
@@ -92,7 +80,6 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     init_sim.convert_to_mmHg()
     pressures_init = init_sim.result_df.iloc[junction_outlet_vessels + [0]]['pressure_in'].to_numpy()
     
-    jcs = []
     
 
         
@@ -102,15 +89,14 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
         for junc_node in junction_nodes:
             for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
                 print(f"Changing junction {junc_node.id} vessel {idx}.")
-                futures.append(executor.submit(conc_sim, zerod_lpn.get_fast_lpn(), vess, junc_node.id, idx, junction_outlet_vessels + [0]))
+                futures.append(executor.submit(conc_sim, zerod_lpn.get_fast_lpn(), junc_node.id, idx, junction_outlet_vessels + [0]))
         pressures = []
         # parse futures in order
         print("Retrieving results...")
         for idx, f in enumerate(futures):
             
-            r, ps = f.result()
+            ps = f.result()
             pressures.append( ps - pressures_init)
-            jcs.append(r)
             print(f"\tRetrieved results for process {idx}/{len(futures)}")
             
     # convert to numpy
@@ -138,9 +124,10 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
     for junc_node in junction_nodes:
-        for idx in range(len(junc_node.vessel_info[0]['outlet_vessels'])):
-            if aT[counter] > -10: # physical
-                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter] * jcs[counter])
+        for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
+            v = zerod_lpn.get_vessel(vess)
+            if aT[counter] + junc_node.vessel_info[0]['junction_values']['R_poiseuille'][idx] > -v['zero_d_element_values']['R_poiseuille']: # physical
+                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter], mode='add')
             counter += 1
             
     # Split Constant according to Murrays law into proximal resistance
@@ -192,15 +179,15 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     
     # print(areas)
     A = sum(list(areas.values()))
-    resistances = []
     # add resistances
     global_const = aT[-1] * m2d(1) / zerod_lpn.inflow.mean_inflow
     for name, bc in zerod_lpn.bc_data.items():
         # if bc['face_name'] in areas:
         add_r = Rpi(areas[bc['face_name']], A, global_const)
         print(add_r)
-        resistances.append(add_r)
-        bc['bc_values']['Rp'] += add_r
+        rat = bc['bc_values']['Rp'] / (bc['bc_values']['Rd'] + bc['bc_values']['Rp'])
+        bc['bc_values']['Rp'] += add_r * rat
+        bc['bc_values']['Rd'] += add_r * (1-rat)
 
     # save the lpn.
     zerod_lpn.update()
@@ -221,18 +208,15 @@ if __name__ == '__main__':
     
     M = Manager(args.config)
     
-    zerod_file = M['workspace']['lpn']
+    zerod_file = M['workspace']['base_lpn']
     threed_file = M['workspace']['3D']
     
-    # get LPN and convert to BVJ
+    # reset lpn back to base
     zerod_lpn = LPN.from_file(zerod_file)
-    zerod_lpn.to_cpp(normal = False) # resets to all 0's
-    # reloads the rcrts from previously tuned
-    rcr = RCR()
-    rcr.read_rcrt_file(M['workspace']['rcrt_file'])
-    zerod_lpn.update_rcrs(rcr)
-    # write to disk
-    zerod_lpn.update()
+    zerod_lpn.write_lpn_file(M['workspace']['lpn'])
+    # re-init LPN
+    zerod_lpn = LPN.from_file(M['workspace']['lpn'])
+
     
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)

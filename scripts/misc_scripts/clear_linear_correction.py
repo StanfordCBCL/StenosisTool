@@ -14,14 +14,9 @@ if __name__ == '__main__':
     
     M = Manager(args.config)
     
-    zerod_file = M['workspace']['lpn']
+    # overwrite base to lpn
+    zerod_file = M['workspace']['base_lpn']
     
-    # get LPN and convert to BVJ
+    # get lpn
     zerod_lpn = LPN.from_file(zerod_file)
-    zerod_lpn.to_cpp(normal = False) # resets to all 0's
-    # reloads the rcrts from previously tuned
-    rcr = RCR()
-    rcr.read_rcrt_file(M['workspace']['rcrt_file'])
-    zerod_lpn.update_rcrs(rcr)
-    
-    zerod_lpn.update()
+    zerod_lpn.write_lpn_file(M['workspace']['lpn'])

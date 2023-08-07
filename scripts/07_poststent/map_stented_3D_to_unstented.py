@@ -1,7 +1,7 @@
 # File: map_stented3D_to_unstented.py
 # File Created: Tuesday, 4th July 2023 12:21:05 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 13th July 2023 3:07:01 pm
+# Last Modified: Friday, 4th August 2023 12:11:57 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Maps stented 3D extracted centerlines to the unstented centerlines
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="map stented to prestent")
     
-    parser.add_argument("-c", dest='stent', help = 'stented 3D extracted centerlines' )
+    parser.add_argument("-c", dest='stent', help = 'stented 3D extracted centerlines (must have been matched via centerline_match.py)' )
     parser.add_argument("-i", dest='config', help= 'Config file for project')
     
     args = parser.parse_args()

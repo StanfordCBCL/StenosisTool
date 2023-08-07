@@ -1,7 +1,7 @@
 # File: format_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 13th July 2023 2:36:39 pm
+# Last Modified: Friday, 4th August 2023 12:19:25 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument("-c", dest = 'centerlines', help = "3D extracted centerlines")
     parser.add_argument("-f", dest = "inflow", help = '3D inflow used to compute simulation')
     parser.add_argument("-o", help = "output destination")
-    parser.add_argument("--s", default = False, action="store_True", help = 'flag to save to manager which used (Should only be used for the prestent)')
+    parser.add_argument("--s", default = False, action="store_true", help = 'flag to save to manager which used (Should only be used for the prestent)')
     
     args = parser.parse_args()
     

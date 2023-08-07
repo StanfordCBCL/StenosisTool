@@ -1,7 +1,7 @@
 # File: map_0D_to_centerlines.py
 # File Created: Monday, 23rd January 2023 7:16:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 23rd May 2023 4:09:53 pm
+# Last Modified: Monday, 17th July 2023 6:28:07 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Takes 0D results csv file and corresponding centerlines used to construct 0D LPN, maps a 0D model's results to centerlines.
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     # files
     parser.add_argument("-i", dest = 'config', required = True, help = 'config file')
     
-    parser.add_argument('-mode', default = None, help = 'Mode: None, AS, R')
-    parser.add_argument("-sim", type = int, help = "Simulation number to use")
+    parser.add_argument('-mode', default = None, help = 'Mode: None, P')
+    parser.add_argument("-sim", help = "Simulation number (or name in P mode) to use")
 
     # flags
     parser.add_argument("--mmHg", action = 'store_true', default = False, help ='converts all values to mmHg')
@@ -43,19 +43,17 @@ if __name__ == '__main__':
     # load original centerlines
     c = Polydata.load_polydata(M['workspace']['centerlines'])
     
-    sims = 'simulations'
-    if args.mode == 'AS':
-        sims = 'as_simulations'
-    elif args.mode == 'R':
-        sims = 'r_simulations'
-    # else:
-    #     raise ValueError("-mode must be AS or R or not set")
-        
+    if args.mode is None:
+        sim = M['simulations'][int(args.sim)]
+    elif args.mode == 'P':
+        sim = M['parameterization']['corrections'][args.sim]
+    
+    
     # load LPN
-    lpn = LPN.from_file(M[sims][args.sim]['lpn'])
+    lpn = LPN.from_file(sim['lpn'])
     
     # load results
-    results = SolverResults.from_csv(M[sims][args.sim]['csv'])
+    results = SolverResults.from_csv(sim['csv'])
     if args.mmHg:
         results.convert_to_mmHg()
 
@@ -70,8 +68,13 @@ if __name__ == '__main__':
         output_file = 'centerline_projection.summary.vtp'
         
     # write polydata
-    out_poly = str(Path(M[sims][args.sim]['dir']) / output_file)
+    out_poly = str(Path(sim['dir']) / output_file)
     c.write_polydata(out_poly)
     
-    M.register(key = 'centerlines', value = out_poly, depth = [sims, args.sim])
+    # register 
+    if args.mode is None:
+        M.register(key = 'centerlines', value = out_poly, depth = ['simulations', int(args.sim)])
+    elif args.mode == 'P':
+        M.register(key = 'centerlines', value = out_poly, depth = ['parameterization', 'corrections', args.sim])
+        
     M.update()
