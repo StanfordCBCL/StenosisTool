@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 2:32:10 pm
+# Last Modified: Tuesday, 15th August 2023 2:34:35 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -93,7 +93,6 @@ def parameterize(M: Manager):
     all_vess_dr = []
     all_juncs = []
     all_juncs_dr = []
-    lpns = []
     # pull out relevant regions and get vessel and junction resistance ranges
     for sim in sim_names:
         # load the regions used
@@ -102,14 +101,13 @@ def parameterize(M: Manager):
             rr = json.load(rrfp)
         # load lpn
         lpn = LPN.from_file(M['parameterization']['corrections'][sim]['lpn'])
-        lpns.append(lpn)
         all_vess.append(rr['Vessels'])
         all_vess_dr.append([lpn.get_vessel(vidx)['zero_d_element_values']['R_poiseuille'] - base_lpn.get_vessel(vidx)['zero_d_element_values']['R_poiseuille'] for vidx in rr['Vessels']])
         
         all_juncs.append(rr['Junctions'])
         all_juncs_dr.append([[lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] - base_lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] for outlet_idx in range(len(lpn.get_junction(jidx)['outlet_vessels']))] for jidx in rr['Junctions']])
             
-    return base_lpn, lpns, all_vess, all_vess_dr, all_juncs, all_juncs_dr
+    return base_lpn, all_vess, all_vess_dr, all_juncs, all_juncs_dr
             
 
 
@@ -120,7 +118,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
     test_dir = data_dir / 'test_data'
     
     total_sims = len(get_sim_names(M))
-    base_lpn, lpns, all_vess, all_vess_dr, all_juncs, all_juncs_dr = parameterize(M)
+    base_lpn, all_vess, all_vess_dr, all_juncs, all_juncs_dr = parameterize(M)
     
     for idx, (mode_dir, num_samples) in enumerate(zip([train_dir, val_dir, test_dir], samples)):
         
@@ -135,14 +133,12 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
         # pass to each process, each process handles incr (32) simulations before creating a fresh process
         futures = []
         with ProcessPoolExecutor() as executor:
-            for idx, p in enumerate(parameterization):
-                if idx % 32 == 0:
-                    print(f"Submitted {idx+1}/{num_samples}")
+            for p in tqdm.tqdm(parameterization, desc='Jobs Submitted', total = len(parameterization)):
                 futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
 
         # get y's
         y = []
-        for idx, f in tqdm.tqdm(enumerate(futures), desc='Futures extracted', total=len(futures)):
+        for f in tqdm.tqdm(futures, desc='Futures extracted', total=len(futures)):
             y.append(np.float32(f.result()))
             
         y = np.vstack(y)
