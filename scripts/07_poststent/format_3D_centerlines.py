@@ -1,7 +1,7 @@
 # File: format_3D_centerlines.py
 # File Created: Thursday, 26th January 2023 5:29:38 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 4th August 2023 12:19:25 pm
+# Last Modified: Monday, 14th August 2023 12:12:36 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Converts 3D extracted centerlines to match the 0D extracted form. Assumes extracted centerlines contains exactly 1 time cycle.
@@ -13,6 +13,7 @@ import argparse
 import re
 import numpy as np
 from svinterface.utils.misc import d2m
+from pathlib import Path
 
 def modify_centerlines(centerlines: Polydata, inflow: Inflow):
     '''maps ts to actual times, as well as change pressures to mmHg
@@ -78,7 +79,6 @@ if __name__ == '__main__':
     parser.add_argument("-i", dest = 'config', help= 'Config file for project')
     parser.add_argument("-c", dest = 'centerlines', help = "3D extracted centerlines")
     parser.add_argument("-f", dest = "inflow", help = '3D inflow used to compute simulation')
-    parser.add_argument("-o", help = "output destination")
     parser.add_argument("--s", default = False, action="store_true", help = 'flag to save to manager which used (Should only be used for the prestent)')
     
     args = parser.parse_args()
@@ -96,7 +96,9 @@ if __name__ == '__main__':
     modify_centerlines(c, inflow)
     
     # write the data out in formatted form
-    c.write_polydata(args.o)
+    opath = Path(args.centerlines)
+    opath = opath.parent / (str(opath.stem) + ".formatted.vtp")
+    c.write_polydata(str(opath))
     if args.s:
-        M.register("3D", args.o, depth = ['workspace'])
+        M.register("3D", opath, depth = ['workspace'])
         M.update()

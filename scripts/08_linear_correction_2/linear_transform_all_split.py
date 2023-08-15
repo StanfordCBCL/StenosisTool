@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 20th July 2023 11:27:28 am
+# Last Modified: Monday, 14th August 2023 1:16:16 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on both junctions and vessels, but split between MPA, RPA, LPA
@@ -17,13 +17,14 @@ import argparse
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
 from svinterface.core.bc import RCR 
-from svinterface.core.zerod.solver import Solver0Dcpp, SolverResults
+from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
 import numpy as np
 from pathlib import Path
 import pandas as pd
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
+import json
 
 
 
@@ -259,6 +260,14 @@ if __name__ == '__main__':
 
     # reinit LPN
     zerod_lpn = LPN.from_file(str(new_lpn_path))
+    
+    # add that relevant regions is all vessels and junctions
+    vess_ids = list(range(zerod_lpn.num_vessels()))
+    junc_ids = ['J' + str(i) for i in range(zerod_lpn.num_junctions())]
+    relevant_regions = correction_dir / 'relevant_regions.json'
+    with relevant_regions.open("w") as rrfile:
+        json.dump({'Vessels': sorted(list(vess_ids)), 'Junctions': sorted(list(junc_ids))}, rrfile, indent=4, sort_keys=True)
+    M.register('relevant_regions', str(relevant_regions), ['parameterization','corrections', args.name])
     
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
