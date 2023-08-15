@@ -1,18 +1,14 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 2:34:35 pm
+# Last Modified: Tuesday, 15th August 2023 3:31:02 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
 
 import tqdm
-import concurrent.futures 
-import os
-import pandas as pd
 import numpy as np
-from scipy.stats.qmc import Sobol, scale
-import copy
+from scipy.stats.qmc import Sobol
 from pathlib import Path
 import json
 import argparse
@@ -22,7 +18,6 @@ from concurrent.futures import ProcessPoolExecutor
 from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.core.zerod.lpn import LPN, FastLPN
 from svinterface.manager.baseManager import Manager
-from svinterface.utils.io import read_json
 
 
 def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, ):
@@ -47,24 +42,16 @@ def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, ):
     
     # add MPA in
     vname = base_lpn.lpn_data[base_lpn.VESS][0]['vessel_name']
-    targets = [results.get_min_val(vname, 'flow_in'),
-               results.get_avg_val(vname, 'flow_in'),
-               results.get_max_val(vname, 'flow_in'),
-               results.get_min_val(vname, 'pressure_in'),
-               results.get_avg_val(vname, 'pressure_in'),
-               results.get_max_val(vname, 'pressure_in')]
+    targets = [*results.get_summ_val(vname, 'flow_in'),
+               *results.get_summ_val(vname, 'pressure_in')]
     # for every vess, get the out
     for vess in base_lpn.lpn_data[base_lpn.VESS]:
         vname = vess['vessel_name']
         
-        targets.append(results.get_min_val(vname, 'flow_out'))
-        targets.append(results.get_avg_val(vname, 'flow_out'))
-        targets.append(results.get_max_val(vname, 'flow_out'))
-        targets.append(results.get_min_val(vname, 'pressure_out'))
-        targets.append(results.get_avg_val(vname, 'pressure_out'))
-        targets.append(results.get_max_val(vname, 'pressure_out'))
+        targets += [*results.get_summ_val(vname, 'flow_out')]
+        targets += [*results.get_summ_val(vname, 'pressure_out')]
     
-    return np.array(targets)
+    return np.float32(np.array(targets))
 
 def sobol_data_gen(size, num_samples, seed):
     
