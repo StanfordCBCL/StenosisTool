@@ -1,7 +1,7 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 23rd January 2023 7:46:03 pm
+# Last Modified: Tuesday, 15th August 2023 12:43:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
@@ -14,10 +14,11 @@ import torch.utils.data as tdata
 import pytorch_lightning as pl
 import numpy as np
 from pathlib import Path
-from src.file_io import read_json
-from src.misc import d2m
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+
+from svinterface.utils.io import read_json
+from svinterface.utils.misc import d2m
 
 class BasicNN(nn.Module):
     
@@ -156,17 +157,18 @@ class PredictDataset(tdata.Dataset):
     def __getitem__(self, idx):
         return torch.from_numpy((self.inputs[idx])).float()
 
-class StenosisDistribution():
+class RepairDistribution():
     
-    class StenosisFixed():
-        def __init__(self, r):
-            self.r = r
+    class RepairFixed():
+        """A repair is fixed/completed and sampling always returns the fixed value"""
+        def __init__(self, c):
+            self.c = c
         
         def sample(self):
-            return self.r
+            return self.c
     
-    class StenosisRandom():
-        
+    class RepairRandom():
+        """A repair is a random distribution"""
         class Category():
             def __init__(self, lower, upper):
                 self.lower = lower
@@ -187,78 +189,75 @@ class StenosisDistribution():
             def __init__(self, lower, upper):
                 super().__init__(lower, upper)
                 
-        def __init__(self, category_probs, radius_range):
+        def __init__(self, category_probs):
             '''categories = (Fail prob, Moderate prob, Success prob)'''
             assert len(category_probs) == 3 # must be probabilities for (Fail, Moderate, Success)
             assert sum(category_probs) == 1 # must add to 1
             self.category_probs = category_probs
-
-            rnge = radius_range[1] - radius_range[0]
             
-            
-            self.categories = (self.Fail(lower = radius_range[0],
-                                         upper = radius_range[0] + rnge * .2),
-                               self.Moderate(lower = radius_range[0] + rnge * .2,
-                                             upper = radius_range[0] + rnge * .8),
-                               self.Success(lower = radius_range[0] + rnge * .8,
-                                            upper = radius_range[0] + rnge)) # split 20, 60, 20
+            # set up categories as 0-.2, .2-.8, .8-1.
+            self.categories = (self.Fail(lower = 0,
+                                         upper = .2),
+                               self.Moderate(lower = .2,
+                                             upper = .8),
+                               self.Success(lower = .8,
+                                            upper = 1)) # split 20, 60, 20
             
             self.frozen = False
         
         def sample(self):
-            # if frozen, just return FAIL.lower since it should be 1
+            # if frozen, just return Fail.lower since it should be disabled
             if self.frozen:
                 return self.categories[0].lower
             
             n = np.random.uniform()
             # check if in Fail
             if (n - self.category_probs[0] < 0):
-                return self.categories[0].sample() # sample from FAIL
+                return self.categories[0].sample() # sample from Fail
             elif (n - self.category_probs[0] - self.category_probs[1] < 0):
                 return self.categories[1].sample() # sample from Moderate
             else:
-                return self.categories[2].sample()
+                return self.categories[2].sample() # sample from Success
     
     
-    def __init__(self, stenosis_parametrization):
-        self.category_probs = (.3, .4, .3)
-        self.stenosis_params = stenosis_parametrization
-        self.stenosis_points = [self.StenosisRandom(category_probs=self.category_probs,
-                                                  radius_range=sten_point) for sten_point in self.stenosis_params]
+    def __init__(self, num_repairs, category_probs = (.3, .4, .3)):
+        
+        self.category_probs = category_probs
+        self.num_repairs = num_repairs
+        self.repair_points = [self.RepairRandom(category_probs=self.category_probs) for i in range(num_repairs)]
     
     def __len__(self):
-        return len(self.stenosis_points)
+        return self.num_repairs
         
-    def fixed(self, sten_point, r_increase):
+    def fixed(self, repair_idx, c):
         ''' change a particular vessel to fixed '''
-        self.stenosis_points[sten_point] = self.StenosisFixed(r_increase)
+        self.repair_points[repair_idx] = self.RepairFixed(c)
     
-    def undo_fixed(self, sten_point):
+    def undo_fixed(self, repair_idx):
         ''' only for testing purposed... to undo a fixture.'''    
-        self.stenosis_points[sten_point] = self.StenosisRandom(category_probs=self.category_probs,
-                                                                radius_range=self.stenosis_params[sten_point])
+        self.repair_points[repair_idx] = self.RepairRandom(category_probs=self.category_probs)
         
     def freeze(self, to_freeze = []):
-        ''' freeze particular vessels (not fixed, just not changing). If a vessel is already frozen, do nothing'''
-        for sten_idx in to_freeze:
-            if type(self.stenosis_points[sten_idx]) == self.StenosisRandom:
-                self.stenosis_points[sten_idx].frozen = True
+        ''' freeze particular vessels (not fixed, just not changing). If a vessel is already frozen or fixed, do nothing'''
+        for repair_idx in to_freeze:
+            if type(self.repair_points[repair_idx]) == self.RepairRandom:
+                self.repair_points[repair_idx].frozen = True
     
     def unfreeze_all(self):
         ''' unfreeze all vessels that aren't fixed'''
-        for sten_point in self.stenosis_points:
-            if type(sten_point) == self.StenosisRandom:
-                sten_point.frozen = False
+        for repair_point in self.repair_points:
+            if type(repair_point) == self.RepairRandom:
+                repair_point.frozen = False
 
     def unfreeze(self, to_unfreeze = []):
         ''' unfreezes previously frozen vessels. If a vessel is already unfrozen, do nothing'''
-        for sten_idx in to_unfreeze:
-            if type(self.stenosis_points[sten_idx]) == self.StenosisRandom:
-                self.stenosis_points[sten_idx].frozen = False
+        for repair_idx in to_unfreeze:
+            if type(self.repair_points[repair_idx]) == self.RepairRandom:
+                self.repair_points[repair_idx].frozen = False
         
     def sample(self):
         ''' generates a sample '''
-        return np.array([sten_point.sample() for sten_point in self.stenosis_points])
+        return np.array([repair_point.sample() for repair_point in self.repair_points])
     
     def create_dataset(self, num_samples):
         input_data = np.array([self.sample() for i in range(num_samples)])
@@ -266,9 +265,12 @@ class StenosisDistribution():
     
     def get_histograms(self, results):
         return [(np.histogram(results[:, 2*i], bins = 'auto'), np.histogram(results[:, 2*i+1], bins = 'auto')) for i in range(len(self))]
+    
+    def save_histograms(self, results, path):
+        np.save(path, self.get_histograms(results),allow_pickle=True)
             
-    def plot_histograms(self, results, save):
-        
+    def animate_histograms(self, results, save):
+
         fig, ax = plt.subplots(1, 2, figsize = (16, 8))
         def animate(vessel):
             P_vessel = vessel * 2
@@ -302,14 +304,6 @@ class StenosisDistribution():
         x = torch.vstack(x)
         rez = torch.vstack(rez)
         return x, rez
-        
-def parametrize_stenosis(occlusion):
-    ''' takes the artificial occlusion and computes the range of diameter changes for that particular vessel'''
-    cur_area = 1 - occlusion
-    area_increase = 1/cur_area
-    radial_increase = np.sqrt(area_increase)
-    # radial change goes from 1 (no repair) to (1/(1-occlusion))^(1/2) (complete repair)
-    return np.dstack((np.ones_like(radial_increase), radial_increase)).squeeze()
 
 class LightningNNPredictor(LightningNN):
     
@@ -324,11 +318,11 @@ class LightningNNPredictor(LightningNN):
 
 if __name__ == '__main__':
     
-    # path
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
+    #! Temp hardcode path
+    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
 
     # load training data to recompute normalization map (#TODO: SAVE THE NORM NEXT TIME.)
-    train_dataset = Dataset0D(dir / 'data' / 'training_data_small' / 'input.npy', dir / 'data' / 'training_data_small' / 'output.npy', normalization, revert_map=None)
+    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
 
     # Construct model
     # retrieve first value of Dataset for sizes
@@ -338,43 +332,40 @@ if __name__ == '__main__':
     
     
     # create probability distribution
-    stenosis_file = read_json(dir / 'stenosis_vessels.dat')
-    stenosis_parametrizations = parametrize_stenosis(np.array(stenosis_file['occlusions']))
-    distribution = StenosisDistribution(stenosis_parametrizations)
+    distribution = RepairDistribution(num_repairs=len(input_data), 
+                                      category_probs=(.3,.4,.3))
+    
+    #! TO be changed
+    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_0" / "checkpoints" / "epoch=0-step=1.ckpt"
+    trainer = pl.Trainer(logger = False, accelerator='auto')
+    
+    # create a dir to save data
+    prob_dir = dir / 'probability_histograms'
+    prob_dir.mkdir(exist_ok=True)
     
     
-    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_11" / "checkpoints" / "epoch=147-step=37888.ckpt"
-    trainer = pl.Trainer(logger = False, accelerator='gpu')
-    
-    '''
-    # starting at random, no fixture
+    # starting at random, no fixture (All possible distributions)
+    all_dir = prob_dir / 'all_distributions'
+    all_dir.mkdir(exist_ok=True)
     x, yhat = distribution.run_test(model=litmodel,
                           trainer=trainer,
                           best_chkpt=best_checkpoint,
                           num_samples=4096*24,
                           batch_size=4096)
-    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.random.gif')
+    distribution.animate_histograms(yhat, save = str(all_dir / 'histograms.gif'))
+    distribution.save_histograms(yhat, path=str(all_dir / 'histograms.npy') )
     
     
-    # fix 3, keep 1 random, freeze rest
-    distribution.fixed(0, 1.5)
-    distribution.fixed(1, 2.1)
-    distribution.fixed(2, 1.9)
-    # freeze all but 3
-    distribution.freeze(to_freeze=list(range(4, len(distribution))))
+    # fix repair 0 (LPA_proximal) at 
+    fixz_dir = prob_dir / 'fixeda1_conditional'
+    fixz_dir.mkdir(exist_ok=True)
+    distribution.fixed(repair_idx=0,
+                       c=.8)
     x, yhat = distribution.run_test(model=litmodel,
                           trainer=trainer,
                           best_chkpt=best_checkpoint,
                           num_samples=4096*24,
                           batch_size=4096)
-    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.f3r1rf17.gif')
+    distribution.animate_histograms(yhat, save = str(fixz_dir / 'histograms.gif'))
+    distribution.save_histograms(yhat, path=str(fixz_dir / 'histograms.npy') )
     
-    '''
-    # freeze all but 3
-    distribution.freeze(to_freeze=list(range(1, len(distribution))))
-    x, yhat = distribution.run_test(model=litmodel,
-                          trainer=trainer,
-                          best_chkpt=best_checkpoint,
-                          num_samples=4096*24,
-                          batch_size=4096)
-    distribution.plot_histograms(yhat, save = 'pptx/pptx_img/prob.test.gif')
