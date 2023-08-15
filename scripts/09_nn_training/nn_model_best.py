@@ -141,11 +141,11 @@ def revert(output, map_back):
 if __name__ == '__main__':
     
     #! Temp
-    dir = Path('data/healthy/0080_0001/jc_solver_dir_0/artificial_stenosis/Manual_1')
+    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
 
-    train_dataset = Dataset0D(dir / 'data' / 'training_data' / 'input.npy', dir / 'data' / 'training_data' / 'output.npy', normalization, revert_map=None)
-    val_dataset = Dataset0D(dir / 'data' / 'val_data' / 'input.npy', dir / 'data' / 'val_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
-    test_dataset = Dataset0D(dir / 'data' / 'test_data' / 'input.npy', dir / 'data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
+    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
+    val_dataset = Dataset0D(dir / 'model_data' / 'val_data' / 'input.npy', dir / 'model_data' / 'val_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
+    test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
 
     
     
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     early_stop = EarlyStopping(monitor="val_loss", mode="min",check_finite=True, patience=10,  )
 
     csv_logger = CSVLogger(cur_results_folder)
-    trainer = pl.Trainer( max_epochs=500, accelerator="gpu", default_root_dir=cur_results_folder, callbacks=[checkpoint_callback, early_stop], logger = csv_logger, log_every_n_steps=5,)# fast_dev_run=True)
+    trainer = pl.Trainer( max_epochs=500, accelerator="auto", default_root_dir=cur_results_folder, callbacks=[checkpoint_callback, early_stop], logger = csv_logger, log_every_n_steps=5,)# fast_dev_run=True)
     trainer.fit(model=litmodel, train_dataloaders=train_loader, val_dataloaders=val_loader)
     
     # test and save test dataloader
