@@ -465,7 +465,9 @@ class LPN(OriginalLPN):
             ''' sets metadata for all vessels at once'''
             for vess in self.vessel_info:
                 vess[key] = value
-            
+        
+        def __len__(self):
+            return len(self.ids)
         
         @abstractclassmethod
         def type(self):

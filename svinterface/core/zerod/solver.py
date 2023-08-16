@@ -207,6 +207,14 @@ class SolverResults():
         assert val in {'flow_in', 'flow_out', 'pressure_in', 'pressure_out'}, "Must be one of flow_in, flow_out, pressure_in, pressure_out"
         df = self.vessel_df(vessel_name)
         return np.array(df[val]).min()
+    
+    def get_summ_val(self, vessel_name, val = 'flow_in'):
+        """Gets min, avg, max of a result"""
+        assert val in {'flow_in', 'flow_out', 'pressure_in', 'pressure_out'}, "Must be one of flow_in, flow_out, pressure_in, pressure_out"
+        df = self.vessel_df(vessel_name)
+        flow = np.array(df[val])
+        time = np.array(df['time'])
+        return np.array(df[val]).min(), np.trapz(flow, time) / (time[-1] - time[0]), np.array(df[val]).max()
 
     def get_vessel_names(self):
         ''' get a list of all vessel names
