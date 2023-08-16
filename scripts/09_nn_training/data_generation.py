@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 3:31:02 pm
+# Last Modified: Tuesday, 15th August 2023 7:36:23 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -117,16 +117,25 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
                               num_samples=num_samples,
                               seed=42 + idx)
 
-        # pass to each process, each process handles incr (32) simulations before creating a fresh process
-        futures = []
-        with ProcessPoolExecutor() as executor:
-            for p in tqdm.tqdm(parameterization, desc='Jobs Submitted', total = len(parameterization)):
-                futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
-
-        # get y's
+        # pass to each process, each process handles incr (64) simulations before creating a fresh process
         y = []
-        for f in tqdm.tqdm(futures, desc='Futures extracted', total=len(futures)):
-            y.append(np.float32(f.result()))
+        counter = tqdm.tqdm(desc='Simulations completed', total = num_samples)
+        incr = 64
+        cur = 0
+        with ProcessPoolExecutor() as executor:
+            
+            while cur < num_samples:
+                futures = []
+                # submit incr jobs at once
+                for p in parameterization[cur:cur+incr]:
+                    futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+
+                # get y's
+                for f in futures:
+                    y.append(f.result())
+                    counter.update(1)
+                
+                del futures
             
         y = np.vstack(y)
         np.save(mode_dir / 'input.npy', parameterization)
