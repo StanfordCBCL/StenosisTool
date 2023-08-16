@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 9:50:34 pm
+# Last Modified: Tuesday, 15th August 2023 10:02:11 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -30,7 +30,7 @@ def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, id: int):
     for pidx, p in enumerate(param):
         
         lpn = base_lpn.copy()
-        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.", flush=True)
+        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.", flush = True)
         # update lpns
         for idx, coef in enumerate(p):
             for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
@@ -128,17 +128,17 @@ def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
                               seed=42 + idx)
 
         # pass to each process, each process handles incr (64) simulations before creating a fresh process
-        y = []
-        futures = []
-        cur = 0
-        split_proc = math.ceil(num_samples / nprocs)
-        with ProcessPoolExecutor(max_workers=nprocs) as executor:
-            
-            # submit incr jobs at once
-            for i in range(nprocs):
-                futures.append(executor.submit(remote_run_sim, parameterization[cur:cur + split_proc], base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr), i))
-                cur += split_proc
 
+        # split data
+        chunked_data = [[] for i in range(nprocs)]
+        for idx, d in enumerate(parameterization):
+            chunked_data[idx % nprocs].append(d)
+
+        # pass to each process
+        with ProcessPoolExecutor(max_workers=nprocs) as executor:
+            futures = executor.map(remote_run_sim, chunked_data, [base_lpn.get_fast_lpn() for i in range(nprocs)], [(all_vess, all_vess_dr, all_juncs, all_juncs_dr) for i in range(nprocs)], range(nprocs))
+
+        y = []
         # get y's
         for f in futures:
             y.append(f.result())
