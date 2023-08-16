@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 9:40:20 pm
+# Last Modified: Tuesday, 15th August 2023 9:50:34 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -21,16 +21,16 @@ from svinterface.core.zerod.lpn import LPN, FastLPN
 from svinterface.manager.baseManager import Manager
 
 
-def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, ):
+def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, id: int):
     
     all_vess, all_vess_dr, all_juncs, all_juncs_dr = lpn_mapping
     all_targets = []
     # take the parameterization and apply it to lpn
     
-    for idx, p in enumerate(param):
+    for pidx, p in enumerate(param):
         
         lpn = base_lpn.copy()
-        print(f"Running simulation {idx}/{len(param)}.", flush=True)
+        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.", flush=True)
         # update lpns
         for idx, coef in enumerate(p):
             for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
@@ -136,7 +136,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
             
             # submit incr jobs at once
             for i in range(nprocs):
-                futures.append(executor.submit(remote_run_sim, parameterization[cur:cur + split_proc], base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+                futures.append(executor.submit(remote_run_sim, parameterization[cur:cur + split_proc], base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr), i))
                 cur += split_proc
 
         # get y's
