@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th August 2023 9:31:31 am
+# Last Modified: Wednesday, 16th August 2023 9:38:00 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -125,26 +125,31 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
         y = []
         cur, incr = 0, 32
         counter = 0
-        with ProcessPoolExecutor(max_tasks_per_child = 5) as executor:
+        
+        while cur < num_samples:
+            
+            if cur % (4 * incr) == 0:
+                executor = ProcessPoolExecutor()
 
             # submit jobs in batches of 32
+            start = time.time()
+            futures = []
+            for p in parameterization[cur:cur + incr]:
+                futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
             
-            while cur < num_samples:
-                start = time.time()
-                futures = []
-                for p in parameterization[cur:cur + incr]:
-                    futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+            for f in futures:
+                y.append(f.result())
+                counter += 1
+                print(f"Retrieved results for simulation {counter}/{num_samples}.", flush = True)
                 
-                for f in futures:
-                    y.append(f.result())
-                    counter += 1
-                    print(f"Retrieved results for simulation {counter}/{num_samples}.", flush = True)
-                    
-                
-                del futures
-                cur += incr
-                print(f"Time (sec) taken for last {incr} jobs: {time.time() - start}")
-                
+            
+            del futures
+            cur += incr
+            print(f"Time (sec) taken for last {incr} jobs: {time.time() - start}")
+            
+            if cur % (4 * incr) == 0:
+                executor.shutdown(wait=True)
+            
         y = np.vstack(y)
         np.save(mode_dir / 'input.npy', parameterization)
         np.save(mode_dir / 'output.npy', y)
