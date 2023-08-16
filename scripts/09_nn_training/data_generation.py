@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 10:09:25 pm
+# Last Modified: Tuesday, 15th August 2023 10:44:39 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -21,47 +21,39 @@ from svinterface.core.zerod.lpn import LPN, FastLPN
 from svinterface.manager.baseManager import Manager
 
 
-def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, id: int):
+def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple):
     
     all_vess, all_vess_dr, all_juncs, all_juncs_dr = lpn_mapping
-    all_targets = []
     # take the parameterization and apply it to lpn
     
-    for pidx, p in enumerate(param):
-        
-        lpn = base_lpn.copy()
-        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.", flush = True)
-        # update lpns
-        for idx, coef in enumerate(p):
-            for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
-                # add the modified coefficient
-                lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
+    for idx, coef in enumerate(param):
+        for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
+            # add the modified coefficient
+            base_lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
 
-            for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
-                for outlet_idx, max_dr in enumerate(max_drs):
-                    lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
+        for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
+            for outlet_idx, max_dr in enumerate(max_drs):
+                base_lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
+    
+    
+    # run simulation
+    solver = Solver0Dcpp(base_lpn)
+    results = solver.run_sim()
+    
+    # add MPA in
+    vname = base_lpn.lpn_data[base_lpn.VESS][0]['vessel_name']
+    targets = [*results.get_summ_val(vname, 'flow_in'),
+            *results.get_summ_val(vname, 'pressure_in')]
+    # for every vess, get the out
+    for vess in base_lpn.lpn_data[base_lpn.VESS]:
+        vname = vess['vessel_name']
         
-        
-        # run simulation
-        solver = Solver0Dcpp(lpn)
-        results = solver.run_sim()
-        
-        # add MPA in
-        vname = lpn.lpn_data[lpn.VESS][0]['vessel_name']
-        targets = [*results.get_summ_val(vname, 'flow_in'),
-                *results.get_summ_val(vname, 'pressure_in')]
-        # for every vess, get the out
-        for vess in lpn.lpn_data[base_lpn.VESS]:
-            vname = vess['vessel_name']
-            
-            targets += [*results.get_summ_val(vname, 'flow_out')]
-            targets += [*results.get_summ_val(vname, 'pressure_out')]
-            
-        all_targets.append(targets)
+        targets += [*results.get_summ_val(vname, 'flow_out')]
+        targets += [*results.get_summ_val(vname, 'pressure_out')]
+    
+    del results, solver
 
-        del lpn
-        
-    return np.array(all_targets)
+    return np.float32(np.array(targets))
 
 def sobol_data_gen(size, num_samples, seed):
     
@@ -108,7 +100,7 @@ def parameterize(M: Manager):
             
 
 
-def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
+def generate_data(M: Manager, data_dir: Path, samples: list):
     
     train_dir = data_dir / 'train_data'
     val_dir = data_dir / 'val_data'
@@ -117,7 +109,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
     total_sims = len(get_sim_names(M))
     base_lpn, all_vess, all_vess_dr, all_juncs, all_juncs_dr = parameterize(M)
     
-    for idx, (mode_dir, num_samples) in enumerate(zip([train_dir, val_dir, test_dir], samples)):
+    for idx, (name, mode_dir, num_samples) in enumerate(zip(['train data', 'val data', 'test data'],[train_dir, val_dir, test_dir], samples)):
         
         # make dir
         mode_dir.mkdir(exist_ok=True)
@@ -129,21 +121,25 @@ def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
 
         # pass to each process, each process handles incr (64) simulations before creating a fresh process
 
-        # split data
-        chunked_data = [[] for i in range(nprocs)]
-        for idx, d in enumerate(parameterization):
-            chunked_data[idx % nprocs].append(d)
-
-        # pass to each process
-        with ProcessPoolExecutor(max_workers=nprocs) as executor:
-            futures = executor.map(remote_run_sim, chunked_data, [base_lpn.get_fast_lpn() for i in range(nprocs)], [(all_vess, all_vess_dr, all_juncs, all_juncs_dr) for i in range(nprocs)], range(nprocs))
-
         y = []
-        # get y's
-        for f in futures:
-            y.append(f.result())
+        cur, incr = 0, 32
+        counter = tqdm.tqdm(total=num_samples, desc=f"Running simulations for {name}")
+        with ProcessPoolExecutor() as executor:
+
+            # submit jobs in batches of 32
+            while cur < num_samples:
+                futures = []
+                for p in parameterization[cur:cur + incr]:
+                    futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+                
+                for f in futures:
+                    y.append(f.result())
+                    counter.update(1)
+                
+                del futures
+                cur += incr
             
-        y = np.concatenate(y)
+        y = np.vstack(y)
         np.save(mode_dir / 'input.npy', parameterization)
         np.save(mode_dir / 'output.npy', y)
         
@@ -156,7 +152,6 @@ if __name__ == '__main__':
     parser.add_argument('-ntrain', dest = 'num_train_samples', default = 8192, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 8192 = 2^13.')
     parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
     parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, type = int, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
-    parser.add_argument('-nprocs', type=int, required=True, help = 'number of processes to use')
     args = parser.parse_args()
     
     M = Manager(args.config)
@@ -168,6 +163,6 @@ if __name__ == '__main__':
     data_dir.mkdir(exist_ok=True)
     M.register('model_data', str(data_dir), depth=['NN_DIR'])
     
-    generate_data(M, data_dir, [args.num_train_samples, args.num_val_samples, args.num_test_samples], args.nprocs)
+    generate_data(M, data_dir, [args.num_train_samples, args.num_val_samples, args.num_test_samples])
     
     
