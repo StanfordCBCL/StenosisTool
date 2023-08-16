@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 8:30:41 pm
+# Last Modified: Tuesday, 15th August 2023 8:54:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -12,6 +12,7 @@ from scipy.stats.qmc import Sobol
 from pathlib import Path
 import json
 import argparse
+import math
 from concurrent.futures import ProcessPoolExecutor
 
 
@@ -23,35 +24,38 @@ from svinterface.manager.baseManager import Manager
 def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, ):
     
     all_vess, all_vess_dr, all_juncs, all_juncs_dr = lpn_mapping
+    all_targets = []
     # take the parameterization and apply it to lpn
-    
-    # update lpns
-    for idx, coef in enumerate(param):
-        for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
-            # add the modified coefficient
-            base_lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
+    for p in param:
+        # update lpns
+        for idx, coef in enumerate(p):
+            for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
+                # add the modified coefficient
+                base_lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
 
-        for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
-            for outlet_idx, max_dr in enumerate(max_drs):
-                base_lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
-    
-
-    # run simulation
-    solver = Solver0Dcpp(base_lpn)
-    results = solver.run_sim()
-    
-    # add MPA in
-    vname = base_lpn.lpn_data[base_lpn.VESS][0]['vessel_name']
-    targets = [*results.get_summ_val(vname, 'flow_in'),
-               *results.get_summ_val(vname, 'pressure_in')]
-    # for every vess, get the out
-    for vess in base_lpn.lpn_data[base_lpn.VESS]:
-        vname = vess['vessel_name']
+            for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
+                for outlet_idx, max_dr in enumerate(max_drs):
+                    base_lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
         
-        targets += [*results.get_summ_val(vname, 'flow_out')]
-        targets += [*results.get_summ_val(vname, 'pressure_out')]
-    
-    return np.float32(np.array(targets))
+
+        # run simulation
+        solver = Solver0Dcpp(base_lpn)
+        results = solver.run_sim()
+        
+        # add MPA in
+        vname = base_lpn.lpn_data[base_lpn.VESS][0]['vessel_name']
+        targets = [*results.get_summ_val(vname, 'flow_in'),
+                *results.get_summ_val(vname, 'pressure_in')]
+        # for every vess, get the out
+        for vess in base_lpn.lpn_data[base_lpn.VESS]:
+            vname = vess['vessel_name']
+            
+            targets += [*results.get_summ_val(vname, 'flow_out')]
+            targets += [*results.get_summ_val(vname, 'pressure_out')]
+            
+        all_targets.append(targets)
+        
+    return np.array(all_targets)
 
 def sobol_data_gen(size, num_samples, seed):
     
@@ -98,7 +102,7 @@ def parameterize(M: Manager):
             
 
 
-def generate_data(M: Manager, data_dir: Path, samples: list):
+def generate_data(M: Manager, data_dir: Path, samples: list, nprocs: int):
     
     train_dir = data_dir / 'train_data'
     val_dir = data_dir / 'val_data'
@@ -119,25 +123,21 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
 
         # pass to each process, each process handles incr (64) simulations before creating a fresh process
         y = []
-        counter = tqdm.tqdm(desc='Simulations completed', total = num_samples)
-        incr = 32
+        futures = []
         cur = 0
-        with ProcessPoolExecutor() as executor:
+        split_proc = math.ceil(num_samples / nprocs)
+        with ProcessPoolExecutor(max_workers=nprocs) as executor:
             
-            while cur < num_samples:
-                futures = []
-                # submit incr jobs at once
-                for p in parameterization[cur:cur+incr]:
-                    futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+            # submit incr jobs at once
+            for i in range(nprocs):
+                futures.append(executor.submit(remote_run_sim, parameterization[cur:cur + split_proc], base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
+                cur += split_proc
 
-                # get y's
-                for f in futures:
-                    y.append(f.result())
-                    counter.update(1)
-                
-                del futures
+        # get y's
+        for f in futures:
+            y.append(f.result())
             
-        y = np.vstack(y)
+        y = np.concatenate(y)
         np.save(mode_dir / 'input.npy', parameterization)
         np.save(mode_dir / 'output.npy', y)
         
@@ -150,6 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('-ntrain', dest = 'num_train_samples', default = 8192, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 8192 = 2^13.')
     parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
     parser.add_argument('-ntest', dest = 'num_test_samples', default = 1024, type = int, help = 'num_test_samples will be generated for testing data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
+    parser.add_argument('-nprocs', type=int, required=True, help = 'number of processes to use')
     args = parser.parse_args()
     
     M = Manager(args.config)
@@ -161,6 +162,6 @@ if __name__ == '__main__':
     data_dir.mkdir(exist_ok=True)
     M.register('model_data', str(data_dir), depth=['NN_DIR'])
     
-    generate_data(M, data_dir, [args.num_train_samples, args.num_val_samples, args.num_test_samples])
+    generate_data(M, data_dir, [args.num_train_samples, args.num_val_samples, args.num_test_samples], args.nprocs)
     
     
