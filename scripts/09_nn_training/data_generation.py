@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 10:05:18 pm
+# Last Modified: Tuesday, 15th August 2023 10:09:25 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -30,7 +30,7 @@ def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, id: int):
     for pidx, p in enumerate(param):
         
         lpn = base_lpn.copy()
-        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.")
+        print(f"Running simulation {pidx + 1}/{len(param)} on process {id}.", flush = True)
         # update lpns
         for idx, coef in enumerate(p):
             for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
