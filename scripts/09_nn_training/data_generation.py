@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 9:11:11 pm
+# Last Modified: Tuesday, 15th August 2023 9:40:20 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -26,35 +26,40 @@ def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple, ):
     all_vess, all_vess_dr, all_juncs, all_juncs_dr = lpn_mapping
     all_targets = []
     # take the parameterization and apply it to lpn
+    
     for idx, p in enumerate(param):
+        
+        lpn = base_lpn.copy()
         print(f"Running simulation {idx}/{len(param)}.", flush=True)
         # update lpns
         for idx, coef in enumerate(p):
             for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
                 # add the modified coefficient
-                base_lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
+                lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
 
             for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
                 for outlet_idx, max_dr in enumerate(max_drs):
-                    base_lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
+                    lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
         
-
+        
         # run simulation
-        solver = Solver0Dcpp(base_lpn)
+        solver = Solver0Dcpp(lpn)
         results = solver.run_sim()
         
         # add MPA in
-        vname = base_lpn.lpn_data[base_lpn.VESS][0]['vessel_name']
+        vname = lpn.lpn_data[lpn.VESS][0]['vessel_name']
         targets = [*results.get_summ_val(vname, 'flow_in'),
                 *results.get_summ_val(vname, 'pressure_in')]
         # for every vess, get the out
-        for vess in base_lpn.lpn_data[base_lpn.VESS]:
+        for vess in lpn.lpn_data[base_lpn.VESS]:
             vname = vess['vessel_name']
             
             targets += [*results.get_summ_val(vname, 'flow_out')]
             targets += [*results.get_summ_val(vname, 'pressure_out')]
             
         all_targets.append(targets)
+
+        del lpn
         
     return np.array(all_targets)
 
