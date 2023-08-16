@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 7:36:23 pm
+# Last Modified: Tuesday, 15th August 2023 8:30:41 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -120,7 +120,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
         # pass to each process, each process handles incr (64) simulations before creating a fresh process
         y = []
         counter = tqdm.tqdm(desc='Simulations completed', total = num_samples)
-        incr = 64
+        incr = 32
         cur = 0
         with ProcessPoolExecutor() as executor:
             
