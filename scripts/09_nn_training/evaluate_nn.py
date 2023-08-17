@@ -2,6 +2,8 @@
 import matplotlib.pyplot as plt
 import torch
 from pathlib import Path
+import torch.utils.data as tdata
+import numpy as np
 
 from svinterface.plotting.params import set_params
 
@@ -45,6 +47,7 @@ def revert(output, map_back):
     for i in range(len(output[0])):
         output[:, i] = (output[:, i] * map_back[i][1]) + map_back[i][0]
     return output
+
 
 
 if __name__ == '__main__':
