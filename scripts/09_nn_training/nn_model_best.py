@@ -55,15 +55,7 @@ class LightningNN(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        #print(y[0])
-        input_filter = (x< 1.0).any(dim = 1) == False
-        x = x[input_filter]
-        y = y[input_filter]
-        
         y_hat = self.model(x)
-        
-        #print(y_hat[0])
-        #print(y_hat.shape)
         loss = nn.functional.huber_loss(y_hat, y)
         self.log("val_loss", loss)
         return loss
@@ -121,9 +113,7 @@ def normalization(output, revert_map = None):
             std = output[:, i].std()
             mean = output[:, i].mean()
             output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-            
             revert_map.append([mean, std])
-        
         return output, revert_map
     
     else:
@@ -145,20 +135,16 @@ if __name__ == '__main__':
     dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
 
     train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
-    print(train_dataset.output.shape)
     val_dataset = Dataset0D(dir / 'model_data' / 'val_data' / 'input.npy', dir / 'model_data' / 'val_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
     test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
 
-    
-    
-    
     train_loader = tdata.DataLoader(train_dataset, batch_size = 128, shuffle = True,)
     val_loader = tdata.DataLoader(val_dataset, batch_size=128, shuffle = False, )
     test_loader = tdata.DataLoader(test_dataset, batch_size=128, shuffle = False)
     
     # retrieve first value of Dataset for sizes
     input_data, output_data = train_dataset[0]
-    
+
     #print(output_data)
     # Arbitrary
     nnmodel = BasicNN(input_neurons=len(input_data), output_neurons=len(output_data), hidden_layers=3, neurons_per_layer=1000)
@@ -184,7 +170,6 @@ if __name__ == '__main__':
     # test and save test dataloader
     trainer.test(model=litmodel, dataloaders=test_loader, ckpt_path='best', verbose = True)
 
-    
     # predict on the test loader and get normalized results
     rez = trainer.predict(model=litmodel, dataloaders=test_loader, ckpt_path="best", return_predictions=True)
     # retrieve x
