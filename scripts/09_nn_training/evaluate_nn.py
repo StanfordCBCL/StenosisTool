@@ -65,4 +65,4 @@ if __name__ == '__main__':
     yhat = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_output.pt")
     
     print(test_dataset.output.shape)
-    print(yhat.shape())
+    print(yhat.size())
