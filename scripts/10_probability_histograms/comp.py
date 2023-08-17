@@ -1,7 +1,7 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th August 2023 8:35:31 pm
+# Last Modified: Wednesday, 16th August 2023 11:42:49 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
@@ -64,11 +64,6 @@ class LightningNN(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        #print(y[0])
-        input_filter = (x< 1.0).any(dim = 1) == False
-        x = x[input_filter]
-        y = y[input_filter]
-        
         y_hat = self.model(x)
         
         #print(y_hat[0])
@@ -336,7 +331,7 @@ if __name__ == '__main__':
                                       category_probs=(.3,.4,.3))
     
     #! TO be changed
-    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_0" / "checkpoints" / "epoch=0-step=1.ckpt"
+    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_0" / "checkpoints" / "epoch=498-step=127744.ckpt"
     trainer = pl.Trainer(logger = False, accelerator='auto')
     
     # create a dir to save data
