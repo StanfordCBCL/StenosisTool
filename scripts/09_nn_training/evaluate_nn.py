@@ -53,6 +53,8 @@ def revert(output, map_back):
 if __name__ == '__main__':
     set_params()
     
+    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
+    
     # load train and test dataset to get truths
     train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
     test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
