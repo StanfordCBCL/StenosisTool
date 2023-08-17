@@ -120,7 +120,8 @@ def normalization(output, revert_map = None):
         for i in range(len(output[0])):
             std = output[:, i].std()
             mean = output[:, i].mean()
-            output[:, i] = (output[:, i] - mean) / std
+            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
+            
             revert_map.append([mean, std])
         
         return output, revert_map
@@ -129,7 +130,7 @@ def normalization(output, revert_map = None):
         for i in range(len(output[0])):
             std = revert_map[i][1]
             mean = revert_map[i][0]
-            output[:, i] = (output[:, i] - mean) / std
+            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
         return output, revert_map
 
 def revert(output, map_back):
@@ -144,6 +145,7 @@ if __name__ == '__main__':
     dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
 
     train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
+    print(train_dataset.output.shape)
     val_dataset = Dataset0D(dir / 'model_data' / 'val_data' / 'input.npy', dir / 'model_data' / 'val_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
     test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
 
@@ -156,6 +158,7 @@ if __name__ == '__main__':
     
     # retrieve first value of Dataset for sizes
     input_data, output_data = train_dataset[0]
+    
     #print(output_data)
     # Arbitrary
     nnmodel = BasicNN(input_neurons=len(input_data), output_neurons=len(output_data), hidden_layers=3, neurons_per_layer=1000)

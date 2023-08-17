@@ -1,7 +1,7 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 15th August 2023 12:43:09 pm
+# Last Modified: Wednesday, 16th August 2023 8:35:31 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
@@ -129,7 +129,7 @@ def normalization(output, revert_map = None):
         for i in range(len(output[0])):
             std = output[:, i].std()
             mean = output[:, i].mean()
-            output[:, i] = (output[:, i] - mean) / std
+            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
             revert_map.append([mean, std])
         
         return output, revert_map
@@ -138,7 +138,7 @@ def normalization(output, revert_map = None):
         for i in range(len(output[0])):
             std = revert_map[i][1]
             mean = revert_map[i][0]
-            output[:, i] = (output[:, i] - mean) / std
+            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
         return output, revert_map
 
 def revert(output, map_back):
