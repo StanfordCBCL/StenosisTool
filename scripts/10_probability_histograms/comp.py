@@ -1,7 +1,7 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th August 2023 11:42:49 pm
+# Last Modified: Tuesday, 22nd August 2023 4:39:35 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
@@ -10,6 +10,7 @@
 from torch import nn
 from torch import optim
 import torch
+import tqdm
 import torch.utils.data as tdata
 import pytorch_lightning as pl
 import numpy as np
@@ -258,34 +259,25 @@ class RepairDistribution():
         input_data = np.array([self.sample() for i in range(num_samples)])
         return PredictDataset(input_data)
     
-    def get_histograms(self, results):
-        return [(np.histogram(results[:, 2*i], bins = 'auto'), np.histogram(results[:, 2*i+1], bins = 'auto')) for i in range(len(self))]
+    def get_histograms(self, yhat):
+        return [[np.histogram(yhat[:, i + j], bins = 'auto', density=True) for j in range(3)]+[np.histogram(d2m(yhat[:, i + j]), bins = 'auto', density=True) for j in range(3,6)] for i in range(0, len(yhat[0]),6)]
     
-    def save_histograms(self, results, path):
-        np.save(path, self.get_histograms(results),allow_pickle=True)
+    def save_histograms(self, histograms, filepath):
+        np.save(filepath, histograms, allow_pickle=True)
             
-    def animate_histograms(self, results, save):
+    def plot_histograms(self, histograms, path: Path):
 
-        fig, ax = plt.subplots(1, 2, figsize = (16, 8))
-        def animate(vessel):
-            P_vessel = vessel * 2
-            Q_vessel = vessel * 2 + 1 
-            ax[0].clear()
-            ax[1].clear()
-            ax[0].set_title('Pressures (mmHg)')
-            ax[0].set_xlabel('Pressures (mmHg)')
-            ax[0].set_ylabel('count')
-            ax[1].set_title('Flows (ml/s)')
-            ax[1].set_xlabel('Flows (ml/s)')
-            ax[1].set_ylabel('count')
-            P_vessel = vessel * 2
-            Q_vessel = vessel * 2 + 1
-            ax[0].hist(d2m(results[:, P_vessel]), bins = 'auto')
-            ax[1].hist(results[:, Q_vessel], bins = 'auto')
-            fig.suptitle(f'Vessel {vessel}')
-            
-        anim = FuncAnimation(fig, animate, frames = range(len(results[0])// 2), interval = 200, repeat = True)
-        anim.save(save, writer = 'pillow', fps = .5)
+        for i in tqdm.tqdm(range(len(histograms)), desc='Generating Histograms'):
+            fig, ax = plt.subplots(2, 3, figsize = (24, 16) )
+            ax = ax.flatten()
+            names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)', 'Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
+            for j in range(6):
+                ax[j].bar(histograms[i][j][1][:-1], histograms[i][j][0], width=np.diff(histograms[i][j][1]),edgecolor="black", align="edge")
+                ax[j].set_xlabel(names[j])
+                ax[j].set_ylabel("Density")
+            fig.suptitle(f"Histograms at point {i +1}")
+            fig.savefig(str(path / f'hist_point_{i+1}.png'))
+            plt.close(fig)
         
     def run_test(self, model, trainer, best_chkpt,  num_samples = 4096, batch_size = 4096):
         test_dataset = self.create_dataset(num_samples)
@@ -339,28 +331,52 @@ if __name__ == '__main__':
     prob_dir.mkdir(exist_ok=True)
     
     
-    # starting at random, no fixture (All possible distributions)
-    all_dir = prob_dir / 'all_distributions'
+    # # starting at random, no fixture (All possible distributions)
+    # all_dir = prob_dir / 'all_distributions'
+    # all_dir.mkdir(exist_ok=True)
+    # (all_dir / 'histograms').mkdir(exist_ok=True)
+    
+    # x, yhat = distribution.run_test(model=litmodel,
+    #                       trainer=trainer,
+    #                       best_chkpt=best_checkpoint,
+    #                       num_samples=4096*24,
+    #                       batch_size=4096)
+    # hist = distribution.get_histograms(yhat)
+
+    # distribution.plot_histograms(hist, path = all_dir / 'histograms')
+    # distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )
+    
+ 
+    
+    # # fix repair 0 (LPA_proximal) at 
+    # fixz_dir = prob_dir / 'fixeda3_conditional'
+    # fixz_dir.mkdir(exist_ok=True)
+    # (fixz_dir / 'histograms').mkdir(exist_ok=True)
+    
+    # distribution.fixed(repair_idx=2,
+    #                    c=.8)
+    # x, yhat = distribution.run_test(model=litmodel,
+    #                       trainer=trainer,
+    #                       best_chkpt=best_checkpoint,
+    #                       num_samples=4096*24,
+    #                       batch_size=4096)
+    # hist = distribution.get_histograms(yhat)
+    # distribution.plot_histograms(hist, path = fixz_dir / 'histograms')
+    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
+    
+    all_dir = prob_dir / 'uniform'
     all_dir.mkdir(exist_ok=True)
+    (all_dir / 'histograms').mkdir(exist_ok=True)
+    
+    # create probability distribution
+    distribution = RepairDistribution(num_repairs=len(input_data), 
+                                      category_probs=(.2,.6,.2))
     x, yhat = distribution.run_test(model=litmodel,
                           trainer=trainer,
                           best_chkpt=best_checkpoint,
                           num_samples=4096*24,
                           batch_size=4096)
-    distribution.animate_histograms(yhat, save = str(all_dir / 'histograms.gif'))
-    distribution.save_histograms(yhat, path=str(all_dir / 'histograms.npy') )
-    
-    
-    # fix repair 0 (LPA_proximal) at 
-    fixz_dir = prob_dir / 'fixeda1_conditional'
-    fixz_dir.mkdir(exist_ok=True)
-    distribution.fixed(repair_idx=0,
-                       c=.8)
-    x, yhat = distribution.run_test(model=litmodel,
-                          trainer=trainer,
-                          best_chkpt=best_checkpoint,
-                          num_samples=4096*24,
-                          batch_size=4096)
-    distribution.animate_histograms(yhat, save = str(fixz_dir / 'histograms.gif'))
-    distribution.save_histograms(yhat, path=str(fixz_dir / 'histograms.npy') )
-    
+    hist = distribution.get_histograms(yhat)
+
+    distribution.plot_histograms(hist, path = all_dir / 'histograms')
+    distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )

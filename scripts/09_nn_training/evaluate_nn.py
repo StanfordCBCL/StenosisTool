@@ -1,68 +1,102 @@
+# File: evaluate_nn.py
+# File Created: Tuesday, 15th August 2023 12:44:58 pm
+# Author: John Lee (jlee88@nd.edu)
+# Last Modified: Thursday, 17th August 2023 1:51:08 am
+# Modified By: John Lee (jlee88@nd.edu>)
+# 
+# Description: Evaluates the Neural Network
+
 
 import matplotlib.pyplot as plt
 import torch
+import tqdm
 from pathlib import Path
-import torch.utils.data as tdata
 import numpy as np
 
 from svinterface.plotting.params import set_params
+from svinterface.utils.misc import d2m
 
+def plot_avp(y, savedir: Path):
+    
+    # plot for all values at a point
+    for i in tqdm.tqdm(range(0,len(y[0][0]),6), desc='Generating A vs. P plots'):
+        fig, ax = plt.subplots(2, 3, figsize = (24, 16), )
+        ax = ax.flatten()
+        names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)', 'Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
+        for j in range(6):
+            if j < 3:
+                ax[j].scatter(y[:,0,i+j],y[:,1,i+j])
+            else:
+                ax[j].scatter(d2m(y[:,0,i+j]),d2m(y[:,1,i+j]))
+            ax[j].set_xlabel("Actual")
+            ax[j].set_ylabel("Predicted")
+            ax[j].set_title(names[j])
+        fig.suptitle(f"Truth vs. Predicted at point {i // 6 +1}")
+        fig.savefig(str(savedir / f'avp_point_{i//6+1}.png'))
+        plt.close(fig)
 
+def plot_overlap(x, y, savedir: Path):
+
+    indices = np.random.choice(list(range(len(x))), size=len(x)//4)
     
-class Dataset0D(tdata.Dataset):
-    """Dataset for input and outputs"""
-    
-    def __init__(self, input_file, output_file, output_transformation = None, revert_map = None):
-        self.input = np.load(input_file)
-        self.output= np.load(output_file)
-        self.revert_map = revert_map
-        if output_transformation:
-            self.output, self.revert_map = output_transformation(self.output, self.revert_map)
+    # plot for all values at a point
+    for i in tqdm.tqdm(range(0,len(y[0][0]),6), desc='Generating Scatter Plots'):
+        fig, ax = plt.subplots(3, 2, figsize = (16, 24), )
+        for row in range(3):
+            for col, name  in enumerate(['Flow', 'Pressure']):
+                if col == 0:
+                    name2=name + ' (mL/s)'
+                    units = lambda x:x
+                else:
+                    name2=name + ' (mmHg)'
+                    units = d2m
+                
+                names = [f'Diastolic {name}', f'Mean {name}', f'Systolic {name}']
+                colors = ['red', 'blue', 'green']
+                for j in range(3):
+                    ax[row][col].scatter(x[indices, row], units(y[indices, 0, i + j + 3*col]),c = colors[j], marker = '^', alpha=.5, label='Actual ' + names[j])
+                    ax[row][col].scatter(x[indices, row], units(y[indices, 1, i + j + 3*col]),c = colors[j], alpha=.5, label='Predicted ' + names[j])
+                
+                ax[row][col].set_xlabel(f'Repair Param {row + 1}')
+                ax[row][col].set_ylabel(name2)
+                ax[row][col].set_title(f'Repair Param {row + 1} {name}')
         
-    def __len__(self):
-        return len(self.input)
     
-    def __getitem__(self, idx):
-        return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
-
-# Normalization methods
-def normalization(output, revert_map = None):
-    if revert_map is None:
-        revert_map = []
-        for i in range(len(output[0])):
-            std = output[:, i].std()
-            mean = output[:, i].mean()
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-            revert_map.append([mean, std])
-        return output, revert_map
+        fig.suptitle(f"Scatter at point {i // 6 +1}")
+        fig.savefig(str(savedir / f'scatter_point_{i//6+1}.png'))
+        plt.close(fig)
     
-    else:
-        for i in range(len(output[0])):
-            std = revert_map[i][1]
-            mean = revert_map[i][0]
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-        return output, revert_map
-
-def revert(output, map_back):
-    for i in range(len(output[0])):
-        output[:, i] = (output[:, i] * map_back[i][1]) + map_back[i][0]
-    return output
-
-
-
+def print_stats(ys):
+    residuals = ys[:,0] - ys[:,1]
+    r = np.abs(residuals / ys[:,0])
+    ABSRELE = r.mean().item()
+    MAXRELE = r.max().item()
+    sd = r.std().item()
+    print(f"Mean Relative Error: {round(ABSRELE * 100, 4)}%" )
+    print(f"Maximum Relative Error: {round(MAXRELE * 100, 4)}%")
+    print(f"2 std Relative Error: (0%, {round(ABSRELE + 2 * sd * 100, 4)}%)")
+    
+    
 if __name__ == '__main__':
     set_params()
     
     dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
     
-    # load train and test dataset to get truths
-    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
-    test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
-
     # load 
     version = 'version_0'
     x = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_input.pt")
-    yhat = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_output.pt")
+    ys = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_output.pt")
     
-    print(test_dataset.output.shape)
-    print(yhat.size())
+    plots_dir = dir / "training_results" /  "run1" / "lightning_logs" / version / 'plots'
+    
+    
+    print_stats(ys)
+    
+    # avp_dir = plots_dir / 'actual_vs_predicted'
+    # avp_dir.mkdir(parents=True, exist_ok=True)
+    
+    # plot_avp(ys, savedir=avp_dir)
+    
+    # overlap_dir = plots_dir / 'overlap'
+    # overlap_dir.mkdir(parents=True, exist_ok=True)
+    # plot_overlap(x, ys, savedir=overlap_dir)
