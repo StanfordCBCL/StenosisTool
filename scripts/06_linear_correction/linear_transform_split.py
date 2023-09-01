@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th July 2023 5:13:03 pm
+# Last Modified: Friday, 1st September 2023 11:23:27 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on the junctions, but split between MPA, RPA, LPA. Only saves physical values
@@ -38,16 +38,17 @@ def conc_sim(lpn: OriginalLPN, junc_id: int, which: int, junction_outlet_vessels
 
     return pressures_cur     
 
-def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
+def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, iterations: int):
     
     # get relevant positions
     tree = zerod_lpn.get_tree()
     # determine sides
     zerod_lpn.det_lpa_rpa(tree)
     
-    for side in  'MPA', 'RPA', 'LPA':
-        print(f"Evaluating {side}.")
-        linear_transform_side(zerod_lpn, threed_c, M, side)
+    for i in range(iterations):
+        for side in  'MPA', 'RPA', 'LPA':
+            print(f"Evaluating {side}.")
+            linear_transform_side(zerod_lpn, threed_c, M, side)
     
     
 def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, side: str):
@@ -126,8 +127,12 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     for junc_node in junction_nodes:
         for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
             v = zerod_lpn.get_vessel(vess)
-            if aT[counter] + junc_node.vessel_info[0]['junction_values']['R_poiseuille'][idx] > -v['zero_d_element_values']['R_poiseuille']: # physical
+            
+            if aT[counter] + junc_node.vessel_info[0]['junction_values']['R_poiseuille'][idx] > -v['zero_d_element_values']['R_poiseuille']: # physical if the new change is still > vessel
                 zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter], mode='add')
+            else:
+                # otherwise change to minimal possible value
+                zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = -v['zero_d_element_values']['R_poiseuille'])
             counter += 1
             
     # Split Constant according to Murrays law into proximal resistance
@@ -202,6 +207,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Perform a linear optimization on the branches")
     parser.add_argument("-i", dest = 'config', help = 'config.yaml file')
+    parser.add_argument("-iter", dest = 'n', type = int, default = 1, help = 'number of iterations to run the linear transforms for. Each iteration consists of a linear correction in the MPA, RPA, and LPA.')
     
     args = parser.parse_args()
     
@@ -221,4 +227,4 @@ if __name__ == '__main__':
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
     
-    linear_transform(zerod_lpn,threed_c, M)
+    linear_transform(zerod_lpn,threed_c, M, iterations = args.n)

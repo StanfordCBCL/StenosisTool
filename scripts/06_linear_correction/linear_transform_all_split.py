@@ -1,11 +1,10 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th July 2023 5:12:36 pm
+# Last Modified: Friday, 1st September 2023 11:26:20 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on both junctions and vessels, but split between MPA, RPA, LPA
-#! Unused
 
 
 
@@ -63,14 +62,14 @@ def vess_sim(lpn: OriginalLPN, vess: int, poi_0d):
 
     return pressures_cur       
         
-def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager,):
+def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, iterations: int):
     
     # get relevant positions
     tree = zerod_lpn.get_tree()
     # determine sides
     zerod_lpn.det_lpa_rpa(tree)
     
-    for i in range(5):
+    for i in range(iterations):
         for side in  'MPA', 'RPA', 'LPA':
             print(f"Evaluating {side}.")
             linear_transform_side(zerod_lpn, threed_c, M, side)
@@ -225,6 +224,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Perform a linear optimization on the branches")
     parser.add_argument("-i", dest = 'config', help = 'config.yaml file')
+    parser.add_argument("-iter", dest = 'n', type = int, default = 1, help = 'number of iterations to run the linear transforms for. Each iteration consists of a linear correction in the MPA, RPA, and LPA.')
     
     args = parser.parse_args()
     
@@ -243,4 +243,4 @@ if __name__ == '__main__':
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
     
-    linear_transform(zerod_lpn,threed_c, M)
+    linear_transform(zerod_lpn,threed_c, M, args.n)
