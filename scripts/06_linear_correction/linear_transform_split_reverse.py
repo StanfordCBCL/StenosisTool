@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 1st September 2023 11:24:28 am
+# Last Modified: Friday, 1st September 2023 11:58:42 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on the junctions, but split between MPA, RPA, LPA. Only saves physical values
@@ -189,7 +189,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     for name, bc in zerod_lpn.bc_data.items():
         # if bc['face_name'] in areas:
         add_r = Rpi(areas[bc['face_name']], A, global_const)
-        print(add_r)
+        # print(add_r)
         rat = bc['bc_values']['Rp'] / (bc['bc_values']['Rd'] + bc['bc_values']['Rp'])
         bc['bc_values']['Rp'] += add_r * rat
         bc['bc_values']['Rd'] += add_r * (1-rat)

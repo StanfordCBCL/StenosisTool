@@ -1,7 +1,7 @@
 # File: linear_transform_physical.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th July 2023 5:12:48 pm
+# Last Modified: Friday, 1st September 2023 11:58:27 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Perform a linear transform on the junctions, but only saves physical values
@@ -138,7 +138,7 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
     global_const = aT[-1] * m2d(1) / zerod_lpn.inflow.mean_inflow
     for name, bc in zerod_lpn.bc_data.items():
         add_r = Rpi(areas[bc['face_name']], A, global_const)
-        print(add_r)
+        # print(add_r)
         rat = bc['bc_values']['Rp'] / (bc['bc_values']['Rd'] + bc['bc_values']['Rp'])
         bc['bc_values']['Rp'] += add_r * rat
         bc['bc_values']['Rd'] += add_r * (1-rat)
