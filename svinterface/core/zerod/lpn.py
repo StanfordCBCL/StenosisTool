@@ -204,15 +204,17 @@ class OriginalLPN():
         """
         return LPN.from_dict(deepcopy(self.lpn_data))
     
-    def to_cpp(self, normal = True):
-        """Converts to cpp by converting to NORMAL_JUNCTIONS. normal=False adds junction_values to BloodVesselJunctions
+    def to_cpp(self):
+        """Converts to cpp by converting to BloodVesselJunctions
         """
+        self.normal_to_bvj()
+        
+    def to_python(self):
+        ''' converts BVJ to Normal Junctions'''
         for junc in self.junctions:
             if junc['junction_type'] == 'BloodVesselJunction':
                 junc['junction_type'] = 'NORMAL_JUNCTION'
         
-        if not normal:
-            self.normal_to_bvj()
                     
 
     def normal_to_bvj(self):
