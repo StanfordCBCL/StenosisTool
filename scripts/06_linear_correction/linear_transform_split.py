@@ -1,20 +1,20 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 1st September 2023 11:58:38 am
+# Last Modified: Thursday, 14th September 2023 7:23:22 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on the junctions, but split between MPA, RPA, LPA. Only saves physical values
-#! Swapping LPA and RPA may result in failure.
 
-import argparse
+
 
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
-from svinterface.core.bc import RCR 
 from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
+
+import argparse
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 
@@ -40,7 +40,6 @@ def conc_sim(lpn: OriginalLPN, junc_id: int, which: int, junction_outlet_vessels
 
 def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, iterations: int):
     
-    # get relevant positions
     tree = zerod_lpn.get_tree()
     # determine sides
     zerod_lpn.det_lpa_rpa(tree)
@@ -53,10 +52,9 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, iteratio
     
 def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, side: str):
 
-    # get relevant positions
     tree = zerod_lpn.get_tree()
     
-    # collect
+    # collect junctions
     junction_outlet_vessels = []
     junction_gids = []
     junction_nodes = []
@@ -114,14 +112,6 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     # compute alpha values
     aT = press_inv @ target_pressures_diff
     
-    
-    
-    # print(target_pressures_diff)
-    # print(aT)
-    # np.savetxt(f"temp/target_dp_{side}.txt", target_pressures_diff, delimiter = ' ' )
-    # np.savetxt(f"temp/aT_{side}.txt", aT, delimiter = ' ')
-    
-    
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
     for junc_node in junction_nodes:
@@ -136,7 +126,6 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
             counter += 1
             
     # Split Constant according to Murrays law into proximal resistance
-    
     def load_area_file(area_filepath):
         ''' loads a capinfo file
         '''
@@ -176,20 +165,12 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
 
     areas= load_area_file(M['workspace']['capinfo'])
     del areas[M['metadata']['inlet']]
-    # lpa_areas, rpa_areas = split_rpa_lpa(areas)
-    # if side == 'LPA':
-    #     areas = lpa_areas
-    # elif side == 'RPA':
-    #     areas = rpa_areas
-    
-    # print(areas)
+
     A = sum(list(areas.values()))
-    # add resistances
+    # add resistances in same ratio
     global_const = aT[-1] * m2d(1) / zerod_lpn.inflow.mean_inflow
     for name, bc in zerod_lpn.bc_data.items():
-        # if bc['face_name'] in areas:
         add_r = Rpi(areas[bc['face_name']], A, global_const)
-        # print(add_r)
         rat = bc['bc_values']['Rp'] / (bc['bc_values']['Rd'] + bc['bc_values']['Rp'])
         bc['bc_values']['Rp'] += add_r * rat
         bc['bc_values']['Rd'] += add_r * (1-rat)
@@ -227,4 +208,5 @@ if __name__ == '__main__':
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
     
+    # linear transform
     linear_transform(zerod_lpn,threed_c, M, iterations = args.n)

@@ -1,7 +1,7 @@
 # File: evaluate_nn.py
 # File Created: Tuesday, 15th August 2023 12:44:58 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 17th August 2023 1:51:08 am
+# Last Modified: Thursday, 14th September 2023 7:39:02 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Evaluates the Neural Network
@@ -17,7 +17,7 @@ from svinterface.plotting.params import set_params
 from svinterface.utils.misc import d2m
 
 def plot_avp(y, savedir: Path):
-    
+    """ Plot Actual vs Predicted """
     # plot for all values at a point
     for i in tqdm.tqdm(range(0,len(y[0][0]),6), desc='Generating A vs. P plots'):
         fig, ax = plt.subplots(2, 3, figsize = (24, 16), )
@@ -36,6 +36,7 @@ def plot_avp(y, savedir: Path):
         plt.close(fig)
 
 def plot_overlap(x, y, savedir: Path):
+    """ Plot Scatter plots"""
 
     indices = np.random.choice(list(range(len(x))), size=len(x)//4)
     
@@ -67,6 +68,7 @@ def plot_overlap(x, y, savedir: Path):
         plt.close(fig)
     
 def print_stats(ys):
+    """ Print Model Statistics """
     residuals = ys[:,0] - ys[:,1]
     r = np.abs(residuals / ys[:,0])
     ABSRELE = r.mean().item()
@@ -78,7 +80,9 @@ def print_stats(ys):
     
     
 if __name__ == '__main__':
-    set_params()
+    
+    import argparse
+    parser = argparse.ArgumentParser(description="Evaluates the neural network")
     
     dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
     
@@ -89,14 +93,16 @@ if __name__ == '__main__':
     
     plots_dir = dir / "training_results" /  "run1" / "lightning_logs" / version / 'plots'
     
+    # set matplotlib params
+    set_params()
     
     print_stats(ys)
     
-    # avp_dir = plots_dir / 'actual_vs_predicted'
-    # avp_dir.mkdir(parents=True, exist_ok=True)
+    avp_dir = plots_dir / 'actual_vs_predicted'
+    avp_dir.mkdir(parents=True, exist_ok=True)
     
-    # plot_avp(ys, savedir=avp_dir)
+    plot_avp(ys, savedir=avp_dir)
     
-    # overlap_dir = plots_dir / 'overlap'
-    # overlap_dir.mkdir(parents=True, exist_ok=True)
-    # plot_overlap(x, ys, savedir=overlap_dir)
+    overlap_dir = plots_dir / 'overlap'
+    overlap_dir.mkdir(parents=True, exist_ok=True)
+    plot_overlap(x, ys, savedir=overlap_dir)

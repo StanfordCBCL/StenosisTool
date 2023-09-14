@@ -1,7 +1,7 @@
 # File: lpn_segmentation.py
 # File Created: Monday, 13th February 2023 4:03:14 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 13th July 2023 2:03:10 pm
+# Last Modified: Thursday, 14th September 2023 7:14:22 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Constructs an LPN from the recorded centerlines in the manager. Uses preset parameters only.
@@ -101,7 +101,6 @@ if __name__ == '__main__':
         # error occured
         print(x)
         exit(1)
-    # LPN successfully constructed
     print("Done")
 
     ## LPN register.

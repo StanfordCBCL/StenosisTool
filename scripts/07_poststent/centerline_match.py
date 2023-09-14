@@ -1,31 +1,16 @@
 # File: centerline_match.py
 # File Created: Wednesday, 14th June 2023 5:11:09 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 14th August 2023 11:46:25 am
+# Last Modified: Thursday, 14th September 2023 7:24:41 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Determines corresponding GID on the stented model centerlines that are relevant to the prestented model centerlines
 
 
-# Pseudocode:
-'''
-Take in config file -> diseased centerlines
-Take in path to stented centerlines
-
-Check diseased centerlines has been mapped adequately already (contains Caps Junctions and Vessels)
-For each relevant point
-    get GID & xyz
-    find segment that is closest to it
-    find GID of point on segment that is min distance for every line from point to next point.
-    save gid into vector on diseased model.
-
-
-'''
-
-import argparse
-
 from svinterface.manager import Manager
 from svinterface.core.polydata import Centerlines
+
+import argparse
 import numpy as np
 from tqdm import tqdm
 
@@ -93,11 +78,8 @@ def match_centerlines(diseased_cent: Centerlines, stented_cent: Centerlines):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Determines the stented model centerline GID that corresponds to relevant GID in diseased model")
-    
-    
     parser.add_argument("-i", help = "Config file")
     parser.add_argument("-c", help = "path to stented centerlines")
-    
     args = parser.parse_args()
     
     M = Manager(args.i)
@@ -106,9 +88,11 @@ if __name__ == '__main__':
     dis_cent = Centerlines.load_centerlines(M['workspace']['centerlines'])
     stent_cent = Centerlines.load_centerlines(args.c)
     
+    # match
     match_centerlines(diseased_cent=dis_cent,
                       stented_cent=stent_cent)
     
+    # update
     stent_cent.write_polydata(args.c)
     
     

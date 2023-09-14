@@ -1,12 +1,10 @@
 # File: tune_bc.py
 # File Created: Monday, 31st October 2022 8:46:06 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Monday, 17th July 2023 5:06:27 pm
+# Last Modified: Thursday, 14th September 2023 7:16:31 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Tunes Boundary Conditions for a 0D model using a simplified nonlinear tuning model.
-#! Sensitivity Tests to be implemented & clean up code
-
 
 
 from svinterface.core.zerod.solver import SolverResults, Solver0Dcpp
@@ -587,62 +585,10 @@ def validate_results(tune_params: TuneParams, main_lpn: LPN, tuning_lpn: LPN, x,
     ax[0].legend(fontsize = 16, loc = 'upper left', framealpha = .5)
 
     fig.savefig(str(save_dir / 'tuning_waveforms.png'))
-
-####################
-# Sensitivity Test #
-####################
-
-# def sens_test(x, tune_params : TuneParams, inflow: Inflow0D, solver: Solver0D, sensitivity_dir):
-#     mapping = {'Rp_LPA': 0, 'C_LPA': 1, 'Rd_LPA': 2, 'Rp_RPA':3, 'C_RPA':4, 'Rd_RPA':5}
     
-#     for var_name, index in mapping.items():
-#         print(f'\tRunning {var_name} sensitivity test...', end = '\t', flush = True)
-        
-#         fig, ax = plt.subplots(2, 2, figsize = (40, 30))
-#         ax = ax.flatten()
-#         ax[0].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
-#         ax[1].set_xlabel(f'pct change {var_name}', fontdict={'fontsize': 20})
-#         ax[0].set_ylabel(f'mPAP', fontdict={'fontsize': 20})
-#         ax[1].set_ylabel(f'Q_RPA_avg', fontdict={'fontsize': 20})
-#         ax[0].set_title('mPAP change', fontdict={'fontsize': 24})
-#         ax[1].set_title('Q_RPA change', fontdict={'fontsize': 24})
-#         ax[2].set_xlabel(f'pct_change {var_name}', fontdict={'fontsize': 20})
-#         ax[2].set_ylabel(f'MSE', fontdict={'fontsize': 20})
-#         ax[2].set_title('MSE', fontdict={'fontsize': 24})
-#         ax[3].set_xlabel(f'pct_change {var_name}', fontdict = {'fontsize':20})
-#         ax[3].set_ylabel(f'maxPAP', fontdict={'fontsize': 20})
-#         ax[3].set_title('maxPAP', fontdict={'fontsize': 24})
-        
-#         for i in range(3):
-#             ax[i].tick_params(axis="x", labelsize=16) 
-#             ax[i].tick_params(axis = 'y', labelsize=16)
-        
-#         mod = np.linspace(.8, 1.2, 40)
-#         mpap = []
-#         q_rpa = []
-#         mses = []
-#         maxpap = []
-#         for pct in mod:
-#             x_test = np.copy(x)
-#             x_test[index] *= pct
-            
-#             rez = run_sim_wrapper(x_test, solver)
-            
-#             _, _, mse, _ , (mPAP_sim, Q_RPA_sim, maxPAP_sim, _, _,_) = loss_function(rez, tune_params, inflow)
-#             mpap.append(mPAP_sim)
-#             q_rpa.append(Q_RPA_sim)
-#             mses.append(mse)
-#             maxpap.append(maxPAP_sim)
-            
-
-        
-#         ax[0].plot(mod - 1, mpap)
-#         ax[1].plot(mod - 1, q_rpa)
-#         ax[2].plot(mod - 1, mses)
-#         ax[3].plot(mod - 1, maxpap)
-        
-#         fig.savefig(os.path.join(sensitivity_dir, f'{var_name}_change.png'))
-#         print('Done')
+##########
+# Params #
+##########
     
 def load_tuning_params(TM: Manager):
     

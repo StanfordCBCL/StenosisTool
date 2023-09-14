@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 1st September 2023 11:58:45 am
+# Last Modified: Thursday, 14th September 2023 7:22:21 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform on both junctions and vessels, but split between MPA, RPA, LPA
@@ -11,14 +11,15 @@
 
 
 
-import argparse
+
 
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
-from svinterface.core.bc import RCR 
-from svinterface.core.zerod.solver import Solver0Dcpp, SolverResults
+from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
+
+import argparse
 import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, wait
@@ -63,22 +64,24 @@ def vess_sim(lpn: OriginalLPN, vess: int, poi_0d):
     return pressures_cur       
         
 def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, iterations: int):
-    
-    # get relevant positions
+    """ Wrapper for linear transform
+    """
     tree = zerod_lpn.get_tree()
     # determine sides
     zerod_lpn.det_lpa_rpa(tree)
     
+    # transform each side
     for i in range(iterations):
         for side in  'MPA', 'RPA', 'LPA':
             print(f"Evaluating {side}.")
             linear_transform_side(zerod_lpn, threed_c, M, side)
         
 def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, side):
-
-    # get relevant positions
+    """ Linearly transform a single side
+    """
     tree = zerod_lpn.get_tree()
-    # collect junction values
+    
+    ## Collect junction values
     junction_outlet_vessels = []
     junction_gids = []
     junction_nodes = []
@@ -88,7 +91,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
             junction_gids += junc_node.vessel_info[0]['gid'][1] # out gids
             junction_nodes.append(junc_node)
         
-    # collect branch values
+    ## Collect branch values
     segment_vess_ids = []
     segment_gids = []
     branch_nodes = []
@@ -104,21 +107,21 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     
     assert len(junction_gids) == len(junction_outlet_vessels), "Number of junction ids on 3D data will not match the number of outlet vessels in the 0D"
         
-    # points of interest
+    ## Points of interest
     poi_3d = junction_gids + segment_gids + [0] # include inlet
     poi_0d = lambda df: pd.concat([df.iloc[junction_outlet_vessels]['pressure_in'], df.iloc[segment_vess_ids]['pressure_out'], df.iloc[[0]]['pressure_in']]).to_numpy()
     
-    # extract target pressures.
+    ## Extract target pressures.
     target_pressures = threed_c.get_pointdata_array("avg_pressure")[poi_3d]
     
-    # compute initial case
+    ## Compute initial case
     tmp = Solver0Dcpp(zerod_lpn, last_cycle_only=True, mean_only=True, debug = False)
     init_sim = tmp.run_sim()
     init_sim.convert_to_mmHg()
     pressures_init = poi_0d(init_sim.result_df)
 
         
-    # submit jobs
+    ## Submit jobs
     futures = []
     with ProcessPoolExecutor() as executor:
         # iterate through each junction outlet (submit futures)
@@ -155,12 +158,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     
     # compute matmul of inverse
     aT = press_inv @ target_pressures_diff
-    
-    print(target_pressures_diff)
-    print(aT)
-    #np.save("transform.dat", {'aT': aT, 'target_pressures': target_pressures, 'pressures_init': pressures_init, 'pressures': pressures}, allow_pickle=True)
-    
-    #! Could swap order of vessels then junctions, so we can always keep it physical
+ 
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
     for junc_node in junction_nodes:
@@ -179,8 +177,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
             zerod_lpn.change_vessel(vessel_id_or_name=vid, R = 0)
         counter += 1
             
-    # Split Constant according to Murrays law into proximal resistance
-    
+    ## Split Constant according to Murrays law into proximal resistance
     def load_area_file(area_filepath):
         ''' loads a capinfo file
         '''
@@ -225,7 +222,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Perform a linear optimization on the branches")
     parser.add_argument("-i", dest = 'config', help = 'config.yaml file')
     parser.add_argument("-iter", dest = 'n', type = int, default = 1, help = 'number of iterations to run the linear transforms for. Each iteration consists of a linear correction in the MPA, RPA, and LPA.')
-    
     args = parser.parse_args()
     
     
@@ -243,4 +239,5 @@ if __name__ == '__main__':
     # load centerlines
     threed_c = Centerlines.load_centerlines(threed_file)
     
+    # linear transform
     linear_transform(zerod_lpn,threed_c, M, args.n)

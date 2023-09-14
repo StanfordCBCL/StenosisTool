@@ -1,25 +1,20 @@
 # File: linear_transform_physical.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 1st September 2023 11:58:27 am
+# Last Modified: Thursday, 14th September 2023 7:23:52 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description: Perform a linear transform on the junctions, but only saves physical values
-
-
-
-
-
-import argparse
+# Description: Perform a linear transform on the junctions, but only saves physical values. Original Linear transform
 
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
-from svinterface.core.bc import RCR 
-from svinterface.core.zerod.solver import Solver0Dcpp, SolverResults
+from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
+
+import argparse
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 
 
 
@@ -145,13 +140,6 @@ def linear_transform(zerod_lpn: LPN, threed_c: Centerlines, M: Manager):
     
     # save the lpn.
     zerod_lpn.update()
-    
-    
-
-    
-
-    
-    
     
 
 

@@ -1,21 +1,21 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 1st September 2023 11:58:42 am
+# Last Modified: Thursday, 14th September 2023 7:22:09 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
-# Description:  Perform a linear transform on the junctions, but split between MPA, RPA, LPA. Only saves physical values
-#! Swapping LPA and RPA may result in failure.
+# Description:  Perform a linear transform on the junctions, but split between MPA, LPA, RPA (reversed from linear_transform_split.py). Only saves physical values. 
 
-import argparse
+
 
 from svinterface.core.zerod.lpn import LPN, OriginalLPN
 from svinterface.core.polydata import Centerlines
-from svinterface.core.bc import RCR 
 from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.manager.baseManager import Manager
 from svinterface.utils.misc import m2d
+
 import numpy as np
+import argparse
 from concurrent.futures import ProcessPoolExecutor
 
 

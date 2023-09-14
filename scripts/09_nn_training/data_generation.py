@@ -1,21 +1,18 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Wednesday, 16th August 2023 9:38:00 am
+# Last Modified: Thursday, 14th September 2023 7:33:26 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
 
-import tqdm
 import numpy as np
 from scipy.stats.qmc import Sobol
 from pathlib import Path
 import json
 import argparse
 import time
-import math
 from concurrent.futures import ProcessPoolExecutor
-
 
 from svinterface.core.zerod.solver import Solver0Dcpp
 from svinterface.core.zerod.lpn import LPN, FastLPN
@@ -102,7 +99,7 @@ def parameterize(M: Manager):
 
 
 def generate_data(M: Manager, data_dir: Path, samples: list):
-    
+    """ Generate Data Proc """
     train_dir = data_dir / 'train_data'
     val_dir = data_dir / 'val_data'
     test_dir = data_dir / 'test_data'
@@ -120,7 +117,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
                               num_samples=num_samples,
                               seed=42 + idx)
 
-        # pass to each process, each process handles incr (64) simulations before creating a fresh process
+        # pass to each process, each executor handles incr (128) simulations before creating a fresh set of subprocesses
 
         y = []
         cur, incr = 0, 32
@@ -128,6 +125,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
         
         while cur < num_samples:
             
+            # restart executor
             if cur % (4 * incr) == 0:
                 executor = ProcessPoolExecutor()
 
@@ -137,6 +135,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
             for p in parameterization[cur:cur + incr]:
                 futures.append(executor.submit(remote_run_sim, p, base_lpn.get_fast_lpn(), (all_vess, all_vess_dr, all_juncs, all_juncs_dr)))
             
+            # get futures
             for f in futures:
                 y.append(f.result())
                 counter += 1
@@ -147,6 +146,7 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
             cur += incr
             print(f"Time (sec) taken for last {incr} jobs: {time.time() - start}")
             
+            # restart executor
             if cur % (4 * incr) == 0:
                 executor.shutdown(wait=True)
             
@@ -158,7 +158,6 @@ def generate_data(M: Manager, data_dir: Path, samples: list):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description = 'Use Multi-threading to create data samples in numpy array for machine learning ')
-    
     parser.add_argument('-i', dest = 'config', required = True, help = 'yaml file for confit')
     parser.add_argument('-ntrain', dest = 'num_train_samples', default = 8192, type = int, help = 'num_train_samples will be generated for training data. Use a power of 2 to guarentee balance properties. Default: 8192 = 2^13.')
     parser.add_argument('-nval', dest = 'num_val_samples', default = 1024, type = int, help = 'num_val_samples will be generated for validation data. Use a power of 2 to guarentee balance properties. Default: 1024 = 2^10.')
@@ -167,13 +166,13 @@ if __name__ == '__main__':
     
     M = Manager(args.config)
     
-    nn_dir = Path(M['workspace']['nn_dir'])
-    
     # main data dir
+    nn_dir = Path(M['workspace']['nn_dir'])
     data_dir = nn_dir / 'model_data'
     data_dir.mkdir(exist_ok=True)
     M.register('model_data', str(data_dir), depth=['NN_DIR'])
     
+    # generate data
     generate_data(M, data_dir, [args.num_train_samples, args.num_val_samples, args.num_test_samples])
     
     
