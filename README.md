@@ -82,3 +82,6 @@ The main stenosis tool should be set up now.
 3. Follow instructions under [C++ Documentation](https://stanfordcbcl.github.io/svZeroDPlus/cpp/) to install dependencies and build the C++ Solver
 
 The C++ solver should now be built
+
+apt install libgl1-mesa-glx
+sudo apt-get install libxrender1

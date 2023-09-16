@@ -77,8 +77,6 @@ class LightningNN(pl.LightningModule):
         """ Prediction """
         x, y = batch
         y_hat = self.model(x)
-        revert(y_hat, self.revert_map)
-        revert(y, self.revert_map)
         
         return torch.stack((y, y_hat), dim = 1)
     
@@ -97,56 +95,77 @@ class LightningNN(pl.LightningModule):
 class Dataset0D(tdata.Dataset):
     """Dataset for input and outputs, performs a transformation"""
     
-    def __init__(self, input_file, output_file, output_transformation = None, revert_map = None):
+    def __init__(self, input_file, output_file, train=False):
         self.input = np.load(input_file)
         self.output= np.load(output_file)
-        self.revert_map = revert_map
-        if output_transformation:
-            self.output, self.revert_map = output_transformation(self.output, self.revert_map)
+        self.train = train
         
+    def reduce_data(self, count):
+        """reduces amount of data to count"""
+        idx = np.random.choice(range(len(self.input)), size=count, replace=False)
+        self.input = self.input[idx]
+        self.output = self.output[idx]
+    
+    def normalize(self, revert_map = None):
+        """ Performs a zscore normalization on targets.
+        If revert_map is provided, then apply the revert_map rather than compute a new one (used for validation and test")"""
+        
+        if self.train:
+            assert revert_map is None, "no revert map should be provided from training data"
+        
+            # construct revert map
+            self.revert_map = []
+            for i in range(len(self.output[0])):
+                std = self.output[:, i].std()
+                mean = self.output[:, i].mean()
+                self.output[:, i] = (self.output[:, i] - mean) / std if std != 0 else 0
+                self.revert_map.append([mean, std])
+        
+        # apply revert map
+        else:
+            self.revert_map = revert_map
+            for i in range(len(self.output[0])):
+                std = self.revert_map[i][1]
+                mean = self.revert_map[i][0]
+                self.output[:, i] = (self.output[:, i] - mean) / std if std != 0 else 0
+    
+    def revert(self, yhat):
+        for i in range(len(yhat[0])):
+            yhat[:, i] = (yhat[:, i] * self.revert_map[i][1]) + self.revert_map[i][0]
+        return yhat
+    
     def __len__(self):
         return len(self.input)
     
     def __getitem__(self, idx):
         return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
 
-def normalization(output, revert_map = None):
-    """ Performs a zscore normalization on targets.
-    If revert_map is provided, then apply the revert_map rather than compute a new one (used for validation and test")"""
-    
-    # compute revert map
-    if revert_map is None:
-        revert_map = []
-        for i in range(len(output[0])):
-            std = output[:, i].std()
-            mean = output[:, i].mean()
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-            revert_map.append([mean, std])
-        return output, revert_map
-    
-    # apply existing revert map
-    else:
-        for i in range(len(output[0])):
-            std = revert_map[i][1]
-            mean = revert_map[i][0]
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-        return output, revert_map
-
-# perform normalization revert
-def revert(output, map_back):
-    for i in range(len(output[0])):
-        output[:, i] = (output[:, i] * map_back[i][1]) + map_back[i][0]
-    return output
-
-
 if __name__ == '__main__':
     
-    #! Temp
-    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
-
-    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
-    val_dataset = Dataset0D(dir / 'model_data' / 'val_data' / 'input.npy', dir / 'model_data' / 'val_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
-    test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', normalization, revert_map=train_dataset.revert_map)
+    import argparse
+    parser = argparse.ArgumentParser(description="Train a neural network")
+    parser.add_argument("-nn_dir", default='data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR', help="Path to neural network dir")
+    parser.add_argument("-tdata_rat", dest='rat', default=1, type=float, help='Amount of data to use for training')
+    parser.add_argument("-seed", default=42, type=int, help="seed to use")
+    args = parser.parse_args()
+    
+    torch.random.manual_seed(args.seed)
+    
+    ## Load Data
+    dir = Path(args.nn_dir)
+    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', train=True)
+    val_dataset = Dataset0D(dir / 'model_data' / 'val_data' / 'input.npy', dir / 'model_data' / 'val_data' / 'output.npy', train=False)
+    test_dataset = Dataset0D(dir / 'model_data' / 'test_data' / 'input.npy', dir / 'model_data' / 'test_data' / 'output.npy', train=False)
+    
+    ## Reduce data if asked
+    tdata_len=int(len(train_dataset)*args.rat)
+    train_dataset.reduce_data(count=tdata_len)
+    print(f"Using {args.rat*100}% ({tdata_len}) of training data.")
+    
+    ## Normalize data
+    train_dataset.normalize()
+    val_dataset.normalize(train_dataset.revert_map)
+    test_dataset.normalize(train_dataset.revert_map)
 
     train_loader = tdata.DataLoader(train_dataset, batch_size = 128, shuffle = True,)
     val_loader = tdata.DataLoader(val_dataset, batch_size=128, shuffle = False, )
@@ -163,7 +182,7 @@ if __name__ == '__main__':
     if not os.path.exists(all_results_folder):
         os.mkdir(all_results_folder)
     
-    cur_results_folder = all_results_folder / 'run1'
+    cur_results_folder = all_results_folder / f'run_{tdata_len}'
     if not os.path.exists(cur_results_folder):
         os.mkdir(cur_results_folder)
     
@@ -187,8 +206,15 @@ if __name__ == '__main__':
     for i in range(len(test_loader.dataset)):
         x.append(test_loader.dataset[i][0])
     x = torch.vstack(x)
+    # unorm results
     rez = torch.vstack(rez)
+    test_dataset.revert(rez[:, 0])
+    test_dataset.revert(rez[:, 1])
     
     # save results
-    torch.save(x, dir / "training_results" /  "run1" / "lightning_logs" / f"version_{csv_logger.version}" / "predict_input.pt")
-    torch.save(rez, dir / "training_results" /  "run1" / "lightning_logs" / f"version_{csv_logger.version}" / "predict_output.pt")
+    run_dir = dir / "training_results" /  f'run_{tdata_len}' / "lightning_logs" / f"version_{csv_logger.version}" 
+    torch.save(x, run_dir / "predict_input.pt")
+    torch.save(rez, run_dir / "predict_output.pt")
+    
+    # save normalization
+    torch.save(train_dataset.revert_map, run_dir / 'revert_map.pt' )

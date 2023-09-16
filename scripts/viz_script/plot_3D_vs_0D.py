@@ -215,8 +215,6 @@ if __name__ == '__main__':
     
     c_3d = Centerlines.load_polydata(three_d)
     
-    r_0d = SolverResults.from_csv(sim['csv'])
-    
     c_0d = Centerlines.load_centerlines(sim['centerlines'])
     
     comp_folder = zero_d_sim / "3D_vs_0D"
