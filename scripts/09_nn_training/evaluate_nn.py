@@ -70,39 +70,47 @@ def plot_overlap(x, y, savedir: Path):
 def print_stats(ys):
     """ Print Model Statistics """
     residuals = ys[:,0] - ys[:,1]
+    
     r = np.abs(residuals / ys[:,0])
+    base_idx = np.arange(0,ys.size()[-1]/6) * 6
+    print(len(base_idx))
+    print(r[:,base_idx].size())
     ABSRELE = r.mean().item()
+    
     MAXRELE = r.max().item()
     sd = r.std().item()
-    print(f"Mean Relative Error: {round(ABSRELE * 100, 4)}%" )
-    print(f"Maximum Relative Error: {round(MAXRELE * 100, 4)}%")
-    print(f"2 std Relative Error: (0%, {round(ABSRELE + 2 * sd * 100, 4)}%)")
+    print(f"Mean Relative Error: {round(r[:,base_idx].mean().item() * 100, 4)}% | {round(r[:,base_idx + 1].mean().item() * 100, 4)}% | {round(r[:,base_idx + 2].mean().item() * 100, 4)}% | {round(r[:,base_idx + 3].mean().item() * 100, 4)}% | {round(r[:,base_idx + 4].mean().item() * 100, 4)}% | {round(r[:,base_idx + 5].mean().item() * 100, 4)}%" )
+    print(f"Maximum Relative Error: {round(r[:,base_idx].max().item() * 100, 4)}% | {round(r[:,base_idx + 1].max().item() * 100, 4)}% | {round(r[:,base_idx + 2].max().item() * 100, 4)}% | {round(r[:,base_idx + 3].max().item() * 100, 4)}% | {round(r[:,base_idx + 4].max().item() * 100, 4)}% | {round(r[:,base_idx + 5].max().item() * 100, 4)}%")
+    print(f"2STD : {round((r[:,base_idx].mean().item() + 2 * r[:,base_idx].std().item())* 100, 4)}% | {round((r[:,base_idx+1].mean().item() + 2 * r[:,base_idx+1].std().item())* 100, 4)}% | {round((r[:,base_idx+2].mean().item() + 2 * r[:,base_idx+2].std().item())* 100, 4)}% | {round((r[:,base_idx+3].mean().item() + 2 * r[:,base_idx+3].std().item())* 100, 4)}% | {round((r[:,base_idx+4].mean().item() + 2 * r[:,base_idx+4].std().item())* 100, 4)}% | {round((r[:,base_idx+5].mean().item() + 2 * r[:,base_idx+5].std().item())* 100, 4)}%")
     
     
 if __name__ == '__main__':
     
     import argparse
     parser = argparse.ArgumentParser(description="Evaluates the neural network")
+    parser.add_argument("-nn_dir", default='data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR', help='nn directory')
+    parser.add_argument("-run", help='run to check')
+    args = parser.parse_args()
     
-    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
+    dir = Path(args.nn_dir)
     
     # load 
     version = 'version_0'
-    x = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_input.pt")
-    ys = torch.load(dir / "training_results" /  "run1" / "lightning_logs" / version / "predict_output.pt")
+    x = torch.load(dir / "training_results" /  args.run / "lightning_logs" / version / "predict_input.pt")
+    ys = torch.load(dir / "training_results" /  args.run / "lightning_logs" / version / "predict_output.pt")
     
-    plots_dir = dir / "training_results" /  "run1" / "lightning_logs" / version / 'plots'
+    plots_dir = dir / "training_results" /  args.run / "lightning_logs" / version / 'plots'
     
     # set matplotlib params
     set_params()
     
     print_stats(ys)
     
-    avp_dir = plots_dir / 'actual_vs_predicted'
-    avp_dir.mkdir(parents=True, exist_ok=True)
+    # avp_dir = plots_dir / 'actual_vs_predicted'
+    # avp_dir.mkdir(parents=True, exist_ok=True)
     
-    plot_avp(ys, savedir=avp_dir)
+    # plot_avp(ys, savedir=avp_dir)
     
-    overlap_dir = plots_dir / 'overlap'
-    overlap_dir.mkdir(parents=True, exist_ok=True)
-    plot_overlap(x, ys, savedir=overlap_dir)
+    # overlap_dir = plots_dir / 'overlap'
+    # overlap_dir.mkdir(parents=True, exist_ok=True)
+    # plot_overlap(x, ys, savedir=overlap_dir)
