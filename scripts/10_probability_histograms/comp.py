@@ -1,15 +1,15 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Tuesday, 22nd August 2023 4:39:35 pm
+# Last Modified: Friday, 22nd September 2023 4:45:32 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
 
-
 from torch import nn
 from torch import optim
 import torch
+import re
 import tqdm
 import torch.utils.data as tdata
 import pytorch_lightning as pl
@@ -17,130 +17,11 @@ import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import argparse
 
 from svinterface.utils.io import read_json
 from svinterface.utils.misc import d2m
-
-class BasicNN(nn.Module):
-    
-    def __init__(self, input_neurons, output_neurons, hidden_layers, neurons_per_layer):
-        super(BasicNN, self).__init__()
-        self.input_layer = nn.Linear(input_neurons, neurons_per_layer )
-        self.relu = nn.Tanh()
-        self.hidden = nn.Sequential()
-        if hidden_layers < 1:
-            raise ValueError('hidden layers must be > 0')
-        else:
-            for i in range(hidden_layers):
-                self.hidden.append(nn.Linear(neurons_per_layer, neurons_per_layer))
-                self.hidden.append(self.relu)
-        self.output_layer = nn.Linear(neurons_per_layer, output_neurons)
-        #self.output_relu = nn.ReLU()
-    
-    def forward(self, x):
-        x = self.input_layer(x)
-        x = self.relu(x)
-        x = self.hidden(x)
-        x = self.output_layer(x)
-        # x = self.output_relu(x)
-        return x
-
-class LightningNN(pl.LightningModule):
-    
-    def __init__(self, model, lr, revert_map):
-        super(LightningNN, self).__init__()
-        self.model = model
-        self.lr = lr
-        self.revert_map = revert_map
-    
-    def training_step(self, batch, batch_idx):
-        # training_step defines the train loop.
-        # it is independent of forward
-        x, y = batch
-        y_hat = self.model(x)
-        loss = nn.functional.huber_loss(y_hat, y)
-        # Logging to TensorBoard by default
-        self.log("train_loss", loss)
-        return loss
-    
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        
-        #print(y_hat[0])
-        #print(y_hat.shape)
-        loss = nn.functional.huber_loss(y_hat, y)
-        self.log("val_loss", loss)
-        return loss
-    
-    def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        loss = nn.functional.huber_loss(y_hat, y)
-        self.log("test_loss", loss)
-        return loss
-    
-    def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        x, y = batch
-        y_hat = self.model(x)
-        revert(y_hat, self.revert_map)
-        revert(y, self.revert_map)
-        
-        return torch.stack((y, y_hat), dim = 1)
-    
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.lr)# weight_decay=.00005)
-        return {
-        "optimizer": optimizer,
-        "lr_scheduler": {
-            "scheduler": optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode = 'min', factor = .1, patience=4, min_lr=1e-8, verbose = True),
-            "monitor": "val_loss",
-            "frequency": 1
-            # If "monitor" references validation metrics, then "frequency" should be set to a
-            # multiple of "trainer.check_val_every_n_epoch".
-        },
-    }
-    
-
-    
-class Dataset0D(tdata.Dataset):
-    
-    def __init__(self, input_file, output_file, output_transformation = None, revert_map = None):
-        self.input = np.load(input_file)
-        self.output= np.load(output_file)
-        self.revert_map = revert_map
-        if output_transformation:
-            self.output, self.revert_map = output_transformation(self.output, self.revert_map)
-        
-    def __len__(self):
-        return len(self.input)
-    
-    def __getitem__(self, idx):
-        return torch.from_numpy((self.input[idx])).float(), torch.from_numpy(self.output[idx]).float()
-
-# Normalization methods
-def normalization(output, revert_map = None):
-    if revert_map is None:
-        revert_map = []
-        for i in range(len(output[0])):
-            std = output[:, i].std()
-            mean = output[:, i].mean()
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-            revert_map.append([mean, std])
-        
-        return output, revert_map
-    
-    else:
-        for i in range(len(output[0])):
-            std = revert_map[i][1]
-            mean = revert_map[i][0]
-            output[:, i] = (output[:, i] - mean) / std if std != 0 else 0
-        return output, revert_map
-
-def revert(output, map_back):
-    for i in range(len(output[0])):
-        output[:, i] = (output[:, i] * map_back[i][1]) + map_back[i][0]
-    return output
+from train_nn import *
 
 class PredictDataset(tdata.Dataset):
     def __init__(self, inputs):
@@ -302,20 +183,34 @@ class LightningNNPredictor(LightningNN):
         y_hat = self.model(x)
         revert(y_hat, self.revert_map)
         return y_hat
+    
+def get_checkpoint(ckpt_dir: Path):
+    for file in ckpt_dir.iterdir():
+        return file
+    
 
 if __name__ == '__main__':
     
     #! Temp hardcode path
-    dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR')
-
-    # load training data to recompute normalization map (#TODO: SAVE THE NORM NEXT TIME.)
-    train_dataset = Dataset0D(dir / 'model_data' / 'train_data' / 'input.npy', dir / 'model_data' / 'train_data' / 'output.npy', normalization, revert_map=None)
+    parser = argparse.ArgumentParser(description="Observe the results")
+    parser.add_argument("-train_dir", default = 'data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768', help = 'training data directory to use' )
+    args = parser.parse_args()
+    
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
+    dir = Path(args.train_dir)
+    # load normalization map
+    revert_map = torch.load(dir / 'lightning_logs' / 'version_0' / 'revert_map.pt', map_location=torch.device(device))
+    
+    # get checkpoint and model size
+    ckpt_dir = get_checkpoint(dir  / 'lightning_logs' / 'version_0' / 'checkpoints')
+    ckpt = torch.load(str(ckpt_dir), map_location=torch.device(device))
+    input_size = ckpt['state_dict']['model.input_layer.weight'].size()[1]
+    output_size = ckpt['state_dict']['model.output_layer.weight'].size()[0]
 
     # Construct model
-    # retrieve first value of Dataset for sizes
-    input_data, output_data = train_dataset[0]
-    nnmodel = BasicNN(input_neurons=len(input_data), output_neurons=len(output_data), hidden_layers=3, neurons_per_layer=1000)
-    litmodel = LightningNNPredictor(nnmodel, lr = 1e-3, revert_map = train_dataset.revert_map)
+    nnmodel = BasicNN(input_neurons=input_size, output_neurons=output_size, hidden_layers=3, neurons_per_layer=1000)
+    litmodel = LightningNNPredictor(nnmodel, lr = 1e-3, revert_map = revert_map)
     
     
     # create probability distribution
