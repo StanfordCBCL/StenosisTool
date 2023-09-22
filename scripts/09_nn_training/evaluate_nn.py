@@ -73,15 +73,20 @@ def print_stats(ys):
     
     r = np.abs(residuals / ys[:,0])
     base_idx = np.arange(0,ys.size()[-1]/6) * 6
-    print(len(base_idx))
-    print(r[:,base_idx].size())
     ABSRELE = r.mean().item()
     
-    MAXRELE = r.max().item()
+    
     sd = r.std().item()
-    print(f"Mean Relative Error: {round(r[:,base_idx].mean().item() * 100, 4)}% | {round(r[:,base_idx + 1].mean().item() * 100, 4)}% | {round(r[:,base_idx + 2].mean().item() * 100, 4)}% | {round(r[:,base_idx + 3].mean().item() * 100, 4)}% | {round(r[:,base_idx + 4].mean().item() * 100, 4)}% | {round(r[:,base_idx + 5].mean().item() * 100, 4)}%" )
-    print(f"Maximum Relative Error: {round(r[:,base_idx].max().item() * 100, 4)}% | {round(r[:,base_idx + 1].max().item() * 100, 4)}% | {round(r[:,base_idx + 2].max().item() * 100, 4)}% | {round(r[:,base_idx + 3].max().item() * 100, 4)}% | {round(r[:,base_idx + 4].max().item() * 100, 4)}% | {round(r[:,base_idx + 5].max().item() * 100, 4)}%")
-    print(f"2STD : {round((r[:,base_idx].mean().item() + 2 * r[:,base_idx].std().item())* 100, 4)}% | {round((r[:,base_idx+1].mean().item() + 2 * r[:,base_idx+1].std().item())* 100, 4)}% | {round((r[:,base_idx+2].mean().item() + 2 * r[:,base_idx+2].std().item())* 100, 4)}% | {round((r[:,base_idx+3].mean().item() + 2 * r[:,base_idx+3].std().item())* 100, 4)}% | {round((r[:,base_idx+4].mean().item() + 2 * r[:,base_idx+4].std().item())* 100, 4)}% | {round((r[:,base_idx+5].mean().item() + 2 * r[:,base_idx+5].std().item())* 100, 4)}%")
+    # print(f"Mean Relative Error: {round(r[:,base_idx].mean().item() * 100, 4)}% | {round(r[:,base_idx + 1].mean().item() * 100, 4)}% | {round(r[:,base_idx + 2].mean().item() * 100, 4)}% | {round(r[:,base_idx + 3].mean().item() * 100, 4)}% | {round(r[:,base_idx + 4].mean().item() * 100, 4)}% | {round(r[:,base_idx + 5].mean().item() * 100, 4)}%" )
+    # print(f"Maximum Relative Error: {round(r[:,base_idx].max().item() * 100, 4)}% | {round(r[:,base_idx + 1].max().item() * 100, 4)}% | {round(r[:,base_idx + 2].max().item() * 100, 4)}% | {round(r[:,base_idx + 3].max().item() * 100, 4)}% | {round(r[:,base_idx + 4].max().item() * 100, 4)}% | {round(r[:,base_idx + 5].max().item() * 100, 4)}%")
+    # print(f"2STD : {round((r[:,base_idx].mean().item() + 2 * r[:,base_idx].std().item())* 100, 4)}% | {round((r[:,base_idx+1].mean().item() + 2 * r[:,base_idx+1].std().item())* 100, 4)}% | {round((r[:,base_idx+2].mean().item() + 2 * r[:,base_idx+2].std().item())* 100, 4)}% | {round((r[:,base_idx+3].mean().item() + 2 * r[:,base_idx+3].std().item())* 100, 4)}% | {round((r[:,base_idx+4].mean().item() + 2 * r[:,base_idx+4].std().item())* 100, 4)}% | {round((r[:,base_idx+5].mean().item() + 2 * r[:,base_idx+5].std().item())* 100, 4)}%")
+    
+    r = np.abs(residuals)
+    print(r[:, base_idx + 2].size())
+    print(r[:,base_idx + 2].max())
+    print(f"Mean Absolute Error: {round(r[:,base_idx].mean().item(), 4)} | {round(r[:,base_idx + 1].mean().item(), 4)} | {round(r[:,base_idx + 2].mean().item(), 4)} | {round(d2m(r[:,base_idx + 3].mean().item()), 4)} | {round(d2m(r[:,base_idx + 4].mean().item()), 4)} | {round(d2m(r[:,base_idx + 5].mean().item() ), 4)}" )
+    print(f"Maximum Absolute Error: {round(r[:,base_idx].max().item() * 100, 4)} | {round(r[:,base_idx + 1].max().item(), 4)} | {round(r[:,base_idx + 2].max().item(), 4)} | {round(d2m(r[:,base_idx + 3].max().item()), 4)} | {round(d2m(r[:,base_idx + 4].max().item()), 4)} | {round(d2m(r[:,base_idx + 5].max().item() ), 4)}")
+    print(f"2STD : {round((r[:,base_idx].mean().item() + 2 * r[:,base_idx].std().item()), 4)} | {round((r[:,base_idx+1].mean().item() + 2 * r[:,base_idx+1].std().item()), 4)} | {round((r[:,base_idx+2].mean().item() + 2 * r[:,base_idx+2].std().item()), 4)} | {round(d2m((r[:,base_idx+3].mean().item() + 2 * r[:,base_idx+3].std().item())), 4)} | {round(d2m((r[:,base_idx+4].mean().item() + 2 * r[:,base_idx+4].std().item())), 4)} | {round(d2m((r[:,base_idx+5].mean().item() + 2 * r[:,base_idx+5].std().item())), 4)}")
     
     
 if __name__ == '__main__':
@@ -106,8 +111,8 @@ if __name__ == '__main__':
     
     print_stats(ys)
     
-    # avp_dir = plots_dir / 'actual_vs_predicted'
-    # avp_dir.mkdir(parents=True, exist_ok=True)
+    avp_dir = plots_dir / 'actual_vs_predicted'
+    avp_dir.mkdir(parents=True, exist_ok=True)
     
     # plot_avp(ys, savedir=avp_dir)
     
