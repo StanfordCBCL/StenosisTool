@@ -107,4 +107,4 @@ ax1[1][0].legend(fontsize=fs-2)
 ax1[1][0].tick_params(axis='both', which='major', labelsize=fs)    
 
 plt.tight_layout()
-plt.savefig('test.pdf')
+plt.savefig('plots/ml_results.pdf')

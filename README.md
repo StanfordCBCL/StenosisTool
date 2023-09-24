@@ -85,3 +85,12 @@ The C++ solver should now be built
 
 apt install libgl1-mesa-glx
 sudo apt-get install libxrender1
+
+
+
+
+
+Write scripts to generate plots, reproducible
+Regenerate data.
+Retrain model.
+Redo data

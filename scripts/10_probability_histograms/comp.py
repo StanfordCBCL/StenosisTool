@@ -1,7 +1,7 @@
 # File: comp.py
 # File Created: Thursday, 22nd September 2022 7:45:48 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Friday, 22nd September 2023 4:45:32 pm
+# Last Modified: Sunday, 24th September 2023 2:10:40 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 #! Description: compares final output.
@@ -314,21 +314,5 @@ if __name__ == '__main__':
         hist_dir.mkdir(exist_ok=True)
         # only plot first 10
         distribution.plot_histograms(hist[:10], path = hist_dir)
-    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
+        # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
     
-    # all_dir = prob_dir / 'uniform'
-    # all_dir.mkdir(exist_ok=True)
-    # (all_dir / 'histograms').mkdir(exist_ok=True)
-    
-    # # create probability distribution
-    # distribution = RepairDistribution(num_repairs=len(input_data), 
-    #                                   category_probs=(.2,.6,.2))
-    # x, yhat = distribution.run_test(model=litmodel,
-    #                       trainer=trainer,
-    #                       best_chkpt=str(best_ckpt),
-    #                       num_samples=4096*24,
-    #                       batch_size=4096)
-    # hist = distribution.get_histograms(yhat)
-
-    # distribution.plot_histograms(hist, path = all_dir / 'histograms')
-    # distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )

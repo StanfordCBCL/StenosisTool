@@ -1,7 +1,7 @@
 # File: linear_transform.py
 # File Created: Tuesday, 14th February 2023 11:25:35 am
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Sunday, 24th September 2023 3:55:39 pm
+# Last Modified: Thursday, 14th September 2023 7:30:24 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description:  Perform a linear transform only the relevant set of vessels and junctions, but split between MPA, RPA, LPA.
@@ -61,18 +61,13 @@ def get_distances(diseased_cent: Centerlines, stented_cent: Centerlines):
 def split_vessel_junc(d: list, lpn: LPN, std: float ):
     distances = np.array(d)[:,2]
     t = set(np.array(d[:np.where(distances > distances.mean() + std*distances.std())[0][-1] + 1])[:,0].astype(int))
-    valid_junc_ids = {}
+    valid_junc_ids = set()
     valid_vess_ids = set()
     for node in lpn.tree_bfs_iterator(lpn.get_tree()):
         for idx, vinfo in enumerate(node.vessel_info):
             if node.type == 'junction':
-                if vinfo['gid'][0] in t:
-                    valid_junc_ids[node.ids[idx]] = list(range(len(vinfo['gid'][1])))
-                elif set(vinfo['gid'][1]).intersection(t):
-                    valid_junc_ids[node.ids[idx]] = []
-                    for which, gid in enumerate(vinfo['gid'][1]):
-                        if gid in t:
-                            valid_junc_ids[node.ids[idx]].append(which)
+                if vinfo['gid'][0] in t or set(vinfo['gid'][1]).intersection(t):
+                    valid_junc_ids.add(node.ids[idx])
             elif node.type == 'branch':
                 if set(vinfo['gid']).intersection(t):
                     valid_vess_ids.add(node.ids[idx])
@@ -132,11 +127,10 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     junction_outlet_vessels = []
     junction_gids = []
     junction_nodes = []
-        
     for junc_node in zerod_lpn.tree_bfs_iterator(tree, allow='junction'):
         if junc_node.vessel_info[0]['side'] == side and junc_node.ids[0] in junctions:
-            junction_outlet_vessels += [junc_node.vessel_info[0]['outlet_vessels'][idx] for idx in junctions[junc_node.ids[0]]]
-            junction_gids += [junc_node.vessel_info[0]['gid'][1][idx] for idx in junctions[junc_node.ids[0]]] # out gids
+            junction_outlet_vessels += junc_node.vessel_info[0]['outlet_vessels']
+            junction_gids += junc_node.vessel_info[0]['gid'][1] # out gids
             junction_nodes.append(junc_node)
         
     # collect branch values
@@ -174,7 +168,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     with ProcessPoolExecutor() as executor:
         # iterate through each junction outlet (submit futures)
         for junc_node in junction_nodes:
-            for idx in junctions[junc_node.ids[0]]:
+            for idx, vess in enumerate(junc_node.vessel_info[0]['outlet_vessels']):
                 print(f"Changing junction {junc_node.id} downstream vessel {idx}.")
                 futures.append(executor.submit(junc_sim, zerod_lpn.get_fast_lpn(), junc_node.id, idx, [junction_outlet_vessels, segment_vess_ids, [0]]))
         # iterate through vessel segments
@@ -213,7 +207,7 @@ def linear_transform_side(zerod_lpn: LPN, threed_c: Centerlines, M: Manager, sid
     # iterate through each junction outlet and fill it with appropriate junction values
     counter = 0
     for junc_node in junction_nodes:
-        for idx in junctions[junc_node.ids[0]]:
+        for idx in range(len(junc_node.vessel_info[0]['outlet_vessels'])):
             if aT[counter] + junc_node.vessel_info[0]['junction_values']['R_poiseuille'][idx] > 0: # physical
                 zerod_lpn.change_junction_outlet(junction_id_or_name=junc_node.id, which=idx, R = aT[counter], mode = 'add')
             else:
@@ -292,7 +286,7 @@ if __name__ == '__main__':
     # save vessel and junctions
     relevant_regions = correction_dir / 'relevant_regions.json'
     with relevant_regions.open("w") as rrfile:
-        json.dump({'Vessels': sorted(list(vess_ids)), 'Junctions': junc_ids}, rrfile, indent=4, sort_keys=True)
+        json.dump({'Vessels': sorted(list(vess_ids)), 'Junctions': sorted(list(junc_ids))}, rrfile, indent=4, sort_keys=True)
     M.register('relevant_regions', str(relevant_regions), ['parameterization','corrections', args.name])
     
     # linear transform
