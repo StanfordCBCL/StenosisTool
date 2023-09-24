@@ -16,7 +16,6 @@ import pytorch_lightning as pl
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import argparse
 
 from svinterface.utils.io import read_json
@@ -33,6 +32,11 @@ class PredictDataset(tdata.Dataset):
     
     def __getitem__(self, idx):
         return torch.from_numpy((self.inputs[idx])).float()
+    
+def revert(yhat, revert_map):
+    for i in range(len(yhat[0])):
+        yhat[:, i] = (yhat[:, i] * revert_map[i][1]) + revert_map[i][0]
+    return yhat
 
 class RepairDistribution():
     
@@ -140,9 +144,28 @@ class RepairDistribution():
         input_data = np.array([self.sample() for i in range(num_samples)])
         return PredictDataset(input_data)
     
+    def get_baseline(self, model, trainer, best_chkpt):
+        ''' retrieves baseline sample (freezing all unfixed and unfrozen)'''
+        to_freeze = []
+        for idx, repair_point in enumerate(self.repair_points):
+            if type(repair_point) == self.RepairRandom and repair_point.frozen == False:
+                to_freeze.append(idx)
+        self.freeze(to_freeze)
+        # run base test
+        x, yhat = self.run_test(model, trainer, best_chkpt,  num_samples = 2, batch_size = 1, p_var = 0, q_var = 0)
+        self.unfreeze(to_unfreeze=to_freeze)
+        return x, yhat
+        
+    
     def get_histograms(self, yhat):
         return [[np.histogram(yhat[:, i + j], bins = 'auto', density=True) for j in range(3)]+[np.histogram(d2m(yhat[:, i + j]), bins = 'auto', density=True) for j in range(3,6)] for i in range(0, len(yhat[0]),6)]
     
+    def save_data(self, x, yhat, baseline, filepath):
+        np.save(filepath, {'x': x,
+                           'yhat': yhat,
+                           'baseline':baseline},
+                allow_pickle=True)
+        
     def save_histograms(self, histograms, filepath):
         np.save(filepath, histograms, allow_pickle=True)
             
@@ -159,8 +182,16 @@ class RepairDistribution():
             fig.suptitle(f"Histograms at point {i +1}")
             fig.savefig(str(path / f'hist_point_{i+1}.png'))
             plt.close(fig)
+    
+    def add_uncertainty(self, yhat, p_var, q_var):
+        base = np.array(range(0, len(yhat[0]), 6))
+        pressures = np.concatenate([base + 3, base + 4, base + 5])
+        flows = np.concatenate([base, base + 1, base + 2])
+        yhat[:, pressures] += torch.from_numpy(np.random.normal(0, p_var, size=(len(yhat),1))).tile(len(pressures)).float()
+        yhat[:, flows] +=  torch.from_numpy(np.random.normal(0, q_var, size=(len(yhat),1))).tile(len(flows)).float()
+        return yhat
         
-    def run_test(self, model, trainer, best_chkpt,  num_samples = 4096, batch_size = 4096):
+    def run_test(self, model, trainer, best_chkpt,  num_samples = 4096, batch_size = 4096, p_var = 1, q_var = 1):
         test_dataset = self.create_dataset(num_samples)
         test_loader = tdata.DataLoader(test_dataset, batch_size = batch_size)
         # predict on the test loader and get normalized results
@@ -168,9 +199,10 @@ class RepairDistribution():
         # retrieve x
         x = []
         for i in range(len(test_loader.dataset)):
-            x.append(test_loader.dataset[i][0])
+            x.append(test_loader.dataset[i])
         x = torch.vstack(x)
         rez = torch.vstack(rez)
+        rez = self.add_uncertainty(rez, p_var, q_var)
         return x, rez
 
 class LightningNNPredictor(LightningNN):
@@ -191,7 +223,6 @@ def get_checkpoint(ckpt_dir: Path):
 
 if __name__ == '__main__':
     
-    #! Temp hardcode path
     parser = argparse.ArgumentParser(description="Observe the results")
     parser.add_argument("-train_dir", default = 'data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768', help = 'training data directory to use' )
     args = parser.parse_args()
@@ -203,22 +234,16 @@ if __name__ == '__main__':
     revert_map = torch.load(dir / 'lightning_logs' / 'version_0' / 'revert_map.pt', map_location=torch.device(device))
     
     # get checkpoint and model size
-    ckpt_dir = get_checkpoint(dir  / 'lightning_logs' / 'version_0' / 'checkpoints')
-    ckpt = torch.load(str(ckpt_dir), map_location=torch.device(device))
+    best_ckpt = get_checkpoint(dir  / 'lightning_logs' / 'version_0' / 'checkpoints')
+    ckpt = torch.load(str(best_ckpt), map_location=torch.device(device))
     input_size = ckpt['state_dict']['model.input_layer.weight'].size()[1]
     output_size = ckpt['state_dict']['model.output_layer.weight'].size()[0]
 
     # Construct model
-    nnmodel = BasicNN(input_neurons=input_size, output_neurons=output_size, hidden_layers=3, neurons_per_layer=1000)
+    nnmodel = BasicNN(input_neurons=input_size, output_neurons=output_size, hidden_layers=3, neurons_per_layer=1000) 
     litmodel = LightningNNPredictor(nnmodel, lr = 1e-3, revert_map = revert_map)
     
-    
-    # create probability distribution
-    distribution = RepairDistribution(num_repairs=len(input_data), 
-                                      category_probs=(.3,.4,.3))
-    
-    #! TO be changed
-    best_checkpoint = dir / "training_results" / "run1" / "lightning_logs" / "version_0" / "checkpoints" / "epoch=498-step=127744.ckpt"
+    # trainer
     trainer = pl.Trainer(logger = False, accelerator='auto')
     
     # create a dir to save data
@@ -226,52 +251,84 @@ if __name__ == '__main__':
     prob_dir.mkdir(exist_ok=True)
     
     
-    # # starting at random, no fixture (All possible distributions)
-    # all_dir = prob_dir / 'all_distributions'
+    # starting at random, no fixture (All possible distributions)
+    
+    all_dir = prob_dir / 'all_distributions'
+    all_dir.mkdir(exist_ok=True)
+    
+    for std in (0, 1, 3):
+        all_dir_std = all_dir / str(std)
+        all_dir_std.mkdir(exist_ok=True)
+        # create probability distribution
+        distribution = RepairDistribution(num_repairs=input_size, 
+                                        category_probs=(.3,.4,.3))
+        
+        x, yhat = distribution.run_test(model=litmodel,
+                            trainer=trainer,
+                            best_chkpt=str(best_ckpt),
+                            num_samples=4096*24,
+                            batch_size=4096,
+                            p_var=1333.22 * std,
+                            q_var=std)
+        hist = distribution.get_histograms(yhat)
+        
+        baseline = distribution.get_baseline(model=litmodel,
+                                            trainer=trainer,
+                                            best_chkpt=str(best_ckpt))
+        distribution.save_data(x, yhat, baseline, all_dir_std / 'data.npy')
+        hist_dir = all_dir_std / 'histograms'
+        hist_dir.mkdir(exist_ok=True)
+        # only plot first 10
+        distribution.plot_histograms(hist[:10], path = hist_dir)
+        # distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )
+        
+    
+    
+    # fix repair 0 (LPA_proximal) at 
+    fixz_dir = prob_dir / 'fixeda3_conditional'
+    fixz_dir.mkdir(exist_ok=True)
+    
+    for std in (0, 1, 3):
+        fixz_dir_std = fixz_dir / str(std)
+        fixz_dir_std.mkdir(exist_ok=True)
+        
+        distribution = RepairDistribution(num_repairs=input_size, 
+                                        category_probs=(.3,.4,.3))
+        distribution.fixed(repair_idx=2,
+                        c=1)
+        
+        x, yhat = distribution.run_test(model=litmodel,
+                            trainer=trainer,
+                            best_chkpt=str(best_ckpt),
+                            num_samples=4096*24,
+                            batch_size=4096,
+                            p_var=1333.22 * std,
+                            q_var=std)
+        hist = distribution.get_histograms(yhat)
+        
+        baseline = distribution.get_baseline(model=litmodel,
+                                            trainer=trainer,
+                                            best_chkpt=str(best_ckpt))
+        distribution.save_data(x, yhat, baseline, fixz_dir_std / 'data.npy')
+        hist_dir = fixz_dir_std / 'histograms'
+        hist_dir.mkdir(exist_ok=True)
+        # only plot first 10
+        distribution.plot_histograms(hist[:10], path = hist_dir)
+    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
+    
+    # all_dir = prob_dir / 'uniform'
     # all_dir.mkdir(exist_ok=True)
     # (all_dir / 'histograms').mkdir(exist_ok=True)
     
+    # # create probability distribution
+    # distribution = RepairDistribution(num_repairs=len(input_data), 
+    #                                   category_probs=(.2,.6,.2))
     # x, yhat = distribution.run_test(model=litmodel,
     #                       trainer=trainer,
-    #                       best_chkpt=best_checkpoint,
+    #                       best_chkpt=str(best_ckpt),
     #                       num_samples=4096*24,
     #                       batch_size=4096)
     # hist = distribution.get_histograms(yhat)
 
     # distribution.plot_histograms(hist, path = all_dir / 'histograms')
     # distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )
-    
- 
-    
-    # # fix repair 0 (LPA_proximal) at 
-    # fixz_dir = prob_dir / 'fixeda3_conditional'
-    # fixz_dir.mkdir(exist_ok=True)
-    # (fixz_dir / 'histograms').mkdir(exist_ok=True)
-    
-    # distribution.fixed(repair_idx=2,
-    #                    c=.8)
-    # x, yhat = distribution.run_test(model=litmodel,
-    #                       trainer=trainer,
-    #                       best_chkpt=best_checkpoint,
-    #                       num_samples=4096*24,
-    #                       batch_size=4096)
-    # hist = distribution.get_histograms(yhat)
-    # distribution.plot_histograms(hist, path = fixz_dir / 'histograms')
-    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
-    
-    all_dir = prob_dir / 'uniform'
-    all_dir.mkdir(exist_ok=True)
-    (all_dir / 'histograms').mkdir(exist_ok=True)
-    
-    # create probability distribution
-    distribution = RepairDistribution(num_repairs=len(input_data), 
-                                      category_probs=(.2,.6,.2))
-    x, yhat = distribution.run_test(model=litmodel,
-                          trainer=trainer,
-                          best_chkpt=best_checkpoint,
-                          num_samples=4096*24,
-                          batch_size=4096)
-    hist = distribution.get_histograms(yhat)
-
-    distribution.plot_histograms(hist, path = all_dir / 'histograms')
-    distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )
