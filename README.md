@@ -62,7 +62,20 @@ sudo apt-get install libxrender1
 
 
 
-Write scripts to generate plots, reproducible
-Regenerate data.
-Retrain model.
-Redo data
+- [] Data 
+    - [] rerun data generation and model training
+- [] Plotting
+    - [] write script for generating plots
+    - [] Make sure plotting is reproducible
+    - [] write down all necessary plots
+- [] Reorganize Code
+    - [] Move svInterface to internal
+    - [] Move certain functions into svinterface
+    - [] Make sure svZeroDPlus still works with pip install version
+- [] Provide a sample
+    - [] write a single script (skipping some data generation steps)
+    - [] make sure all data exists
+- [] Documentation
+    - [] of plotting
+    
+
