@@ -1,7 +1,7 @@
 # File: sobol_sampling_healthy.py
 # File Created: Friday, 19th August 2022 4:22:32 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 14th September 2023 7:33:26 pm
+# Last Modified: Monday, 25th September 2023 9:07:04 am
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Use Sobol sampling to parameterize from 0-1 each post-stent simulation. Save diastolic, mean, systolic pressures and flows.
@@ -28,10 +28,10 @@ def remote_run_sim(param, base_lpn: FastLPN, lpn_mapping: tuple):
         for vidx, max_dr in list(zip(all_vess[idx], all_vess_dr[idx])):
             # add the modified coefficient
             base_lpn.change_vessel(vidx, R = max_dr * coef, mode='add')
-
+    
         for jidx, max_drs in list(zip(all_juncs[idx], all_juncs_dr[idx])):
             for outlet_idx, max_dr in enumerate(max_drs):
-                base_lpn.change_junction_outlet(int(jidx[1:]), which=outlet_idx, R=max_dr * coef, mode='add')
+                base_lpn.change_junction_outlet(int(jidx[1:]), which=all_juncs[idx][jidx][outlet_idx], R=max_dr * coef, mode='add')
     
     
     # run simulation
@@ -82,18 +82,21 @@ def parameterize(M: Manager):
     all_juncs_dr = []
     # pull out relevant regions and get vessel and junction resistance ranges
     for sim in sim_names:
+        print(sim_names)
         # load the regions used
         rrpath = Path(M['parameterization']['corrections'][sim]['relevant_regions'])
         with rrpath.open() as rrfp:
             rr = json.load(rrfp)
+            
+        print(rr)
         # load lpn
         lpn = LPN.from_file(M['parameterization']['corrections'][sim]['lpn'])
         all_vess.append(rr['Vessels'])
         all_vess_dr.append([lpn.get_vessel(vidx)['zero_d_element_values']['R_poiseuille'] - base_lpn.get_vessel(vidx)['zero_d_element_values']['R_poiseuille'] for vidx in rr['Vessels']])
         
         all_juncs.append(rr['Junctions'])
-        all_juncs_dr.append([[lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] - base_lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] for outlet_idx in range(len(lpn.get_junction(jidx)['outlet_vessels']))] for jidx in rr['Junctions']])
-            
+        all_juncs_dr.append([[lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] - base_lpn.get_junction(jidx)['junction_values']['R_poiseuille'][outlet_idx] for outlet_idx in rr['Junctions'][jidx]] for jidx in rr['Junctions']])
+        print(all_juncs)
     return base_lpn, all_vess, all_vess_dr, all_juncs, all_juncs_dr
             
 
