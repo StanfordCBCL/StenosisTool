@@ -9,51 +9,23 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
 
 ## Tasks
 
-- [x] First Pipeline for Healthy Model
-
-- [] Rewrite Code for Organization into pipeline.
-    - [] Pipeline
-        - [x] Generate config for workspace
-        - [x] Setup Workspace
-        - [x] Setup LPN 
-        - [x] LPN Tuning Setup 
-            - [x] !BUG: The LPA and RPA swap??? -> solved by sorting the outlet caps
-        - [x] Artificial Stenosis Gen
-        - [] Stenosis Detection
-        - [] Training Data Generation
-        - [] Neural Network Training
-        - [] Probability Report
-    - [] Research
-        - [x] Determine models to use, and set adequate meshing
-        - [x] Generate Centerlines for each model (ensure they are correct)
-        - [x] Retrieve Cap Info/Inlet information for each model
-        - [x] Retrieve Inflow condition for diseased model
-        - [] JC vs. Base LPN
-            - [] 3D
-                - [x] Use 0D boundary conditions to Tune each version
-                - [x] Create 3D simulation files for each
-                - [X] Run 3D simulation for each
-                    - [X] Make it so Diseased model doesn't explode.
-                    - [] Make sure Diseased model is solved correctly
-                - [] Postprocess results to 1D centerlines to compare
-                    - [] Centerline map from 0D
-                    - [] Centerline map from 3D
-                    - [] Centerline conversion from 3D centerline map to 0D style.
-                - [] Ensure values are physiological & values are similar/correlated to 3D
-            - [] 0D
-                - [] Demonstrate that JC model captures delta P better than Base
-                - [] Demonstrate that fixture/AS is insufficient w/ Base model.
-    - [] Visualization
-        - [x] Better Tuning plots (Add targets)
-        - [] Generate representation of 0D model vs 3D model and expansion operation (fixing)
-        - [] Interface
-
-- [] Write Paper
-- [] Clean Up
-    - [] Documentation
-    - [] Slides
-    - [] Remove extra code.
-
+- [x] Write script for pipeline
+- [] Generate Data for Paper
+    - [] Regenerate training data
+    - [] Rerun Model
+    - [] Generate Data to evaluate
+- [] Write plotting scripts
+    - [] Make sure plots are reproducible
+    - [] These can be more hard coded, which is acceptable
+- [] Cleanup
+    - [] Reorganize code
+        - [] Make sure everything is consistent with saving in a config file
+        - [] Change svZeroDPlus to pip installed version
+        - [] Move svInterface to local instead of submodule
+        - [] Comment/Run through to ensure everything works
+    - [] Write Documentation
+    - [] Create a sample to run
+        - [] Ensure all data is present, and config is written
 
 ## Installation
 
