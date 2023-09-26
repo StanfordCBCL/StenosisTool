@@ -58,9 +58,8 @@ def get_distances(diseased_cent: Centerlines, stented_cent: Centerlines):
         
     return sorted(distances, key=lambda x: x[2], reverse=True)
 
-def split_vessel_junc(d: list, lpn: LPN, std: float ):
-    distances = np.array(d)[:,2]
-    t = set(np.array(d[:np.where(distances > distances.mean() + std*distances.std())[0][-1] + 1])[:,0].astype(int))
+def split_vessel_junc(d: list, lpn: LPN, points: float ):
+    t = set(np.array(d[:points])[:,0].astype(int))
     valid_junc_ids = {}
     valid_vess_ids = set()
     for node in lpn.tree_bfs_iterator(lpn.get_tree()):
@@ -242,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument("-i", dest = 'config', help = 'config.yaml file')
     parser.add_argument("-c", dest = 'cent', help = 'centerline directory path of 3D model. Should include both original and mapped+formatted vtp file')
     parser.add_argument("-n", dest = 'name', help = 'Name for stented model')
-    parser.add_argument("--std", default=2, type=float, help='Number of standard deviations above mean to consider as region to correct. Defaults to 2.')
+    parser.add_argument("--points", default=4, type=int, help='Number of points to correct for (should be determined by find_stenosis_regions.py). Defaults to 4.')
     parser.add_argument("--iter", default=5, type=int, help="Number of iterations to correct for.")
     args = parser.parse_args()
     
@@ -286,13 +285,13 @@ if __name__ == '__main__':
     
     # get relevant junctions and vessels
     d = get_distances(dis_threed_c, threed_origin_c)
-    vess_ids, junc_ids = split_vessel_junc(d, zerod_lpn, args.std)
+    vess_ids, junc_ids = split_vessel_junc(d, zerod_lpn, args.points)
     print("Vessels:", vess_ids)
     print("Junctions:", junc_ids)
     # save vessel and junctions
     relevant_regions = correction_dir / 'relevant_regions.json'
     with relevant_regions.open("w") as rrfile:
-        json.dump({'Vessels': sorted(list(vess_ids)), 'Junctions': junc_ids}, rrfile, indent=4, sort_keys=True)
+        json.dump({'Vessels': sorted(list(vess_ids)), 'Junctions': junc_ids, 'points': args.points}, rrfile, indent=4, sort_keys=True)
     M.register('relevant_regions', str(relevant_regions), ['parameterization','corrections', args.name])
     
     # linear transform
