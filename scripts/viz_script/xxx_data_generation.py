@@ -36,7 +36,7 @@ def change_sim(param, base_lpn: FastLPN, lpn_mapping: tuple):
 
 def get_sim_names(M: Manager):
     ''' gets names of simulations'''
-    with open("data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR_old/parametrization_sims.txt", 'r') as sfile:
+    with open("data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/parametrization_sims.txt", 'r') as sfile:
         sims = sfile.readlines()
     return [s.rstrip() for s in sims]
 

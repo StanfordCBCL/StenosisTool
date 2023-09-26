@@ -26,7 +26,7 @@
         - scripts/viz_script/0D_model_to_3D.py
         - used on original LPN model (sim 0)
 
-    * Fig 6 - 3D, 0D uncorrected, 0D final corrected
+    Fig 6 - 3D, 0D uncorrected, 0D final corrected
         - For 0D models: scripts/viz_script/map_0D_to_centerlines.py
         - used on orginal LPN model (sim 0), and final LPN corrections (sim 5)
         - For 3D models: scripts/03_3D_prestent/map_3D_to_centerlines.py
@@ -34,9 +34,10 @@
         - vtp files are compared on paraview, and color scale is made the same for all 3
     
     Fig 7 - No LC vs LC
-        - *
+        - images/plot_scripts/lc_plots.py
 
     Fig 8 - LC extensions
+        - images/plot_scripts/lc_plots.py
 
 05_param
 
@@ -64,5 +65,5 @@
     * Fig 14b - 3D plot of configuration density @ lowest point, highest and middle
 
     * Fig 15 - Histogram of pressures with conditional
-    
-     
+
+

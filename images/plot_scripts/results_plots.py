@@ -16,15 +16,11 @@ if __name__ == '__main__':
     point = 4 # mPAP
     hist, bins = np.histogram(x['yhat'][:, point] / 1333.22, bins = 'auto', density = True)
     ax.bar(bins[:-1], hist, width=np.diff(bins),edgecolor="black", align="edge")
-    #plt.show()
+    plt.show()
     
     # Density Plot
-    idx = np.argwhere(x['yhat'][:, point]/1333.22 > bins[0]   )
-    idx = np.argwhere(x['yhat'][idx.flatten(),point]/1333.22 < bins[1])
+    idx = np.argwhere(x['yhat'][:,point]/1333.22 < bins[1])
 
-    idxx = x['x'][idx.flatten(), 0] < .2
-    print(x['x'][idxx.flatten(), :])
-    exit()
     ax = plt.axes(projection='3d')
     ax.scatter3D(x['x'][idx.flatten(),0], x['x'][idx.flatten(),1], x['x'][idx.flatten(),2])
     ax.set_xlabel("LPA Proximal")

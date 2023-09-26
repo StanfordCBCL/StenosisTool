@@ -14,7 +14,7 @@ from svinterface.utils.io import write_json
 from svinterface.plotting.params import set_params
 
 
-def plot_valid(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
+def plot_valid(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path, points ):
     
     # use valid array
     caps = c_3d.get_pointdata_array("Caps_0D")
@@ -165,6 +165,8 @@ def plot_valid(c_3d: Centerlines, c_1d: Centerlines, save_dir: Path ):
     fig.savefig(str(save_dir / "summary.2.png"))
     plt.close(fig)
     
+    if not points:
+        return
     
     ## individual outlets
     individual_dir = save_dir / "points"
@@ -195,6 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('-mode', default = None, help = 'Mode: None, P')
     parser.add_argument('-3D', dest = 'threed', default = None, required = False, help = '3D formatted centerlines')
     parser.add_argument("-sim", dest = 'sim', help = '0d simulation results desired to compare')
+    parser.add_argument('-points', action = 'store_true', default=False, help = 'whether to plot individual points')
     
     
     args = parser.parse_args()
@@ -225,4 +228,4 @@ if __name__ == '__main__':
     # plotting params
     set_params()
     
-    plot_valid(c_3d, c_0d, comp_folder)
+    plot_valid(c_3d, c_0d, comp_folder, points = args.points)
