@@ -202,10 +202,10 @@ if __name__ == '__main__':
             np.save(f'images/plot_data/{name}.npy', zerod_results, allow_pickle=True)
             print("Done")
         
-        #! load the repaired data
+        # load the repaired data
         param_dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/parameterization')
         rep_3d_dir = Path('data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/3D_DIR')
-        for sim, (name, threed_name) in enumerate(zip(['LPA_all', 'LPA_limited_true', 'RPA_all', 'RPA_limited_true', 'RPA_2_all', 'RPA_2_limited_true'],
+        for sim, (name, threed_name) in enumerate(zip(['LPA_all', 'LPA_limited', 'RPA_all', 'RPA_limited', 'RPA_2_all', 'RPA_2_limited'],
                                        ['LPA_stent/AS1_SU0308_3D_LPA_stented_centerlines.mapped.formatted.vtp','LPA_stent/AS1_SU0308_3D_LPA_stented_centerlines.mapped.formatted.vtp', 'RPA_stent/AS1_SU0308_3D_RPA_stented_centerlines.mapped.formatted.vtp','RPA_stent/AS1_SU0308_3D_RPA_stented_centerlines.mapped.formatted.vtp', 'RPA_2_stent/AS1_SU0308_3D_RPA_stented_2_centerlines.mapped.formatted.vtp', 'RPA_2_stent/AS1_SU0308_3D_RPA_stented_2_centerlines.mapped.formatted.vtp'])):
             print(f"Loading {name}...", end = '', flush = True)
             rep_3d_file = rep_3d_dir / threed_name.split('/')[0] / threed_name.split('/')[1]

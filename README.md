@@ -16,7 +16,12 @@ We build a pipeline from 3D model to probability analysis, enabling us to answer
     - [] Generate Data to evaluate
 - [] Write plotting scripts
     - [] Make sure plots are reproducible
-    - [] These can be more hard coded, which is acceptable
+        - [] LC script
+            - [x] Fig 7 8
+            - [] Param Figs
+        - [] ML fig
+        - [] Probability Analysis scripts
+    - [x] These can be more hard coded, which is acceptable
 - [] Cleanup
     - [] Reorganize code
         - [] Make sure everything is consistent with saving in a config file
@@ -58,24 +63,5 @@ The C++ solver should now be built
 apt install libgl1-mesa-glx
 sudo apt-get install libxrender1
 
-
-
-
-
-- [] Data 
-    - [] rerun data generation and model training
-- [] Plotting
-    - [] write script for generating plots
-    - [] Make sure plotting is reproducible
-    - [] write down all necessary plots
-- [] Reorganize Code
-    - [] Move svInterface to internal
-    - [] Move certain functions into svinterface
-    - [] Make sure svZeroDPlus still works with pip install version
-- [] Provide a sample
-    - [] write a single script (skipping some data generation steps)
-    - [] make sure all data exists
-- [] Documentation
-    - [] of plotting
     
 

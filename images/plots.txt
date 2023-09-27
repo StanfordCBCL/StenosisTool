@@ -45,8 +45,10 @@
         - screenshot in Paraview 
         - highlight repair region
     
-    * Fig 10 - Mapped centerlines
+    Fig 10 - Mapped centerlines
         - Compare repaired and diseased centerlines, show how they correspond
+        - scripts/09_nn_training/find_stenosis_regions.py
+        - only plots the relevant regions to avoid clutter ( or full model)
     
     * Fig 11 - Compressed plots for LPA, RPA, RPA2
 
