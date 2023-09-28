@@ -169,8 +169,12 @@ class RepairDistribution():
         rez = torch.vstack(rez)
         return x, rez
     
-    def get_histograms(self, yhat):
-        return [[np.histogram(yhat[:, i + j], bins = 'auto', density=True) for j in range(3)]+[np.histogram(d2m(yhat[:, i + j]), bins = 'auto', density=True) for j in range(3,6)] for i in range(0, len(yhat[0]),6)]
+    def get_histograms(self, yhat, points = 'all'):
+        if points == 'all':
+            points = range(0, len(yhat[0]),6)
+        else:
+            points = np.array(points) * 6
+        return [[np.histogram(yhat[:, i + j], bins = 'auto', density=True) for j in range(3)]+[np.histogram(d2m(yhat[:, i + j]), bins = 'auto', density=True) for j in range(3,6)] for i in points]
     
     def save_data(self, x, yhat, baseline, filepath):
         np.save(filepath, {'x': x,
@@ -181,19 +185,52 @@ class RepairDistribution():
     def save_histograms(self, histograms, filepath):
         np.save(filepath, histograms, allow_pickle=True)
             
-    def plot_histograms(self, histograms, path: Path):
-
+    def plot_histograms(self, histograms, baseline =None, path: Path= None):
+        counter = 0
         for i in tqdm.tqdm(range(len(histograms)), desc='Generating Histograms'):
-            fig, ax = plt.subplots(2, 3, figsize = (24, 16) )
-            ax = ax.flatten()
-            names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)', 'Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
-            for j in range(6):
-                ax[j].bar(histograms[i][j][1][:-1], histograms[i][j][0], width=np.diff(histograms[i][j][1]),edgecolor="black", align="edge")
-                ax[j].set_xlabel(names[j])
-                ax[j].set_ylabel("Density")
+            fig = self.plot_single_histogram(histograms[i], baseline[counter:counter+6])
             fig.suptitle(f"Histograms at point {i +1}")
             fig.savefig(str(path / f'hist_point_{i+1}.png'))
             plt.close(fig)
+            counter += 6
+
+    def plot_single_histogram(self, h, baseline_yhat, p=True, q=True,):
+        if p and q:
+            fig, ax = plt.subplots(2, 3, figsize = (10, 5) )
+            ax = ax.flatten()
+            names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)', 'Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
+            for j in range(6):
+                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black", linewidth=.1, align="edge")
+                ax[j].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
+                ax[j].set_xlabel(names[j])
+                ax[j].set_ylabel("Density")
+            fig.legend(labels=['Baseline'], fontsize=plt.rcParams['font.size']-2)
+            fig.tight_layout()
+            return fig
+        elif p:
+            fig, ax = plt.subplots(1, 3, figsize = (10, 2.5) )
+            ax = ax.flatten()
+            names = ['Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
+            for j in range(3, 3+len(names)):
+                ax[j-3].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black", linewidth=.1, align="edge")
+                ax[j-3].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
+                ax[j-3].set_xlabel(names[j-3])
+                ax[j-3].set_ylabel("Density")
+            fig.legend(labels=['Baseline'], fontsize=plt.rcParams['font.size']-2)
+            fig.tight_layout()
+            return fig
+        elif q:
+            fig, ax = plt.subplots(1, 3, figsize = (10, 2.5) )
+            ax = ax.flatten()
+            names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)']
+            for j in range(len(names)):
+                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black",linewidth=.1, align="edge")
+                ax[j].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
+                ax[j].set_xlabel(names[j])
+                ax[j].set_ylabel("Density")
+            fig.legend(labels=['Baseline'], fontsize=plt.rcParams['font.size']-2)
+            fig.tight_layout()
+            return fig
     
     def add_uncertainty(self, yhat, p_var, q_var):
         base = np.array(range(0, len(yhat[0]), 6))
@@ -300,7 +337,8 @@ if __name__ == '__main__':
         hist_dir = all_dir_std / 'histograms'
         hist_dir.mkdir(exist_ok=True)
         # only plot first 10
-        distribution.plot_histograms(hist[:10], path = hist_dir)
+        points = 10
+        distribution.plot_histograms(hist[:points],baseline[1][0][:6 * points], path = hist_dir)
         # distribution.save_histograms(hist, filepath=str(all_dir / 'histograms.npy') )
         
     
@@ -334,6 +372,7 @@ if __name__ == '__main__':
         hist_dir = fixz_dir_std / 'histograms'
         hist_dir.mkdir(exist_ok=True)
         # only plot first 10
-        distribution.plot_histograms(hist[:10], path = hist_dir)
+        points = 10
+        distribution.plot_histograms(hist[:points],baseline[1][0][:6 * points], path = hist_dir)
         # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
     

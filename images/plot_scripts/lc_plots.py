@@ -170,11 +170,65 @@ def plot_valid(threed_data, zerod_data, names):
     fig2.tight_layout()
     return fig1, fig2
 
+def plot_valid2(threed_data, zerod_data, names):
+    markers = ['o','>','D']
+    colors = ['b','r', 'm']
+    fig1, ax1 = plt.subplots(3, 3, figsize=(10, 6), sharex=True)
+    for idx, (data_3d, data_0d, name) in enumerate(list(zip(threed_data, zerod_data, names))):
+        results_3d = np.load(data_3d, allow_pickle=True).item()
+        threed_mins = results_3d['3d_mins']
+        threed_maxs = results_3d['3d_maxs']
+        threed_means = results_3d['3d_means']
+        
+        
+        
+        s = 10
+        # Reference 3D model Resultss
+        ax1[idx][1].scatter(range(len(threed_means)), threed_means, s = s, color = "black", marker='^', label = '3D')
+        ax1[idx][1].tick_params(axis='both', which='major', labelsize=fs)
+    
+        ax1[idx][0].scatter(range(len(threed_maxs)), threed_maxs, s = s, color = "black", marker='^',label = '3D')
+        ax1[idx][0].set_ylabel("Pressure [mmHg]",fontsize=fs)
+        ax1[idx][0].tick_params(axis='both', which='major', labelsize=fs)
+        
+        ax1[idx][2].scatter(range(len(threed_mins)), threed_mins,s = s, color = "black", marker='^', label = '3D')
+        ax1[idx][2].tick_params(axis='both', which='major', labelsize=fs)    
+
+        if idx == 0:
+            ax1[idx][1].set_title("Mean",fontsize=fs)
+            ax1[idx][0].set_title("Systolic",fontsize=fs)
+            ax1[idx][2].set_title("Diastolic",fontsize=fs) 
+        
+        if idx == 2:
+            for i in range(3):
+                ax1[idx][i].set_xlabel("Points",fontsize=fs)
+        
+        results_0d = np.load(data_0d, allow_pickle=True).item()
+        zerod_mins = results_0d['0d_mins']
+        zerod_maxs = results_0d['0d_maxs']
+        zerod_means = results_0d['0d_means']
+        ## Summary Statistics
+        
+        ## means
+        ax1[idx][1].scatter(range(len(zerod_means)), zerod_means,s = s, label = name, marker=markers[0],color=colors[idx], alpha = .7)        
+        ## systolic
+        ax1[idx][0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label = name, marker=markers[0],color=colors[idx], alpha = .7)        
+        # diastolic
+        ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = name, marker=markers[0], color=colors[idx],alpha = .7)
+            
+
+        ax1[idx][2].set_ylim([18.0,20.0])
+        ax1[idx][2].legend(fontsize=fs-2)
+
+ 
+    fig1.tight_layout()
+    return fig1
+
 if __name__ == '__main__':
     
     # Parameter for loading from npy if already saved
-    quick_load = False
-    # quick_load = True
+    # quick_load = False
+    quick_load = True
     
     fs=12
     plt.rc('font', family='serif')
@@ -231,3 +285,14 @@ if __name__ == '__main__':
     fig2.savefig("images/paper/04_zerod/07b_lc_nlc.pdf")
     fig3.savefig("images/paper/04_zerod/08a_lc_ext.pdf")
     fig4.savefig("images/paper/04_zerod/08b_lc_ext.pdf")
+    
+    plt.close(fig1)
+    plt.close(fig2)
+    plt.close(fig3)
+    plt.close(fig4)
+    
+    
+    dis_3d_files = ['images/plot_data/' + file + '.npy' for file in ['LPA_limited_3d', 'RPA_limited_3d', 'RPA_2_limited_3d']]
+    dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['LPA_limited', 'RPA_limited', 'RPA_2_limited']]
+    fig5 = plot_valid2(dis_3d_files, dis_0d_files, names = ['LPA Proximal', 'RPA Proximal', 'RPA Distal'])
+    fig5.savefig("images/paper/05_param/11_repaired_lc.pdf")

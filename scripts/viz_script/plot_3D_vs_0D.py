@@ -198,6 +198,7 @@ if __name__ == '__main__':
     parser.add_argument('-3D', dest = 'threed', default = None, required = False, help = '3D formatted centerlines')
     parser.add_argument("-sim", dest = 'sim', help = '0d simulation results desired to compare')
     parser.add_argument('-points', action = 'store_true', default=False, help = 'whether to plot individual points')
+    parser.add_argument("--latex", action='store_true', help='Plot using Latex (nicer but needs Latex installed)')
     
     
     args = parser.parse_args()
@@ -226,6 +227,6 @@ if __name__ == '__main__':
     comp_folder.mkdir(exist_ok=True, parents=True)
     
     # plotting params
-    set_params()
+    set_params(font='Times New Roman', size=18, use_latex=args.latex)
     
     plot_valid(c_3d, c_0d, comp_folder, points = args.points)

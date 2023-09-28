@@ -41,7 +41,7 @@
 
 05_param
 
-    * Fig 9 - 3D repaired model
+    Fig 9 - 3D repaired model
         - screenshot in Paraview 
         - highlight repair region
     
@@ -50,7 +50,8 @@
         - scripts/09_nn_training/find_stenosis_regions.py
         - only plots the relevant regions to avoid clutter ( or full model)
     
-    * Fig 11 - Compressed plots for LPA, RPA, RPA2
+    Fig 11 - Compressed plots for LPA, RPA, RPA2
+        - images/plot_scripts/lc_plots.py
 
 06_ann
 
