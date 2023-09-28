@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Plot Density Histogram")
     parser.add_argument("-data", default='data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768/probability_histograms/all_distributions/0/data.npy', help='path to data.npy generated from sampling')
     parser.add_argument("-outdir", default='.', help='directory to output results to (will create if it doesnt exist)')
+    parser.add_argument("-prefix", default='', help='prefix to add to file output (used to label)')
     parser.add_argument("-kde", action='store_true', help='use the kde rather than histogram (kde will probably have issues with bandwith)')
     parser.add_argument("-points", nargs='+', default=[0], type=int, help='number of plots to limit to, rather than plotting entire set of points')
     parser.add_argument("--p", action='store_true', help='Plot pressures')
@@ -30,14 +31,23 @@ if __name__ == '__main__':
     yhat = data['yhat']
     baseline_x = data['baseline'][0]
     baseline_yhat = data['baseline'][1][0]
+    
+    # suffic for saving
+    if args.p and args.q:
+        suffix = ''
+    elif args.p:
+        suffix = '_pressures'
+    elif args.q:
+        suffix = '_flows'   
+        
+    # prefix
+    prefix = args.prefix if args.prefix == '' else args.prefix + '_'
 
-    # convert pressure data to mmHg
-    # base_idx = np.arange(0, len(yhat[0]), 6)
-    # pressures_idx = np.concatenate([base_idx + 3, base_idx + 4, base_idx + 5])
-    # yhat[:, pressures_idx] = d2m(yhat[:, pressures_idx])
+
+    # Density Hist
     outdir = Path(args.outdir)
     outdir.mkdir(exist_ok=True, parents=True)
-    set_params(use_latex=True, small_ticks=True)
+    set_params(use_latex=args.latex, small_ticks=True, linewidth=.1)
     if not args.kde:
         # convert baseline to mmHg
         base_idx = np.arange(0, len(yhat[0]), 6)
@@ -47,12 +57,13 @@ if __name__ == '__main__':
         # density hist    
         dist = RepairDistribution(3)
         hist = dist.get_histograms(yhat, points=args.points)
+        
         for pidx, point in enumerate(args.points):
-            fig = dist.plot_single_histogram(hist[pidx], p=args.p, q=args.q, baseline_yhat=baseline_yhat[point*6:point*6+6])    
-            fig.savefig(str(outdir / f'point_{point}'))
+            fig = dist.plot_single_histogram(hist[pidx], p=args.p, q=args.q, baseline_yhat=baseline_yhat[point*6:point*6+6])  
+            
+            fig.savefig(str(outdir / f'{prefix}point_{point}{suffix}.pdf'))
             fig.suptitle(f"Point {point}")
             
-        plt.show()
     else:
         # kde
         #convert pressure data to mmHg
@@ -107,10 +118,5 @@ if __name__ == '__main__':
                     ax[j].set_ylabel("Density")
                 fig.tight_layout()
 
-    
-
-
-    
-            
     plt.show()
    
