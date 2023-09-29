@@ -175,6 +175,13 @@ class RepairDistribution():
         else:
             points = np.array(points) * 6
         return [[np.histogram(yhat[:, i + j], bins = 'auto', density=True) for j in range(3)]+[np.histogram(d2m(yhat[:, i + j]), bins = 'auto', density=True) for j in range(3,6)] for i in points]
+
+    def to_mmHg(self, yhat):
+        base_idx = np.arange(0, len(yhat[0]), 6)
+        pressures_idx = np.concatenate([base_idx + 3, base_idx + 4, base_idx + 5])
+        yhat[:, pressures_idx] = d2m(yhat[:, pressures_idx])
+        return yhat
+        
     
     def save_data(self, x, yhat, baseline, filepath):
         np.save(filepath, {'x': x,
