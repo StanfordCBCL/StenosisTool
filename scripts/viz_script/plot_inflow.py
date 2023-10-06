@@ -11,9 +11,10 @@ import sys
 from svinterface.plotting import params, plot_flow
 from svinterface.core.bc import Inflow
 
-
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     inflow=Inflow.from_file(sys.argv[1], smooth = False)
-    params.set_params()
-    plot_flow.plot_flow(inflow, save = False)# save = True, output_file=sys.argv[2])
+    params.set_params(use_latex=True, small_ticks=True)
+    fig = plot_flow.plot_flow(inflow, save = True, output_file=sys.argv[2])
+    plt.show()

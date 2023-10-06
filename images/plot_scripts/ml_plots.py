@@ -29,7 +29,7 @@ plt.rc('ytick', labelsize='x-small')
 plt.rc('text', usetex=True)
 
 s = 30
-fig1, ax1 = plt.subplots(2, 2, figsize=(10, 8),)
+fig1, ax1 = plt.subplots(2, 2, figsize=(10, 6),)
 ax1[0][1].set_xscale("log", base=2)
 markers = ['o','>','D']
 colors = ['b','r', 'm']
@@ -84,4 +84,4 @@ ax1[1][0].legend(fontsize=fs-2)
 ax1[1][0].tick_params(axis='both', which='major', labelsize=fs)    
 
 plt.tight_layout()
-plt.savefig('images/paper/06_ann/12_ml_results.pdf')
+plt.savefig('images/paper/06_ann/11_ml_results.pdf')

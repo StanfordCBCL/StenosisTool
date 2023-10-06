@@ -26,7 +26,9 @@ def plot_dens(yhat, point, meas, bins):
 
 if __name__ == '__main__':
     
-    
+    parser = argparse.ArgumentParser(description="Plot density")
+    parser.add_argument("-data", default='data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768/probability_histograms/all_distributions/0/data.npy', help='data.npy file to plot')
+    parser.add_argument("-range")
     datafile = 'data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768/probability_histograms/all_distributions/0/data.npy'
     
     data = np.load(datafile, allow_pickle=True).item()
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     bins = range(20,23)
     fig, ax = plot_dens(yhat, point, meas, bins)
     ax.view_init(elev=30., azim=-45)
-    fig.savefig("images/paper/07_results/joint_dist_0std_midbins_sPAP.pdf")
+    #fig.savefig("images/paper/07_results/joint_dist_0std_midbins_sPAP.pdf")
     
     
     plt.show()

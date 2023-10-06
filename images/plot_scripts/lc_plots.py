@@ -172,7 +172,7 @@ def plot_valid(threed_data, zerod_data, names):
 
 def plot_valid2(threed_data, zerod_data, names):
     markers = ['o','>','D']
-    colors = ['b','r', 'm']
+    colors = ['r','b', 'm']
     fig1, ax1 = plt.subplots(3, 3, figsize=(10, 6), sharex=True)
     for idx, (data_3d, data_0d, name) in enumerate(list(zip(threed_data, zerod_data, names))):
         results_3d = np.load(data_3d, allow_pickle=True).item()
@@ -184,14 +184,14 @@ def plot_valid2(threed_data, zerod_data, names):
         
         s = 10
         # Reference 3D model Resultss
-        ax1[idx][1].scatter(range(len(threed_means)), threed_means, s = s, color = "black", marker='^', label = '3D')
+        ax1[idx][1].scatter(range(len(threed_means)), threed_means, s = s, color = "black", marker='^', label = name + ' 3D')
         ax1[idx][1].tick_params(axis='both', which='major', labelsize=fs)
     
-        ax1[idx][0].scatter(range(len(threed_maxs)), threed_maxs, s = s, color = "black", marker='^',label = '3D')
+        ax1[idx][0].scatter(range(len(threed_maxs)), threed_maxs, s = s, color = "black", marker='^',label = name +' 3D')
         ax1[idx][0].set_ylabel("Pressure [mmHg]",fontsize=fs)
         ax1[idx][0].tick_params(axis='both', which='major', labelsize=fs)
         
-        ax1[idx][2].scatter(range(len(threed_mins)), threed_mins,s = s, color = "black", marker='^', label = '3D')
+        ax1[idx][2].scatter(range(len(threed_mins)), threed_mins,s = s, color = "black", marker='^', label = name + ' 3D')
         ax1[idx][2].tick_params(axis='both', which='major', labelsize=fs)    
 
         if idx == 0:
@@ -210,11 +210,11 @@ def plot_valid2(threed_data, zerod_data, names):
         ## Summary Statistics
         
         ## means
-        ax1[idx][1].scatter(range(len(zerod_means)), zerod_means,s = s, label = name, marker=markers[0],color=colors[idx], alpha = .7)        
+        ax1[idx][1].scatter(range(len(zerod_means)), zerod_means,s = s, label = name + ' 0D', marker=markers[0],color=colors[idx], alpha = .7)        
         ## systolic
-        ax1[idx][0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label = name, marker=markers[0],color=colors[idx], alpha = .7)        
+        ax1[idx][0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label = name + ' 0D', marker=markers[0],color=colors[idx], alpha = .7)        
         # diastolic
-        ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = name, marker=markers[0], color=colors[idx],alpha = .7)
+        ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = name + ' 0D', marker=markers[0], color=colors[idx],alpha = .7)
             
 
         ax1[idx][2].set_ylim([18.0,20.0])
@@ -281,10 +281,10 @@ if __name__ == '__main__':
     dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['split_lc', 'all_lc', 'iter_lc']]
     fig3, fig4 = plot_valid(dis_3d_file, dis_0d_files,  names = ['Subdomain', 'S + Vessels', 'S + V + Iterative'])
     
-    fig1.savefig("images/paper/04_zerod/07a_lc_nlc.pdf")
-    fig2.savefig("images/paper/04_zerod/07b_lc_nlc.pdf")
-    fig3.savefig("images/paper/04_zerod/08a_lc_ext.pdf")
-    fig4.savefig("images/paper/04_zerod/08b_lc_ext.pdf")
+    fig1.savefig("images/paper/04_zerod/a_lc_nlc.pdf")
+    fig2.savefig("images/paper/04_zerod/b_lc_nlc.pdf")
+    fig3.savefig("images/paper/04_zerod/a_lc_ext.pdf")
+    fig4.savefig("images/paper/04_zerod/b_lc_ext.pdf")
     
     plt.close(fig1)
     plt.close(fig2)
@@ -295,4 +295,4 @@ if __name__ == '__main__':
     dis_3d_files = ['images/plot_data/' + file + '.npy' for file in ['LPA_limited_3d', 'RPA_limited_3d', 'RPA_2_limited_3d']]
     dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['LPA_limited', 'RPA_limited', 'RPA_2_limited']]
     fig5 = plot_valid2(dis_3d_files, dis_0d_files, names = ['LPA Proximal', 'RPA Proximal', 'RPA Distal'])
-    fig5.savefig("images/paper/05_param/11_repaired_lc.pdf")
+    fig5.savefig("images/paper/05_param/repaired_lc.pdf")
