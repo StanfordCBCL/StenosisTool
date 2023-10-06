@@ -23,9 +23,16 @@ class Solver0Dcpp():
         self.mean_only = mean_only
     
         self.lpn.lpn_data['simulation_parameters']['steady_initial'] = use_steady
-        self.lpn.lpn_data['simulation_parameters']['output_last_cycle_only'] = last_cycle_only
+        self._last_cycle(last_cycle_only)
+
         self.lpn.lpn_data['simulation_parameters']['output_mean_only'] = mean_only
         self.debug = debug
+        
+    def _last_cycle(self, last_cycle_only):
+        # old version
+        self.lpn.lpn_data['simulation_parameters']['output_last_cycle_only'] = last_cycle_only
+        # new version 2.0
+        self.lpn.lpn_data['simulation_parameters']['output_all_cycles'] = not last_cycle_only
 
     def _print(self, s, end = '\n', flush = False):
         ''' debug print '''
@@ -48,7 +55,7 @@ class Solver0Dcpp():
             print("Cannot validate with mean_only.")
             exit(1)
         elif validate and self.last_cycle_only:
-            self.lpn.simulation_params['output_last_cycle_only'] = False
+            self._last_cycle(False)
             post_convert_last_cycle = True
         else:
             post_convert_last_cycle = False

@@ -215,8 +215,6 @@ class OriginalLPN():
             if junc['junction_type'] == 'BloodVesselJunction':
                 junc['junction_type'] = 'NORMAL_JUNCTION'
         
-                    
-
     def normal_to_bvj(self):
         """ Converts Normal junctions to BVJ junctions"""
         for junc in self.junctions:
