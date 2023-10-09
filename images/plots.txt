@@ -41,29 +41,32 @@
 
 05_param
 
-    Fig 9 - 3D repaired model
+    Fig 9a - 3D repaired model
         - screenshot in Paraview 
         - highlight repair region
     
-    Fig 10 - Mapped centerlines
+    Fig 9b - Mapped centerlines
         - Compare repaired and diseased centerlines, show how they correspond
-        - scripts/09_nn_training/find_stenosis_regions.py
-        - only plots the relevant regions to avoid clutter ( or full model)
+        - scripts/08_linear_correction_2/find_stenosis_regions.py
+        - Compiled after screenshotting from Paraview
     
-    Fig 11 - Compressed plots for LPA, RPA, RPA2
+    Fig 10 - Compressed plots for LPA, RPA, RPA2
         - images/plot_scripts/lc_plots.py
 
 06_ann
 
-    Fig 12 - ML accuracy over size
+    Fig 11 - ML accuracy over size
         - images/paper_viz/ml_plots.py
 
 07_results
 
-    * Fig 13 - Histograms of F/P w/ different pressures
-        - overlapping histogram?
+    Fig 12 - Histograms of F/P w/ different pressures
+        - images/plot_scripts/plot_overlapped.py
 
-    * Fig 14a - Plot of just the MPA histogram pressures
+    Fig 13a - Plot of just the MPA histograms
+        - images/plot_scripts/plot_histogram.py
+    
+    Fig 13b - Plot of densities
 
     * Fig 14b - 3D plot of configuration density @ lowest point, highest and middle
 
