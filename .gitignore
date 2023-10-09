@@ -11,7 +11,6 @@ svZeroDInterface
 *.vtp
 *.vtu
 *.csv
-
 # ignore irrelevant dirs
 scratch
 results

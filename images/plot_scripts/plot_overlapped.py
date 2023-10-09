@@ -1,6 +1,5 @@
 # Plot 3D density plots (only useful for N=3. For larger values, this will be less useful)
 
-import argparse
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt

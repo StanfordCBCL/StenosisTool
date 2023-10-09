@@ -60,16 +60,23 @@
 
 07_results
 
-    Fig 12 - Histograms of F/P w/ different pressures
+    Fig 12 - Histograms of RPA FLows and PAP with different sigma
         - images/plot_scripts/plot_overlapped.py
 
-    Fig 13a - Plot of just the MPA histograms
+    Fig 13a - Plot of just the MPA histograms, joint distribution
         - images/plot_scripts/plot_histogram.py
     
     Fig 13b - Plot of densities
+        - scripts/10_probability_histograms/plot_density.py
 
-    * Fig 14b - 3D plot of configuration density @ lowest point, highest and middle
+    Fig 14a,b - Plot of the MPA histograms after correction of the distal RPA
+        - images/plot_scripts/plot_histogram.py
 
-    * Fig 15 - Histogram of pressures with conditional
+    Fig 14c,d - Densities after correction of the distal RPA
+        - scripts/10_probability_histograms/plot_density.py
+    
+appendix
 
+    Fig 15 - Corrected Inflow Comparison
+        - images/plot_scripts/plot_flows.py
 
