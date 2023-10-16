@@ -207,7 +207,7 @@ class RepairDistribution():
             ax = ax.flatten()
             names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)', 'Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
             for j in range(6):
-                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black", linewidth=.1, align="edge")
+                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]), edgecolor="black", align="edge")
                 ax[j].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
                 ax[j].set_xlabel(names[j])
                 ax[j].set_ylabel("Density")
@@ -219,7 +219,7 @@ class RepairDistribution():
             ax = ax.flatten()
             names = ['Diastolic Pressure (mmHg)','Mean Pressure (mmHg)','Systolic Pressure (mmHg)']
             for j in range(3, 3+len(names)):
-                ax[j-3].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black", linewidth=.1, align="edge")
+                ax[j-3].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]) ,edgecolor="black", align="edge")
                 ax[j-3].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
                 ax[j-3].set_xlabel(names[j-3])
                 ax[j-3].set_ylabel("Density")
@@ -231,7 +231,7 @@ class RepairDistribution():
             ax = ax.flatten()
             names = ['Diastolic Flow (mL/s)', 'Mean Flow (mL/s)', 'Systolic Flow (mL/s)']
             for j in range(len(names)):
-                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]),edgecolor="black",linewidth=.1, align="edge")
+                ax[j].bar(h[j][1][:-1], h[j][0], width=np.diff(h[j][1]), edgecolor="black", align="edge")
                 ax[j].axvline(x=baseline_yhat[j], color = 'r', label = 'Baseline')
                 ax[j].set_xlabel(names[j])
                 ax[j].set_ylabel("Density")
@@ -353,14 +353,14 @@ if __name__ == '__main__':
         
     
     
-    # fix repair 0 (LPA_proximal) at 
-    fixz_dir = prob_dir / 'rpa_distal_conditional'
-    fixz_dir.mkdir(exist_ok=True)
+    # # fix repair 0 (LPA_proximal) at 
+    # fixz_dir = prob_dir / 'rpa_distal_conditional'
+    # fixz_dir.mkdir(exist_ok=True)
     
     std = 0
     
-    fixz_dir_std = fixz_dir / '0.6'
-    fixz_dir_std.mkdir(exist_ok=True)
+    # fixz_dir_std = fixz_dir / '0.6'
+    # fixz_dir_std.mkdir(exist_ok=True)
     
     distribution = RepairDistribution(num_repairs=input_size, 
                                     category_probs=(.3,.4,.3))
@@ -376,47 +376,47 @@ if __name__ == '__main__':
                         q_var=std)
     hist = distribution.get_histograms(yhat)
     
-    baseline = distribution.get_baseline(model=litmodel,
-                                        trainer=trainer,
-                                        best_chkpt=str(best_ckpt))
+    # baseline = distribution.get_baseline(model=litmodel,
+    #                                     trainer=trainer,
+    #                                     best_chkpt=str(best_ckpt))
     
-    distribution.save_data(x, yhat, baseline, fixz_dir_std / 'data.npy')
-    hist_dir = fixz_dir_std / 'histograms'
-    hist_dir.mkdir(exist_ok=True)
-    # only plot first 10
-    points = 10
-    baseline_yhat = distribution.to_mmHg(baseline[1])
-    distribution.plot_histograms(hist[:points],baseline_yhat[0][:6 * points], path = hist_dir)
-    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
+    # distribution.save_data(x, yhat, baseline, fixz_dir_std / 'data.npy')
+    # hist_dir = fixz_dir_std / 'histograms'
+    # hist_dir.mkdir(exist_ok=True)
+    # # only plot first 10
+    # points = 10
+    # baseline_yhat = distribution.to_mmHg(baseline[1])
+    # distribution.plot_histograms(hist[:points],baseline_yhat[0][:6 * points], path = hist_dir)
+    # # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
     
     
-    fixz_dir_std = fixz_dir / '1.0'
-    fixz_dir_std.mkdir(exist_ok=True)
+    # fixz_dir_std = fixz_dir / '1.0'
+    # fixz_dir_std.mkdir(exist_ok=True)
     
-    distribution = RepairDistribution(num_repairs=input_size, 
-                                    category_probs=(.3,.4,.3))
-    distribution.fixed(repair_idx=2,
-                    c=1)
+    # distribution = RepairDistribution(num_repairs=input_size, 
+    #                                 category_probs=(.3,.4,.3))
+    # distribution.fixed(repair_idx=2,
+    #                 c=1)
     
-    x, yhat = distribution.run_test(model=litmodel,
-                        trainer=trainer,
-                        best_chkpt=str(best_ckpt),
-                        num_samples=4096*24,
-                        batch_size=4096,
-                        p_var=1333.22 * std,
-                        q_var=std)
-    hist = distribution.get_histograms(yhat)
+    # x, yhat = distribution.run_test(model=litmodel,
+    #                     trainer=trainer,
+    #                     best_chkpt=str(best_ckpt),
+    #                     num_samples=4096*24,
+    #                     batch_size=4096,
+    #                     p_var=1333.22 * std,
+    #                     q_var=std)
+    # hist = distribution.get_histograms(yhat)
     
-    baseline = distribution.get_baseline(model=litmodel,
-                                        trainer=trainer,
-                                        best_chkpt=str(best_ckpt))
+    # baseline = distribution.get_baseline(model=litmodel,
+    #                                     trainer=trainer,
+    #                                     best_chkpt=str(best_ckpt))
     
-    distribution.save_data(x, yhat, baseline, fixz_dir_std / 'data.npy')
-    hist_dir = fixz_dir_std / 'histograms'
-    hist_dir.mkdir(exist_ok=True)
-    # only plot first 10
-    points = 10
-    baseline_yhat = distribution.to_mmHg(baseline[1])
-    distribution.plot_histograms(hist[:points],baseline_yhat[0][:6 * points], path = hist_dir)
-    # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
+    # distribution.save_data(x, yhat, baseline, fixz_dir_std / 'data.npy')
+    # hist_dir = fixz_dir_std / 'histograms'
+    # hist_dir.mkdir(exist_ok=True)
+    # # only plot first 10
+    # points = 10
+    # baseline_yhat = distribution.to_mmHg(baseline[1])
+    # distribution.plot_histograms(hist[:points],baseline_yhat[0][:6 * points], path = hist_dir)
+    # # distribution.save_histograms(hist, filepath=str(fixz_dir / 'histograms.npy') )
     

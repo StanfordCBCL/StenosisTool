@@ -59,7 +59,7 @@ if __name__ == '__main__':
         
         for pidx, point in enumerate(args.points):
             fig = dist.plot_single_histogram(hist[pidx], p=args.p, q=args.q, baseline_yhat=baseline_yhat[point*6:point*6+6])  
-            fig.savefig(str(outdir / f'{prefix}point_{point}{suffix}.png'))
+            fig.savefig(str(outdir / f'{prefix}point_{point}{suffix}.pdf'))
             fig.suptitle(f"Point {point}")
             
     else:
@@ -81,7 +81,10 @@ if __name__ == '__main__':
                     X_plot = np.linspace(X.min(), X.max(), 1000)[:, np.newaxis]
                     kde = KernelDensity(kernel='gaussian', bandwidth=bandwiths[j]).fit(X)
                     log_dens = kde.score_samples(X_plot)
-                    ax[j].fill(X_plot[:, 0], np.exp(log_dens))
+                    x, y = X_plot[:, 0], np.exp(log_dens)
+                    y[0] = 0
+                    y[-1] = 0
+                    ax[j].plot(x,y)
                     ax[j].set_xlabel(names[j])
                     ax[j].set_ylabel("Density")
                 fig.tight_layout()
@@ -96,7 +99,10 @@ if __name__ == '__main__':
                     X_plot = np.linspace(X.min(), X.max(), 1000)[:, np.newaxis]
                     kde = KernelDensity(kernel='gaussian', bandwidth=bandwiths[j-3]).fit(X)
                     log_dens = kde.score_samples(X_plot)
-                    ax[j-3].fill(X_plot[:, 0], np.exp(log_dens), [X_plot[:, 0][0], X_plot[:, 0][-1]], [0,0])
+                    x, y = X_plot[:, 0], np.exp(log_dens)
+                    y[0] = 0
+                    y[-1] = 0
+                    ax[j-3].plot(x,y)
                     ax[j-3].set_xlabel(names[j-3])
                     ax[j-3].set_ylabel("Density")
                 fig.tight_layout()
@@ -111,7 +117,10 @@ if __name__ == '__main__':
                     X_plot = np.linspace(X.min(), X.max(), 1000)[:, np.newaxis]
                     kde = KernelDensity(kernel='gaussian', bandwidth=bandwiths[j]).fit(X)
                     log_dens = kde.score_samples(X_plot)
-                    ax[j].fill(X_plot[:, 0], np.exp(log_dens))
+                    x, y = X_plot[:, 0], np.exp(log_dens)
+                    y[0] = 0
+                    y[-1] = 0
+                    ax[j].plot(x,y)
                     ax[j].set_xlabel(names[j])
                     ax[j].set_ylabel("Density")
                 fig.tight_layout()

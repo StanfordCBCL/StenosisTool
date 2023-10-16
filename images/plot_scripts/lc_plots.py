@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 
+
 from pathlib import Path
 from svinterface.core.polydata import Centerlines
+from svinterface.plotting import params 
 
 
 def load_data(c_3d: Centerlines, c_1d: Centerlines):
@@ -116,15 +118,15 @@ def plot_valid(threed_data, zerod_data, names):
     
     # fig2.suptitle("3D vs 0D Pressures at Relevant Points.")
 
-    ax2[0].plot([min(threed_maxs), max(threed_maxs)], [min(threed_maxs), max(threed_maxs)], 'k--', lw=0.8)
+    ax2[0].plot([min(threed_maxs), max(threed_maxs)], [min(threed_maxs), max(threed_maxs)], 'k--', lw=0.8, label= 'Expected')
     ax2[0].set_title("Systolic",fontsize=fs)
     ax2[0].tick_params(axis='both', which='major', labelsize=fs)    
 
-    ax2[1].plot([min(threed_means), max(threed_means)], [min(threed_means), max(threed_means)], 'k--', lw=0.8)
+    ax2[1].plot([min(threed_means), max(threed_means)], [min(threed_means), max(threed_means)], 'k--', lw=0.8,label= 'Expected')
     ax2[1].set_title("Mean",fontsize=fs)
     ax2[1].tick_params(axis='both', which='major', labelsize=fs)    
 
-    ax2[2].plot([min(threed_mins), max(threed_mins)], [min(threed_mins), max(threed_mins)], 'k--', lw=0.8)
+    ax2[2].plot([min(threed_mins), max(threed_mins)], [min(threed_mins), max(threed_mins)], 'k--', lw=0.8,label= 'Expected')
     ax2[2].set_title("Diastolic",fontsize=fs)
     ax2[2].tick_params(axis='both', which='major', labelsize=fs)    
 
@@ -136,7 +138,7 @@ def plot_valid(threed_data, zerod_data, names):
     
 
     markers = ['o','>','D']
-    colors = ['b','r', 'm']
+    colors = ['b','r', 'g']
     
     for i, (name, zerod_f) in enumerate(zip(names, zerod_data)):
         results_0d = np.load(zerod_f, allow_pickle=True).item()
@@ -146,11 +148,11 @@ def plot_valid(threed_data, zerod_data, names):
         ## Summary Statistics
         
         ## means
-        ax1[1].scatter(range(len(zerod_means)), zerod_means,s = s, label = name, marker=markers[i], alpha = .7)        
+        ax1[1].scatter(range(len(zerod_means)), zerod_means,s = s, color = colors[i], label = name, marker=markers[i], alpha = .7)        
         ## systolic
-        ax1[0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label = name, marker=markers[i], alpha = .7)        
+        ax1[0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,  color = colors[i], label = name, marker=markers[i], alpha = .7)        
         # diastolic
-        ax1[2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = name, marker=markers[i], alpha = .7)
+        ax1[2].scatter(range(len(zerod_mins)), zerod_mins,s = s, color = colors[i], label = name, marker=markers[i], alpha = .7)
         
         ## plot 3D on x axis, and 0D on y axis
         s2=20
@@ -172,7 +174,7 @@ def plot_valid(threed_data, zerod_data, names):
 
 def plot_valid2(threed_data, zerod_data, names):
     markers = ['o','>','D']
-    colors = ['r','b', 'm']
+    colors = ['r','b', 'g']
     fig1, ax1 = plt.subplots(3, 3, figsize=(10, 6), sharex=True)
     for idx, (data_3d, data_0d, name) in enumerate(list(zip(threed_data, zerod_data, names))):
         results_3d = np.load(data_3d, allow_pickle=True).item()
@@ -184,14 +186,14 @@ def plot_valid2(threed_data, zerod_data, names):
         
         s = 10
         # Reference 3D model Resultss
-        ax1[idx][1].scatter(range(len(threed_means)), threed_means, s = s, color = "black", marker='^', label = name + ' 3D')
+        ax1[idx][1].scatter(range(len(threed_means)), threed_means, s = s, color = "black", marker='^', label = '3D ' + name )
         ax1[idx][1].tick_params(axis='both', which='major', labelsize=fs)
     
-        ax1[idx][0].scatter(range(len(threed_maxs)), threed_maxs, s = s, color = "black", marker='^',label = name +' 3D')
+        ax1[idx][0].scatter(range(len(threed_maxs)), threed_maxs, s = s, color = "black", marker='^',label = '3D ' + name)
         ax1[idx][0].set_ylabel("Pressure [mmHg]",fontsize=fs)
         ax1[idx][0].tick_params(axis='both', which='major', labelsize=fs)
         
-        ax1[idx][2].scatter(range(len(threed_mins)), threed_mins,s = s, color = "black", marker='^', label = name + ' 3D')
+        ax1[idx][2].scatter(range(len(threed_mins)), threed_mins,s = s, color = "black", marker='^', label = '3D ' + name)
         ax1[idx][2].tick_params(axis='both', which='major', labelsize=fs)    
 
         if idx == 0:
@@ -210,11 +212,11 @@ def plot_valid2(threed_data, zerod_data, names):
         ## Summary Statistics
         
         ## means
-        ax1[idx][1].scatter(range(len(zerod_means)), zerod_means,s = s, label = name + ' 0D', marker=markers[0],color=colors[idx], alpha = .7)        
+        ax1[idx][1].scatter(range(len(zerod_means)), zerod_means,s = s, label ='0D ' + name, marker=markers[0],color=colors[idx], alpha = .7)        
         ## systolic
-        ax1[idx][0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label = name + ' 0D', marker=markers[0],color=colors[idx], alpha = .7)        
+        ax1[idx][0].scatter(range(len(zerod_maxs)), zerod_maxs, s = s,label ='0D ' + name, marker=markers[0],color=colors[idx], alpha = .7)        
         # diastolic
-        ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = name + ' 0D', marker=markers[0], color=colors[idx],alpha = .7)
+        ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = '0D ' + name, marker=markers[0], color=colors[idx],alpha = .7)
             
 
         ax1[idx][2].set_ylim([18.0,20.0])
@@ -235,6 +237,7 @@ if __name__ == '__main__':
     plt.rc('xtick', labelsize='x-small')
     plt.rc('ytick', labelsize='x-small')
     plt.rc('text', usetex=True)
+    params.set_params(small_ticks=True, use_latex=True, plw = 0.01)
 
     dis_filenames = ['no_lc', 'original_lc', 'split_lc', None, 'all_lc', 'iter_lc']
     
@@ -276,10 +279,10 @@ if __name__ == '__main__':
     dis_3d_file = 'images/plot_data/threed.npy'
     
     dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['no_lc', 'original_lc']]
-    fig1, fig2 = plot_valid(dis_3d_file, dis_0d_files, names = ['No Correction', 'Original Correction'])
+    fig1, fig2 = plot_valid(dis_3d_file, dis_0d_files, names = ['0D No Correction', '0D One-Step Correction'])
     
     dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['split_lc', 'all_lc', 'iter_lc']]
-    fig3, fig4 = plot_valid(dis_3d_file, dis_0d_files,  names = ['Subdomain', 'S + Vessels', 'S + V + Iterative'])
+    fig3, fig4 = plot_valid(dis_3d_file, dis_0d_files,  names = ['0D Subdomains', '0D S + Vessels', '0D S + V + Iterative'])
     
     fig1.savefig("images/paper/04_zerod/a_lc_nlc.pdf")
     fig2.savefig("images/paper/04_zerod/b_lc_nlc.pdf")

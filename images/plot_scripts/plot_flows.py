@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     
-    set_params(use_latex=False, small_ticks=True)
+    set_params(use_latex=True, small_ticks=True)
     
     i1 = Inflow.from_file("data/diseased/AS1_SU0308_stent/flow_files/inflow_1D_orig.flow")
     i2 = Inflow.from_file("data/diseased/AS1_SU0308_stent/flow_files/inflow_1D.flow")
@@ -19,4 +19,5 @@ if __name__ == '__main__':
     ax.spines['top'].set_visible(False)
     ax.legend()
     
+    fig.savefig('images/paper/appendix/15_corrected_inflow.pdf')
     plt.show()
