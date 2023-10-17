@@ -32,12 +32,12 @@ s = 30
 fig1, ax1 = plt.subplots(2, 2, figsize=(10, 6),)
 ax1[0][1].set_xscale("log", base=2)
 markers = ['o','>','D']
-colors = ['b','r', 'm']
+colors = ['b','r', 'g']
 
 # Pressures
 ax1[0][1].scatter(sizes, Maxs[:, 3], s = s, color = "b", marker='o', label = 'Diastolic')
 ax1[0][1].scatter(sizes, Maxs[:, 4], s = s, color = "r", marker='>', label = 'Mean')
-ax1[0][1].scatter(sizes, Maxs[:, 5], s = s, color = "m", marker='D', label = 'Systolic')
+ax1[0][1].scatter(sizes, Maxs[:, 5], s = s, color = "g", marker='D', label = 'Systolic')
 
 ax1[0][1].set_title("Max Absolute Errors",fontsize=fs)
 ax1[0][1].set_ylabel("Pressure [mmHg]",fontsize=fs)
@@ -49,7 +49,7 @@ ax1[0][1].tick_params(axis='both', which='major', labelsize=fs)
 
 ax1[0][0].scatter(sizes, Means[:, 3], s = s, color = "b", marker='o', label = 'Diastolic')
 ax1[0][0].scatter(sizes, Means[:, 4], s = s, color = "r", marker='>', label = 'Mean')
-ax1[0][0].scatter(sizes, Means[:, 5], s = s, color = "m", marker='D', label = 'Systolic')
+ax1[0][0].scatter(sizes, Means[:, 5], s = s, color = "g", marker='D', label = 'Systolic')
 
 ax1[0][0].set_title("Mean Absolute Errors",fontsize=fs)
 ax1[0][0].set_ylabel("Pressure [mmHg]",fontsize=fs)
@@ -63,7 +63,7 @@ ax1[0][0].tick_params(axis='both', which='major', labelsize=fs)
 # Flows
 ax1[1][1].scatter(sizes, Maxs[:, 0], s = s, color = "b", marker='o', label = 'Diastolic')
 ax1[1][1].scatter(sizes, Maxs[:, 1], s = s, color = "r", marker='>', label = 'Mean')
-ax1[1][1].scatter(sizes, Maxs[:, 2], s = s, color = "m", marker='D', label = 'Systolic')
+ax1[1][1].scatter(sizes, Maxs[:, 2], s = s, color = "g", marker='D', label = 'Systolic')
 
 ax1[1][1].set_ylabel(r"Flow [cc$^3$/sec]",fontsize=fs)
 ax1[1][1].set_xlabel("Train Size",fontsize=fs)
@@ -74,7 +74,7 @@ ax1[1][1].tick_params(axis='both', which='major', labelsize=fs)
 
 ax1[1][0].scatter(sizes, Means[:, 0], s = s, color = "b", marker='o', label = 'Diastolic')
 ax1[1][0].scatter(sizes, Means[:, 1], s = s, color = "r", marker='>', label = 'Mean')
-ax1[1][0].scatter(sizes, Means[:, 2], s = s, color = "m", marker='D', label = 'Systolic')
+ax1[1][0].scatter(sizes, Means[:, 2], s = s, color = "g", marker='D', label = 'Systolic')
 
 ax1[1][0].set_ylabel(r"Flow [cc$^3$/sec]",fontsize=fs)
 ax1[1][0].set_xlabel("Train Size",fontsize=fs)
