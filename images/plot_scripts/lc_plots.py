@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
+from matplotlib.ticker import MaxNLocator
 
 
 from pathlib import Path
@@ -82,6 +83,10 @@ def load_data(c_3d: Centerlines, c_1d: Centerlines):
     return threed_results, zerod_results
     
 
+def rmse(x, xhat):
+    
+    return (((np.array(x) - np.array(xhat))**2).sum() / len(x))**(1/2)
+
 def plot_valid(threed_data, zerod_data, names):
     
     results_3d = np.load(threed_data, allow_pickle=True).item()
@@ -156,11 +161,16 @@ def plot_valid(threed_data, zerod_data, names):
         
         ## plot 3D on x axis, and 0D on y axis
         s2=20
+        print(f"For {name}")
         ax2[0].scatter(threed_maxs, zerod_maxs,s = s2, label = name, marker=markers[i], color=colors[i], alpha = .7, lw=0)
+        print(f"Corr Co (Systolic): {np.corrcoef(np.array(zerod_maxs), np.array(threed_maxs))[0,1]}")
         ax2[1].scatter(threed_means, zerod_means,s = s2, label = name, marker=markers[i], color=colors[i], alpha = .7, lw=0)
+        print(f"Corr Co (Mean): {np.corrcoef(np.array(zerod_means), np.array(threed_means))[0,1]}")
         ax2[2].scatter(threed_mins, zerod_mins, s = s2,label = name, marker=markers[i], color=colors[i], alpha = .7, lw=0)
+        print(f"Corr Co (Diastolic): {np.corrcoef(np.array(zerod_mins), np.array(threed_mins))[0,1]}")
 
-    ax1[2].set_ylim([18.0,20.0])
+    ax1[2].set_ylim([17.8,20.2])
+    ax1[2].yaxis.set_major_locator(MaxNLocator(integer=True))
     ax1[2].legend(fontsize=fs-2)
     ax2[2].legend(fontsize=fs-2)
 
@@ -219,7 +229,8 @@ def plot_valid2(threed_data, zerod_data, names):
         ax1[idx][2].scatter(range(len(zerod_mins)), zerod_mins,s = s, label = '0D ' + name, marker=markers[0], color=colors[idx],alpha = .7)
             
 
-        ax1[idx][2].set_ylim([18.0,20.0])
+        ax1[idx][2].set_ylim([17.8,20.2])
+        ax1[idx][2].yaxis.set_major_locator(MaxNLocator(integer=True))
         ax1[idx][2].legend(fontsize=fs-2)
 
  

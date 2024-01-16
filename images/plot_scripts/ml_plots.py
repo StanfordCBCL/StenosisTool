@@ -61,6 +61,7 @@ ax1[0][0].tick_params(axis='both', which='major', labelsize=fs)
 
 
 # Flows
+ax1[1][1].set_title("Max Absolute Errors",fontsize=fs)
 ax1[1][1].scatter(sizes, Maxs[:, 0], s = s, color = "b", marker='o', label = 'Diastolic')
 ax1[1][1].scatter(sizes, Maxs[:, 1], s = s, color = "r", marker='>', label = 'Mean')
 ax1[1][1].scatter(sizes, Maxs[:, 2], s = s, color = "g", marker='D', label = 'Systolic')
@@ -76,6 +77,7 @@ ax1[1][0].scatter(sizes, Means[:, 0], s = s, color = "b", marker='o', label = 'D
 ax1[1][0].scatter(sizes, Means[:, 1], s = s, color = "r", marker='>', label = 'Mean')
 ax1[1][0].scatter(sizes, Means[:, 2], s = s, color = "g", marker='D', label = 'Systolic')
 
+ax1[1][0].set_title("Mean Absolute Errors",fontsize=fs)
 ax1[1][0].set_ylabel(r"Flow [cc$^3$/sec]",fontsize=fs)
 ax1[1][0].set_xlabel("Train Size",fontsize=fs)
 ax1[1][0].set_xscale("log", base=2)
