@@ -19,13 +19,13 @@ corrections of a zero-dimensional approximant.
 
 This Git Directory contains the source code and scripts for replicating our pipeline.
 
-## [Paper](https://arxiv.org/abs/2312.00854)
+## [Paper (Arxiv)](https://arxiv.org/abs/2312.00854)
 
 ## Installation
 
 The installation is currently only supported for MacOS/Ubuntu.
 
-##### Simvascular
+#### Simvascular
 
 Several pre-processing stages of this pipeline was written to connect with Simvascular. The primary requirement is access to `simvascular --python`.
 
@@ -34,25 +34,35 @@ Several pre-processing stages of this pipeline was written to connect with Simva
 
 Your Simvascular cmd line should now be set up.
 
-##### Stenosis Tool
+#### Stenosis Tool
 
 1. Clone this repository using `git clone https://github.com/JohnDLee/StenosisTool.git` (Subject to change).
-2. If you have conda/miniconda installed, you can create a virtual environment using `conda env install`. Otherwise, install the packages listed in environment.yml
-3. You may need to install cuda versions of [Pytorch](https://pytorch.org/get-started/locally/) to run models on Nvidia GPU's
-4. Run `pip3 install [-e] .` to install the src library. `[-e]` is for editable mode.
+2. If you have conda/miniconda installed, you can create a virtual environment using `conda env create -f environment.yml`. Otherwise, install the packages listed in `environment.yml`
+3. You may need to install cuda versions of [Pytorch](https://pytorch.org/get-started/locally/) to run models on Nvidia GPU's. This pipeline was run using `torch==1.13.1+cu117`
+4. Run `pip3 install [-e] .` to install the svinterface library. `[-e]` is for editable mode.
 
-The main stenosis tool should be set up now.
+#### svZeroDSolver C++
 
-##### svZeroDSolver C++
+The svZeroDSolver is how 0D simulations are run. There are two options for installation. 
 
-1. In the Stenosis Tool repository, run `git clone https://github.com/StanfordCBCL/svZeroDPlus.git` (Subject to change).
+##### Option 1 (pip)
+In most cases a pip install is sufficient.
+
+1. `pip install git+https://github.com/simvascular/svZeroDSolver.git`
+2. If the building process fails due to missing libraries, they may need to be installed.
+
+##### Option 2 (building using CMake)
+The github repository can also by cloned into the main repository and built using CMake.
+
+1. In the Stenosis Tool repository, run `git clone https://github.com/simvascular/svZeroDSolver` (Subject to change).
 2. Navigate to the svZeroDPlus directory.
-3. Follow instructions under [C++ Documentation](https://stanfordcbcl.github.io/svZeroDPlus/cpp/) to install dependencies and build the C++ Solver
+3. Follow instructions under [C++ Documentation](https://simvascular.github.io/svZeroDSolver/) to install dependencies and build the C++ Solver
 
-The C++ solver should now be built
+The setup should now be complete.
 
-apt install libgl1-mesa-glx
-sudo apt-get install libxrender1
+
+
+
 
     
 
