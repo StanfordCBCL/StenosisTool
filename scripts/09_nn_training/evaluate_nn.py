@@ -70,12 +70,14 @@ def plot_overlap(x, y, savedir: Path):
 def print_stats(ys):
     """ Print Model Statistics """
     residuals = ys[:,0] - ys[:,1]
-    r = np.abs(residuals / ys[:,0])
+    
     base_idx = np.arange(0,ys.size()[-1]/6) * 6
     
+    # r = np.abs(residuals / ys[:,0])
+    dig_round = 4
     r = np.abs(residuals)
-    print(f"Mean Absolute Error: {round(r[:,base_idx].mean().item(), 4)} | {round(r[:,base_idx + 1].mean().item(), 4)} | {round(r[:,base_idx + 2].mean().item(), 4)} | {round(d2m(r[:,base_idx + 3].mean().item()), 4)} | {round(d2m(r[:,base_idx + 4].mean().item()), 4)} | {round(d2m(r[:,base_idx + 5].mean().item() ), 4)}" )
-    print(f"Maximum Absolute Error: {round(r[:,base_idx].max().item() * 100, 4)} | {round(r[:,base_idx + 1].max().item(), 4)} | {round(r[:,base_idx + 2].max().item(), 4)} | {round(d2m(r[:,base_idx + 3].max().item()), 4)} | {round(d2m(r[:,base_idx + 4].max().item()), 4)} | {round(d2m(r[:,base_idx + 5].max().item() ), 4)}")
+    print(f"Mean Absolute Error: {round(r[:,base_idx].mean().item(), dig_round)} | {round(r[:,base_idx + 1].mean().item(), dig_round)} | {round(r[:,base_idx + 2].mean().item(), dig_round)} | {round(d2m(r[:,base_idx + 3].mean().item()), dig_round)} | {round(d2m(r[:,base_idx + 4].mean().item()), dig_round)} | {round(d2m(r[:,base_idx + 5].mean().item() ), dig_round)}" )
+    print(f"Maximum Absolute Error: {round(r[:,base_idx].max().item() * 100, dig_round)} | {round(r[:,base_idx + 1].max().item(), dig_round)} | {round(r[:,base_idx + 2].max().item(), dig_round)} | {round(d2m(r[:,base_idx + 3].max().item()), dig_round)} | {round(d2m(r[:,base_idx + 4].max().item()), dig_round)} | {round(d2m(r[:,base_idx + 5].max().item() ), dig_round)}")
     
 if __name__ == '__main__':
     

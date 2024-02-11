@@ -7,9 +7,10 @@ from matplotlib.ticker import MaxNLocator
 from pathlib import Path
 from svinterface.core.polydata import Centerlines
 from svinterface.plotting import params 
+from svinterface.core.zerod.lpn import LPN
 
 
-def load_data(c_3d: Centerlines, c_1d: Centerlines):
+def load_data(c_3d: Centerlines, c_1d: Centerlines, lpn: LPN):
     """ load LC data"""
     
     # use valid array
@@ -18,6 +19,15 @@ def load_data(c_3d: Centerlines, c_1d: Centerlines):
     vess = c_3d.get_pointdata_array("Vessels_0D") 
     #! pull out which outlet it actually is
     valid = np.array(sorted(list(set([0] + list(np.where(caps != -1)[0]) + list(np.where(juncs != -1)[0]) + list(np.where(vess != -1)[0])))))
+    
+    #! Remove later
+    # gid_map = {}
+    # tree = lpn.get_tree()
+    # lpn.det_lpa_rpa(tree)
+    # for node in lpn.tree_bfs_iterator(tree, allow='branch'):
+    #     for v in node.vessel_info:
+    #         for gid in v['gid']:
+    #             gid_map[gid] = v['side']
     
     results_3d = {}
     # iterate through each valid point
@@ -35,6 +45,9 @@ def load_data(c_3d: Centerlines, c_1d: Centerlines):
                             'pressure': pressure,
                             'flow': flow,
                             'point_id': point_id}
+    #     print(oidx, point_id, gid_map[point_id])
+        
+    # exit()
         
     results_1d = {}
     # iterate through each outlet
@@ -241,7 +254,7 @@ if __name__ == '__main__':
     
     # Parameter for loading from npy if already saved
     # quick_load = False
-    quick_load = True
+    quick_load = False
     
     fs=12
     plt.rc('font', family='serif')
@@ -264,7 +277,8 @@ if __name__ == '__main__':
             new_dir = lpn_dir / f'AS1_SU0308.sim.{sim}'
             
             c1d = Centerlines.load_centerlines(str(new_dir / 'centerline_projection.vtp'))
-            threed_results, zerod_results = load_data(c_3d=c_3d_dis, c_1d=c1d)
+            #lpn = LPN.from_file(str(new_dir / "AS1_SU0308.in"))
+            threed_results, zerod_results = load_data(c_3d=c_3d_dis, c_1d=c1d)#, lpn=lpn)
             if sim == 0:
                 np.save('images/plot_data/threed.npy', threed_results, allow_pickle=True)
             np.save(f'images/plot_data/{name}.npy', zerod_results, allow_pickle=True)
@@ -294,7 +308,7 @@ if __name__ == '__main__':
     
     dis_0d_files = ['images/plot_data/' + file + '.npy' for file in  ['split_lc', 'all_lc', 'iter_lc']]
     fig3, fig4 = plot_valid(dis_3d_file, dis_0d_files,  names = ['0D Subdomains', '0D S + Vessels', '0D S + V + Iterative'])
-    
+    exit()
     fig1.savefig("images/paper/04_zerod/a_lc_nlc.pdf")
     fig2.savefig("images/paper/04_zerod/b_lc_nlc.pdf")
     fig3.savefig("images/paper/04_zerod/a_lc_ext.pdf")

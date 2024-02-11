@@ -1,9 +1,0 @@
-HOW to fix the lack of sensitivity
-
-Changes to how artificial stenosis is determined (both in number of points, occlusion, how to distribute b/w generations)
-
-Changes to how stenosis detection is calculated -> can map to a diameter based generation ordering (More similar to the paper)
-- Perhaps another way to compute, maybe by pressures
-
-
-In 3d to 0d Rcrs could implement a retuning feature?

@@ -1,42 +1,33 @@
-# Probabilistic Intra-Surgical Guidance Tool for Balloon Angioplasty
-
+# A Probabilistic Neural Twin for Treatment Planning in Peripheral Pulmonary Artery Stenosis
 
 ## Description
 
-We build a pipeline from 3D model to probability analysis, enabling us to answer relevant clinical questions such as optimal path of repair.
+The substantial computational cost of high-fidelity models in numerical hemodynamics has, so far, rel-
+egated their use mainly to offline treatment planning. New breakthroughs in data-driven architectures
+and optimization techniques for fast surrogate modeling provide an exciting opportunity to overcome
+these limitations, enabling the use of such technology for time-critical decisions. We discuss an applica-
+tion to the repair of multiple stenosis in peripheral pulmonary artery disease through either transcatheter
+pulmonary artery rehabilitation or surgery, where it is of interest to achieve desired pressures and flows
+at specific locations in the pulmonary artery tree, while minimizing the risk for the patient. Since dif-
+ferent degrees of success can be achieved in practice during treatment, we formulate the problem in
+probability, and solve it through a sample-based approach. We propose a new offline-online pipeline
+for probabilistic real-time treatment planning which combines offline assimilation of boundary condi-
+tions, model reduction, and training dataset generation with online estimation of marginal probabilities,
+possibly conditioned on the degree of augmentation observed in already repaired lesions. Moreover, we
+propose a new approach for the parametrization of arbitrarily shaped vascular repairs through iterative
+corrections of a zero-dimensional approximant. 
 
-## [Paper](NULL)
+This Git Directory contains the source code and scripts for replicating our pipeline.
 
-## Tasks
-
-- [x] Write script for pipeline
-- [] Generate Data for Paper
-    - [] Regenerate training data
-    - [] Rerun Model
-    - [] Generate Data to evaluate
-- [] Write plotting scripts
-    - [] Make sure plots are reproducible
-        - [] LC script
-            - [x] Fig 7 8
-            - [] Param Figs
-        - [] ML fig
-        - [] Probability Analysis scripts
-    - [x] These can be more hard coded, which is acceptable
-- [] Cleanup
-    - [] Reorganize code
-        - [] Make sure everything is consistent with saving in a config file
-        - [] Change svZeroDPlus to pip installed version
-        - [] Move svInterface to local instead of submodule
-        - [] Comment/Run through to ensure everything works
-    - [] Write Documentation
-    - [] Create a sample to run
-        - [] Ensure all data is present, and config is written
+## [Paper](https://arxiv.org/abs/2312.00854)
 
 ## Installation
 
 The installation is currently only supported for MacOS/Ubuntu.
 
 ##### Simvascular
+
+Several pre-processing stages of this pipeline was written to connect with Simvascular. The primary requirement is access to `simvascular --python`.
 
 1. Go to [Simvascular](https://github.com/SimVascular/SimVascular) and install either the most recent Github Build, or the official release.
 2. Navigate to the Simvascular Home Folder on your local machine and run the shell script `./Simvascular`. You may need to modify the contents depending on your path.
