@@ -61,6 +61,9 @@ The github repository can also by cloned into the main repository and built usin
 The setup should now be complete.
 
 
+## Running Pipeline
+
+Each tool has been seperated into 
 
 
 
