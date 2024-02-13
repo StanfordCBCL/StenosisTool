@@ -89,7 +89,9 @@ We set up an isolated workspace to avoid overwriting information in the original
 
 A config file can be generated using the below command (It is highly recommended to be placed in the same general directory as the data files)
 
-```python3 scripts/01_dev/generate_sv_config.py <outdir>```
+```
+python3 scripts/01_dev/generate_sv_config.py -o <outdir>
+```
 
 The config file looks as follows, with comments on each line corresponding to a prerequisite listed in the prior section:
 
@@ -122,7 +124,10 @@ options:
 
 We can generate a workspace anywhere using the command:
 
-```python3 scripts/01_dev/setup_workspace.py -i <path_to_config> -o <path_to_directory>```
+```
+python3 scripts/01_dev/setup_workspace.py -i <path_to_config> \
+                                          -o <path_to_directory>
+```
 
 Files are copied from their original location and renamed. A new config file is generated, referred to as the main config file from now on.
 
@@ -136,7 +141,12 @@ Generating the pre-stent centerlines is easily accomplished by running the scrip
 
 Generating the post-stent centerlines for each model must be done manually. It is recommended to construct a directory along the lines of "poststent_centerlines" to save the centerlines. Use
 
-```python3 scripts/02_centerline_gen/centerline_gen_diseased.py -mdl <path_to_poststent_mdl> -vtp <path_to_poststent_vtp> -inlet <name_of_inlet_cap> -o <file_output_path>```
+```
+python3 scripts/02_centerline_gen/centerline_gen_diseased.py  -mdl <path_to_poststent_mdl> \
+                                                              -vtp <path_to_poststent_vtp> \
+                                                              -inlet <name_of_inlet_cap>   \
+                                                              -o <file_output_path>
+```
 
 *<file_output_path> is the path to save the output centerlines to and should be of the form `(name).vtp`.
 
@@ -145,7 +155,9 @@ Generating the post-stent centerlines for each model must be done manually. It i
 #### Generating LPN
 With the centerlines, we can use Simvascular's inbuilt functionality to generate a default setup for an LPN/0D model with:
 
-```python3 scripts/03_lpn_setup/lpn_segmentation.py -i <path_to_config>```
+```
+python3 scripts/03_lpn_setup/lpn_segmentation.py -i <config_file>
+```
 
 This should generate a directory called `LPN_DIR` within the directory containing relevant files. If a `.rcrt` file was provided in the original config, then it is copied into the directory. Otherwise, an empty rcrt with 0'd values is created.
 
@@ -154,7 +166,9 @@ This should generate a directory called `LPN_DIR` within the directory containin
 #### Mapping LPN to centerlines
 For a future step, it is important to map locations on the LPN and centerlines to each other. Running the script
 
-```python3 scripts/03_lpn_setup/map_junctions_to_centerlines.py```
+```
+python3 scripts/03_lpn_setup/map_junctions_to_centerlines.py -i <config_file>
+```
 
 will map global ids on the centerlines onto the lpn and vice versa.
 
@@ -186,13 +200,19 @@ tune_params:
 
 After the data is provided all that needs to be run is:
 
-```python3 scripts/04_tune/tune_bc_nonlinear.py -i <path_to_config>```
+```
+python3 scripts/04_tune/tune_bc_nonlinear.py -i <path_to_config>
+```
 
 ### Running 0D Simulations and Visualization
 
 After generating an LPN and determining boundary conditions, solving that LPN is easily accomplished by running:
 
-```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n <name_for_sim> [-c] [-b] [--l] [--m] [-v]```
+```
+python3 scripts/solver_scripts/run_lpn.py -i <config_file> \
+                                          -n <name_for_sim> \
+                                          [-c] [-b] [--l] [--m] [-v]
+```
 
 ```
 -n <name_for_sim> # a label for the simulation
@@ -205,7 +225,11 @@ After generating an LPN and determining boundary conditions, solving that LPN is
 
 To run the original unoptimized LPN, the default line below should suffice:
 
-```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n "no_correction" -c -b --l -v```
+```
+python3 scripts/solver_scripts/run_lpn.py  -i <config_file> \
+                                           -n "no_correction" \
+                                           -c -b --l -v
+```
 
 
 ### Computing 3D Prestent Ground Truth (05)
@@ -215,7 +239,10 @@ To perform optimization of LPNs, we need a ground truth 3D solution to optimize 
 #### Converting 0D RCR to 3D RCR Format
 Tuned RCR boundary conditions can be converted to a valid 3D RCR boundary condition file by using the script
 
-```python3 scripts/05_3D_prestent/0D_rcrt_to_3D.py -rcrt <0D_rcrt_file_path> -o <3D_simulation_dir_path>```
+```
+python3 scripts/05_3D_prestent/0D_rcrt_to_3D.py -rcrt <0D_rcrt_file_path> \
+                                                -o <3D_simulation_dir_path>
+```
 
 where `<0D_rcrt_file_path>` is the path to the rcrt file after tuning (or provided), `<3D_simulation_dir_path>` is the directory containing all the files for a 3D simulation (which MUST include a `.svpre` and `.inp` file).
 
@@ -237,12 +264,28 @@ After mapping solutions onto the 1D centerlines, they should be downloaded and s
 
 where `<3D_inflow>` is the file containing the _negative_ inflow waveform directly used by svSolver to solve the 3D solution.
 
-### Linear Correction
+### Linear Correction of Pre-stent LPN
+
+In our paper, we perform a linear correction based on mean pressures to optimize LPNs to the 3D solution. We described 4 progressively more accurate methods of correction.
+
+#### One-Step Correction
+
+This correction optimizes the resistances in the junctions of the LPN in one step, via a least squares method.
+
+```
+python3 scripts/06_linear_correction/linear_transform_unified.py -i <config_file>
+python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n "one_step_correction" -c -b --l -v
+```
+
+#### Split Correction
 
 
-####
+#### Junctions + Vessel Correction
 
-####
+
+#### Resetting a Correction
+
+After performing a correction, various components of the LPN `.inp` file have been modified. If the correction is unsatisfactory, the default
 
 
 
