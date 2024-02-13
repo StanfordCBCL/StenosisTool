@@ -1,7 +1,7 @@
 # File: lpn_segmentation.py
 # File Created: Monday, 13th February 2023 4:03:14 pm
 # Author: John Lee (jlee88@nd.edu)
-# Last Modified: Thursday, 14th September 2023 7:14:22 pm
+# Last Modified: Tuesday, 13th February 2024 2:25:08 pm
 # Modified By: John Lee (jlee88@nd.edu>)
 # 
 # Description: Constructs an LPN from the recorded centerlines in the manager. Uses preset parameters only.
@@ -121,6 +121,16 @@ if __name__ == '__main__':
     print("Done")
 
     lpn.update()
+    
+    ## Append the rcrs and register the base lpn if tuning is not required
+    if not M['options']['tune']:
+        bcs = RCR()
+        bcs.read_rcrt_file(str(rcrt_path))
+        lpn.update_rcrs(bcs)
+        
+        base_lpn_path = Path(M['workspace']['root']) / 'base_lpn.in'
+        M.register('base_lpn', str(base_lpn_path), depth = ['workspace'])
+        lpn.write_lpn_file(str(base_lpn_path))
     
     # update Manager
     M.update()

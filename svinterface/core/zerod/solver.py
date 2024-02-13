@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd  
 from .lpn import LPN
 from collections import defaultdict
-from svzerodsolver.runnercpp import run_from_config
+import pysvzerod
 import matplotlib.pyplot as plt
 from pathlib import Path
 from svinterface.utils.misc import d2m
@@ -44,7 +44,7 @@ class Solver0Dcpp():
         
         self._print("Running solver...", end = '\t', flush = True)
     
-        results_df = run_from_config(self.lpn.lpn_data)
+        results_df = pysvzerod.simulate(self.lpn.lpn_data)
         self._print('Done')
         
         return SolverResults(results_df)
