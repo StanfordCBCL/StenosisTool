@@ -190,7 +190,7 @@ After the data is provided all that needs to be run is:
 
 ### Running 0D Simulations and Visualization
 
-After generating an LPN and determining boundary conditions, solving the LPN is easily accomplished by running:
+After generating an LPN and determining boundary conditions, solving that LPN is easily accomplished by running:
 
 ```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n <name_for_sim> [-c] [-b] [--l] [--m] [-v]```
 
@@ -203,7 +203,7 @@ After generating an LPN and determining boundary conditions, solving the LPN is 
 -v                # whether to output a plot of the last 3 cycles to ensure convergence and verify other features
 ```
 
-To run the original tuned LPN, the default line below should suffice:
+To run the original unoptimized LPN, the default line below should suffice:
 
 ```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n "no_correction" -c -b --l -v```
 
