@@ -45,7 +45,7 @@ Your Simvascular cmd line should now be set up.
 
 The svZeroDSolver is how 0D simulations are run. There are two options for installation. 
 
-*** Note: Due to the constant updating nature of the svZeroDPlus Solver, the release 1.1 version of svZeroDPlus has been tested to work. The pip installation, `pysvzerod==2.0` is currently being verified ***
+*** Note: Due to the constant updating nature of the svZeroDPlus Solver, only the pip installation `pysvzerod==2.0` is verified ***
 
 ##### Option 1 (pip)
 In most cases a pip install is sufficient.
@@ -137,7 +137,9 @@ For each model, pre-stent and post-stent, centerlines must be generated. Dependi
 
 Generating the pre-stent centerlines is easily accomplished by running the script below and the centerlines will be tracked automatically.
 
-```python3 scripts/02_centerline_gen/centerline_gen_diseased.py -i <path_to_config>```
+```
+python3 scripts/02_centerline_gen/centerline_gen_diseased.py -i <path_to_config>
+```
 
 Generating the post-stent centerlines for each model must be done manually. It is recommended to construct a directory along the lines of "poststent_centerlines" to save the centerlines. Use
 
@@ -217,7 +219,7 @@ python3 scripts/solver_scripts/run_lpn.py -i <config_file> \
 ```
 -n <name_for_sim> # a label for the simulation
 -c                # whether to save results as a csv file (recommended)
--b                # whether to convert the c output to the old python output (recommended)
+-b                # whether to convert the c output to the old python output
 --l               # flag to only output last cycle 
 --m               # flag to only output mean values
 -v                # whether to output a plot of the last 3 cycles to ensure convergence and verify other features
@@ -228,7 +230,7 @@ To run the original unoptimized LPN, the default line below should suffice:
 ```
 python3 scripts/solver_scripts/run_lpn.py  -i <config_file> \
                                            -n "no_correction" \
-                                           -c -b --l -v
+                                           -c --l -v
 ```
 
 
@@ -250,7 +252,12 @@ where `<0D_rcrt_file_path>` is the path to the rcrt file after tuning (or provid
 
 `scripts/05_3D_prestent/map_3D_centerlines.py` is a standalone script that can be copied and run on a compute cluster with minimal packages. After uploading the centerlines (which have been mapped to the LPN via `scripts/03_lpn_setup/map_junctions_to_centerlines.py`) to the compute cluster, 3D solutions can be mapped onto those centerlines as such.
 
-```python3 scripts/05_3D_prestent/map_3D_centerlines.py -c <centerlines_vtp_file> -v <3D_solution_volume_vtu_file> -o <output_centerline_vtp_file> <--caps|--juncs|--0D>```
+```
+python3 scripts/05_3D_prestent/map_3D_centerlines.py  -c <centerlines_vtp_file> \
+                                                      -v <3D_solution_volume_vtu_file> \
+                                                      -o <output_centerline_vtp_file> \
+                                                      [--caps|--juncs|--0D]
+```
 
 where `<--caps|--juncs|--0D>` are optional mutually exclusive flags to map either all points onto the centerline (>2 hrs) or only the relevant 0D LPN locations (<1 minute).
 
@@ -260,13 +267,18 @@ where `<--caps|--juncs|--0D>` are optional mutually exclusive flags to map eithe
 
 After mapping solutions onto the 1D centerlines, they should be downloaded and saved to a directory in the workspace. However, the mapping must be formatted one more time via
 
-```python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> -c <3D_centerline_solution_Vtp> -f <3D_inflow> --s```
+```
+python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> \
+                                                        -c <3D_centerline_solution_vtp> \
+                                                        -f <3D_inflow> \
+                                                        --s
+```
 
 where `<3D_inflow>` is the file containing the _negative_ inflow waveform directly used by svSolver to solve the 3D solution.
 
 ### Linear Correction of Pre-stent LPN
 
-In our paper, we perform a linear correction based on mean pressures to optimize LPNs to the 3D solution. We described 4 progressively more accurate methods of correction.
+In our paper, we perform a linear correction based on mean pressures to optimize LPNs to the 3D solution. We described 4 progressively more accurate methods of correction - One-Step, Subdomains, Vessels, and Iterative.
 
 #### One-Step Correction
 
@@ -274,20 +286,67 @@ This correction optimizes the resistances in the junctions of the LPN in one ste
 
 ```
 python3 scripts/06_linear_correction/linear_transform_unified.py -i <config_file>
-python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n "one_step_correction" -c -b --l -v
+python3 scripts/solver_scripts/run_lpn.py -i <config_file> \
+                                          -n "one_step_correction" \
+                                          -c --l -v
 ```
 
-#### Split Correction
+#### Subdomain Correction
+
+This correction optimizes the resistances of the junctions in the LPN by cycling through the MPA, RPA, then LPA. The iterative method is included via the `-iter N` parameter. We determined that N=5 is sufficient for convergence.
+
+```
+python3 scripts/06_linear_correction/linear_transform_split.py  -i <config_file> \
+                                                                -iter N
+python3 scripts/solver_scripts/run_lpn.py -i <config_file> \
+                                          -n "subdomain_correction" \
+                                          -c --l -v
+```
 
 
-#### Junctions + Vessel Correction
+#### Subdomains + Vessel Correction
 
+This correction does the same as the subdomains correction but includes vessels and junctions.
+
+```
+python3 scripts/06_linear_correction/linear_transform_all_split.py  -i <config_file> \
+                                                                -iter N
+python3 scripts/solver_scripts/run_lpn.py -i <config_file> \
+                                          -n "all_subdomain_correction" \
+                                          -c --l -v
+```
 
 #### Resetting a Correction
 
-After performing a correction, various components of the LPN `.inp` file have been modified. If the correction is unsatisfactory, the default
+After performing a correction, various components of the LPN `.inp` file have been modified. If the correction is unsatisfactory, the lpn can be reset to the default by running:
+```
+python3 scripts/06_linear_correction/clear_linear_correction.py -i <config_file>
+```
 
+### Visualization of Prestent 0D solution projected on 1D centerlines
 
+To compare with the 3D solutions (which are projected on 1D centerlines), we must first project the 0D solution onto the centerlines.
+
+```
+python3 scripts/viz_script/map_0D_to_centerlines.py -i <config_file> \
+                                                    -sim <sim_number> \
+                                                    [--mmHg] [--s]
+```
+
+where
+```
+-sim <sim_number>      # simulation number (not by simulation name)
+--mmHg                 # flag to convert pressures to mmHg
+--s                    # flag to only report summary values (sys, dia, mean) values across the centerlines
+```
+
+### Comparing prestent 3D solution to 0D solution
+
+With both 3D and 0D solutions projected onto 1D centerlines, we can perform a comparison of the two.
+
+```
+python3 scripts/viz_script/plot_3D_vs_0D.py -i <config_file> \
+            
 
 
 
