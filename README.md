@@ -61,11 +61,48 @@ The github repository can also by cloned into the main repository and built usin
 The setup should now be complete.
 
 
-## Running Pipeline
+## Running Pipeline (Overview)
 
-Each tool has been seperated into 
+Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt)
 
 
+#### Prerequisites
 
-    
+There are several prerequisites to be satisfied prior to beginning the pipeline.
 
+1. *A prestent VTP (`.vtp`) and corresponding MDL (`.mdl`) file containing the model prior to any stenting procedure. Typically, these can be found in the `Models` directory of a Simvascular project.
+2. *N poststent VTP and MDL files containing the model after stenting a SINGLE repair location.
+3. An exported CapInfo file from Simvascular, containing the cap name and area for each face in the pre-stent model.
+4. A inflow waveform file in the _POSITIVE_ direction, as opposed to the _negative_ direction used in svSolver.
+5. (Optionally) RCRT boundary conditions in a (`.rcrt`) file.
+
+* Additionally, the name of the inlet cap for each model must be known (they may be different across models depending on naming convention)
+
+
+#### Setup workspace
+
+We set up an isolated workspace to avoid overwriting information in the original directory.
+
+##### Generating a config file
+
+A config file can be generated using the below command (It is highly recommended to be placed in the same general directory as the data files)
+
+```python3 scripts/01_dev/generate_sv_config.py <outdir>```
+
+The first part of the config file looks as follows:
+
+```
+workspace:
+  surface_model: "Models/AS1_SU0308_prestent.vtp"
+  mdl: "Models/AS1_SU0308_prestent.mdl"
+  flow_file: "flow_files/inflow_1D.flow"
+  rcrt_file: 
+  capinfo: "Models/AS1_SU0308_prestent_CapInfo"
+
+metadata: 
+  model_name: "AS1_SU0308"
+  diseased: true
+  inlet: "cap_RPA"
+```
+
+surface_model is the 

@@ -7,7 +7,7 @@ workspace:
   capinfo: "Models/AS1_SU0308_prestent_CapInfo"
 
 # Metadata about model
-metadata:
+metadata: 
   model_name: "AS1_SU0308"
   diseased: true
   inlet: "cap_RPA"
