@@ -66,7 +66,7 @@ The setup should now be complete.
 Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt). In general, steps are presented assuming a smooth workflow.
 
 
-### Prerequisites
+### Prerequisites (00)
 
 There are several prerequisites to be satisfied prior to beginning the pipeline.
 
@@ -79,7 +79,7 @@ There are several prerequisites to be satisfied prior to beginning the pipeline.
 *Additionally, the name of the inlet cap for each model must be known (they may be different across models depending on naming convention)
 
 
-### Setup workspace
+### Setup workspace (01)
 
 We set up an isolated workspace to avoid overwriting information in the original directory.
 
@@ -124,7 +124,7 @@ We can generate a workspace anywhere using the command:
 
 Files are copied from their original location and renamed. A new config file is generated, referred to as the main config file from now on.
 
-### Centerline Generation
+### Centerline Generation (02)
 
 For each model, pre-stent and post-stent, centerlines must be generated. Depending on the quality of the models, this step may throw an error (centerlines failed to be generated), which can only be resolved by refining the models manually in Simvascular.
 
@@ -138,7 +138,7 @@ Generating the post-stent centerlines for each model must be done manually. It i
 
 *<file_output_path> is the path to save the output centerlines to and should be of the form `(name).vtp`.
 
-### Lumped Parameter Network (LPN) Setup
+### Lumped Parameter Network (LPN) Setup (03)
 
 #### Generating LPN
 With the centerlines, we can use Simvascular's inbuilt functionality to generate a default setup for an LPN/0D model with:
@@ -157,7 +157,7 @@ For a future step, it is important to map locations on the LPN and centerlines t
 will map global ids on the centerlines onto the lpn and vice versa.
 
 
-### Boundary Condition Tuning (if necessary)
+### Boundary Condition Tuning (if necessary) (04)
 
 The tuning procedure developed here was developed for the limited physiological information provided in our sample dataset and may not be an adequate procedure. Various automated pipelines exist and can replace the one provided here.
 
@@ -189,7 +189,7 @@ After the data is provided all that needs to be run is:
 ### Running 0D Simulations
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-### Computing 3D Prestent Ground Truth
+### Computing 3D Prestent Ground Truth (05)
 
 To perform optimization of LPNs, we need a ground truth 3D solution to optimize to. Setting up a 3D hemodynamic simulation is built into Simvascular, with instructions found [here](https://simvascular.github.io/documentation/flowsolver.html). The provided scripts convert boundary conditions and compress 3D solutions onto a 1D centerline.
 
