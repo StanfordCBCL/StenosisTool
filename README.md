@@ -66,7 +66,7 @@ The setup should now be complete.
 Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt)
 
 
-#### Prerequisites
+### Prerequisites
 
 There are several prerequisites to be satisfied prior to beginning the pipeline.
 
@@ -76,33 +76,42 @@ There are several prerequisites to be satisfied prior to beginning the pipeline.
 4. A inflow waveform file in the _POSITIVE_ direction, as opposed to the _negative_ direction used in svSolver.
 5. (Optionally) RCRT boundary conditions in a (`.rcrt`) file.
 
-* Additionally, the name of the inlet cap for each model must be known (they may be different across models depending on naming convention)
+*Additionally, the name of the inlet cap for each model must be known (they may be different across models depending on naming convention)
 
 
-#### Setup workspace
+### Setup workspace
 
 We set up an isolated workspace to avoid overwriting information in the original directory.
 
-##### Generating a config file
+#### Generating a config file
 
 A config file can be generated using the below command (It is highly recommended to be placed in the same general directory as the data files)
 
 ```python3 scripts/01_dev/generate_sv_config.py <outdir>```
 
-The first part of the config file looks as follows:
+The config file looks as follows, with comments on each line corresponding to a prerequisite listed in the prior section:
 
 ```
+# SV Workspace
 workspace:
-  surface_model: "Models/AS1_SU0308_prestent.vtp"
-  mdl: "Models/AS1_SU0308_prestent.mdl"
-  flow_file: "flow_files/inflow_1D.flow"
-  rcrt_file: 
-  capinfo: "Models/AS1_SU0308_prestent_CapInfo"
+  surface_model: "Models/AS1_SU0308_prestent.vtp"   # pre-stent vtp file (1)
+  mdl: "Models/AS1_SU0308_prestent.mdl"             # pre-stent mdl file (1)
+  flow_file: "flow_files/inflow_1D.flow"            # inflow waveform file (4)
+  rcrt_file:                                        # Optional rcrt file (5) -> if provided, tune parameter should be false
+  capinfo: "Models/AS1_SU0308_prestent_CapInfo"     # CapInfo file (3)
 
+# Metadata about model
 metadata: 
-  model_name: "AS1_SU0308"
-  diseased: true
-  inlet: "cap_RPA"
+  model_name: "AS1_SU0308"                          # A name for the model
+  diseased: true                                    # diseased flag (typically should be true)
+  inlet: "cap_RPA"                                  # the name of the inlet cap to the model
+
+# Options in pipeline
+options:
+  tune: true                                        # whether the model requires boundary condition tuning -> should be true if rcrt_file is empty
+
+# Tuning Parameters
+...
 ```
 
-surface_model is the 
+#### Generating workspace
