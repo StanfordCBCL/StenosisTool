@@ -45,6 +45,8 @@ Your Simvascular cmd line should now be set up.
 
 The svZeroDSolver is how 0D simulations are run. There are two options for installation. 
 
+*** Note: Due to the constant updating nature of the svZeroDPlus Solver, the release 1.1 version of svZeroDPlus has been tested to work. The pip installation, `pysvzerod==2.0` is currently being verified ***
+
 ##### Option 1 (pip)
 In most cases a pip install is sufficient.
 
@@ -186,8 +188,25 @@ After the data is provided all that needs to be run is:
 
 ```python3 scripts/04_tune/tune_bc_nonlinear.py -i <path_to_config>```
 
-### Running 0D Simulations
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+### Running 0D Simulations and Visualization
+
+After generating an LPN and determining boundary conditions, solving the LPN is easily accomplished by running:
+
+```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n <name_for_sim> [-c] [-b] [--l] [--m] [-v]```
+
+```
+-n <name_for_sim> # a label for the simulation
+-c                # whether to save results as a csv file (recommended)
+-b                # whether to convert the c output to the old python output (recommended)
+--l               # flag to only output last cycle 
+--m               # flag to only output mean values
+-v                # whether to output a plot of the last 3 cycles to ensure convergence and verify other features
+```
+
+To run the original tuned LPN, the default line below should suffice:
+
+```python3 scripts/solver_scripts/run_lpn.py -i <config_file> -n "no_correction" -c -b --l -v```
+
 
 ### Computing 3D Prestent Ground Truth (05)
 
