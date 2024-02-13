@@ -63,7 +63,7 @@ The setup should now be complete.
 
 ## Running Pipeline (Overview)
 
-Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt).
+Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt). In general, steps are presented assuming a smooth workflow.
 
 
 ### Prerequisites
@@ -74,7 +74,7 @@ There are several prerequisites to be satisfied prior to beginning the pipeline.
 2. *N poststent VTP and MDL files containing the model after stenting a SINGLE repair location.
 3. An exported CapInfo file from Simvascular, containing the cap name and area for each face in the pre-stent model.
 4. A inflow waveform file in the _POSITIVE_ direction, as opposed to the _negative_ direction used in svSolver.
-5. (Optionally) RCRT boundary conditions in a (`.rcrt`) file.
+5. (Optionally) RCRT boundary conditions in a (`.rcrt`) file. This file must be in the format accepted by the 0D solver.
 
 *Additionally, the name of the inlet cap for each model must be known (they may be different across models depending on naming convention)
 
@@ -140,18 +140,90 @@ Generating the post-stent centerlines for each model must be done manually. It i
 
 ### Lumped Parameter Network (LPN) Setup
 
+#### Generating LPN
 With the centerlines, we can use Simvascular's inbuilt functionality to generate a default setup for an LPN/0D model with:
 
 ```python3 scripts/03_lpn_setup/lpn_segmentation.py -i <path_to_config>```
 
 This should generate a directory called `LPN_DIR` within the directory containing relevant files. If a `.rcrt` file was provided in the original config, then it is copied into the directory. Otherwise, an empty rcrt with 0'd values is created.
 
+*Note: a workaround was implemented here due to the challenges of connecting Simvascular's Python 3.5 and the newer version of Python, where the actual computation is done in `scripts/03_lpn_setup/sv_lpn_segmentation.py`.
 
-*Note: a workaround was implemented here due to the challenges of connecting Simvascular's Python 3.5 and the newer version of Python, where the actual computation is done in `scripts/03_lpn_setup/sv_lpn_segmentation.py`
+#### Mapping LPN to centerlines
+For a future step, it is important to map locations on the LPN and centerlines to each other. Running the script
+
+```python3 scripts/03_lpn_setup/map_junctions_to_centerlines.py```
+
+will map global ids on the centerlines onto the lpn and vice versa.
 
 
+### Boundary Condition Tuning (if necessary)
+
+The tuning procedure developed here was developed for the limited physiological information provided in our sample dataset and may not be an adequate procedure. Various automated pipelines exist and can replace the one provided here.
+
+The necessary data, which must be filled in the config file, are as follows:
+
+```
+tune_params:
+  PCWP: 18                  # Pulmonary Capillary Wedge Pressure -> Empirically, this value must be <= to the minPAP value otherwise capacitances may tune to 0.
+  R_LPA: 2.81564864366      # *Nonlinear Resistance coefficient for LPA
+  R_RPA: 5.5670662746       # *Nonlinear Resistance coefficient for RPA
+  mPAP:
+  - 42                      # lower bound mean Pulmonary arterial Pressure 
+  - 42                      # upper bound mean Pulmonary arterial Pressure 
+  maxPAP:
+  - 90                      # lower bound systolic/max Pulmonary arterial Pressure 
+  - 90                      # upper bound systolic/max Pulmonary arterial Pressure 
+  minPAP:
+  - 18                      # lower bound diastolic/min Pulmonary arterial Pressure 
+  - 18                      # upper bound diastolic/min Pulmonary arterial Pressure 
+  rpa_split: 0.52           # The flow split going into the RPA branch
+```
+
+*The Nonlinear resistance coefficients can be calculated through the procedure mentioned in Section 3 of the linked paper.
+
+After the data is provided all that needs to be run is:
+
+```python3 scripts/04_tune/tune_bc_nonlinear.py -i <path_to_config>```
+
+### Running 0D Simulations
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+### Computing 3D Prestent Ground Truth
+
+To perform optimization of LPNs, we need a ground truth 3D solution to optimize to. Setting up a 3D hemodynamic simulation is built into Simvascular, with instructions found [here](https://simvascular.github.io/documentation/flowsolver.html). The provided scripts convert boundary conditions and compress 3D solutions onto a 1D centerline.
+
+#### Converting 0D RCR to 3D RCR Format
+Tuned RCR boundary conditions can be converted to a valid 3D RCR boundary condition file by using the script
+
+```python3 scripts/05_3D_prestent/0D_rcrt_to_3D.py -rcrt <0D_rcrt_file_path> -o <3D_simulation_dir_path>```
+
+where `<0D_rcrt_file_path>` is the path to the rcrt file after tuning (or provided), `<3D_simulation_dir_path>` is the directory containing all the files for a 3D simulation (which MUST include a `.svpre` and `.inp` file).
+
+#### Mapping 3D solution onto 1D Centerlines
+
+`scripts/05_3D_prestent/map_3D_centerlines.py` is a standalone script that can be copied and run on a compute cluster with minimal packages. After uploading the centerlines (which have been mapped to the LPN via `scripts/03_lpn_setup/map_junctions_to_centerlines.py`) to the compute cluster, 3D solutions can be mapped onto those centerlines as such.
+
+```python3 scripts/05_3D_prestent/map_3D_centerlines.py -c <centerlines_vtp_file> -v <3D_solution_volume_vtu_file> -o <output_centerline_vtp_file> <--caps|--juncs|--0D>```
+
+where `<--caps|--juncs|--0D>` are optional mutually exclusive flags to map either all points onto the centerline (>2 hrs) or only the relevant 0D LPN locations (<1 minute).
+
+*** Note: The mapping script has a bug where the flows are computed incorrectly. However, the flows are not used in the current iteration of the pipeline ***
+
+#### Formatting 1D Mapped Solutions 
+
+After mapping solutions onto the 1D centerlines, they should be downloaded and saved to a directory in the workspace. However, the mapping must be formatted one more time via
+
+```python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> -c <3D_centerline_solution_Vtp> -f <3D_inflow> --s```
+
+where `<3D_inflow>` is the file containing the _negative_ inflow waveform directly used by svSolver to solve the 3D solution.
+
+### Linear Correction
 
 
+####
+
+####
 
 
 
