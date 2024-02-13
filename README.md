@@ -63,7 +63,7 @@ The setup should now be complete.
 
 ## Running Pipeline (Overview)
 
-Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt)
+Each tool has been seperated into individual scripts. A more detailed description of what each file does can be found [here](docs/script_documentation.txt).
 
 
 ### Prerequisites
@@ -91,6 +91,8 @@ A config file can be generated using the below command (It is highly recommended
 
 The config file looks as follows, with comments on each line corresponding to a prerequisite listed in the prior section:
 
+*** ALL PATHS MUST BE RELATIVE TO THE LOCATION OF THE CONFIG FILE ***
+
 ```
 # SV Workspace
 workspace:
@@ -111,7 +113,59 @@ options:
   tune: true                                        # whether the model requires boundary condition tuning -> should be true if rcrt_file is empty
 
 # Tuning Parameters
-...
+...                                                 # These can be filled later (and are only necessary if tuning is required).
 ```
 
 #### Generating workspace
+
+We can generate a workspace anywhere using the command:
+
+```python3 scripts/01_dev/setup_workspace.py -i <path_to_config> -o <path_to_directory>```
+
+Files are copied from their original location and renamed. A new config file is generated, referred to as the main config file from now on.
+
+### Centerline Generation
+
+For each model, pre-stent and post-stent, centerlines must be generated. Depending on the quality of the models, this step may throw an error (centerlines failed to be generated), which can only be resolved by refining the models manually in Simvascular.
+
+Generating the pre-stent centerlines is easily accomplished by running the script below and the centerlines will be tracked automatically.
+
+```python3 scripts/02_centerline_gen/centerline_gen_diseased.py -i <path_to_config>```
+
+Generating the post-stent centerlines for each model must be done manually. It is recommended to construct a directory along the lines of "poststent_centerlines" to save the centerlines. Use
+
+```python3 scripts/02_centerline_gen/centerline_gen_diseased.py -mdl <path_to_poststent_mdl> -vtp <path_to_poststent_vtp> -inlet <name_of_inlet_cap> -o <file_output_path>```
+
+*<file_output_path> is the path to save the output centerlines to and should be of the form `(name).vtp`.
+
+### Lumped Parameter Network (LPN) Setup
+
+With the centerlines, we can use Simvascular's inbuilt functionality to generate a default setup for an LPN/0D model with:
+
+```python3 scripts/03_lpn_setup/lpn_segmentation.py -i <path_to_config>```
+
+This should generate a directory called `LPN_DIR` within the directory containing relevant files. If a `.rcrt` file was provided in the original config, then it is copied into the directory. Otherwise, an empty rcrt with 0'd values is created.
+
+
+*Note: a workaround was implemented here due to the challenges of connecting Simvascular's Python 3.5 and the newer version of Python, where the actual computation is done in `scripts/03_lpn_setup/sv_lpn_segmentation.py`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
