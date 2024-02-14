@@ -14,7 +14,7 @@ import argparse
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description = "Converts a 3D rcrt file to 1D rcrt file")
+    parser = argparse.ArgumentParser(description = "Converts a 0D rcrt file to 3D rcrt file")
     parser.add_argument("-rcrt", dest = "rcrt_file", help = "0D rcrt file")
     parser.add_argument("-o", dest = "out_dir", help = "output dir to write rcrt.dat (must contain an svpre and an inp file)")
     parser.add_argument('-rep',required=False, default = [], action='append',nargs=2 ,help='For stented models, certain names may be replaced with a different one.  old name, new name')
