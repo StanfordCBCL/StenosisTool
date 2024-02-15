@@ -45,7 +45,7 @@ Your Simvascular cmd line should now be set up.
 
 The svZeroDSolver is how 0D simulations are run. There are two options for installation. 
 
-*** Note: Due to the constant updating nature of the svZeroDPlus Solver, only the pip installation `pysvzerod==2.0` is verified ***
+***Note: Due to the constant updating nature of the svZeroDPlus Solver, only the pip installation `pysvzerod==2.0` is verified***
 
 ##### Option 1 (pip)
 In most cases a pip install is sufficient.
@@ -95,7 +95,7 @@ python3 scripts/01_dev/generate_sv_config.py -o <outdir>
 
 The config file looks as follows, with comments on each line corresponding to a prerequisite listed in the prior section:
 
-*** ALL PATHS MUST BE RELATIVE TO THE LOCATION OF THE CONFIG FILE ***
+***ALL PATHS MUST BE RELATIVE TO THE LOCATION OF THE CONFIG FILE***
 
 ```
 # SV Workspace
@@ -261,7 +261,7 @@ python3 scripts/05_3D_prestent/map_3D_centerlines.py  -c <centerlines_vtp_file> 
 
 where `<--caps|--juncs|--0D>` are optional mutually exclusive flags to map either all points onto the centerline (>2 hrs) or only the relevant 0D LPN locations (<1 minute).
 
-*** Note: The mapping script has a bug where the flows are computed incorrectly. However, the flows are not used in the current iteration of the pipeline ***
+***Note: The mapping script has a bug where the flows are computed incorrectly. However, the flows are not used in the current iteration of the pipeline***
 
 #### Formatting 1D Mapped Solutions 
 
@@ -395,7 +395,7 @@ Mapping solutions are identical for this step. However, __DO NOT__ add the `--s`
 ```
 python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> \
                                                         -c <3D_centerline_solution_vtp> \
-                                                        -f <3D_inflow> \
+                                                        -f <3D_inflow>
 ```
 
 ### Parameterization of Post-Stent LPNs (through Linear Correction) (08)
@@ -438,7 +438,7 @@ After the threshold for the number of points to include has been determined, we 
 python3 scripts/08_linear_correction_2/linear_transform_local_split.py  -i <config_file> \
                                                                         -c <formatted_stented_centerline_path> \
                                                                         -n <name_for_stented_lpn> \
-                                                                        -points <point_threshold>
+                                                                        -points <point_threshold> \
                                                                         --iter [5]
 ```
 
@@ -463,14 +463,91 @@ python3 scripts/viz_script/plot_3D_vs_0D.py -i <config_file> \
 ```
 where `<formatted_centerline_path>` is the path to the corresponding formatted 3D solution centerline.
 
-### 09_nn_training
-            
+#### Verification of Parameterization
 
+In our paper, we perform a linear superposition of each 0D LPN in order to merge the N different post-stent LPN. However, adding and subtracting resistances may cause physiologically invalid negative resistances to arise when combining values. While performing a local correction will largely mitigate this issue, it may still arise and there is no easy and reasonable solution to fixing this besides finagling with the points used for linear correction. However, we can verify if this situation is a problem with
+```
+python3 scripts/08_linear_correction_2/verify_parameterization.py -i <config_file>  \
+                                                                  -sims [stented_lpn_name_1] [stented_lpn_name_2] ... [stented_lpn_name_N]
+```
+where the `-sims` flag should take all N stented LPNs.
 
+***Note: This step __MUST__ be run as it sets up the directory for neural network training***
 
+### Neural Twin Training (09)
 
+#### Data Generation
+After parameterization is complete, we can begin generating data to train our Neural Twin. The data generation script uses Multi-threading to create data samples drawn from a Sobol Distribution.
+```
+python3 scripts/09_nn_training/data_generation.py -i <config_file> \
+                                                  -ntrain <train_samples> \
+                                                  -nval <val_samples> \
+                                                  -ntest <test_samples>
+```
+***Train, Validation, and Test sample count should be a power of 2 in order to preserve pseudo uniform nature***
 
+#### NN Training
 
+Training the NN is straightforward (assuming a GPU exists on the machine). Run
+```
+python3 scripts/09_nn_training/train_nn.py  -nn_dir <NN_dir_path> \
+                                            [-seed N]
+```
+where `<NN_dir_path>` is the path to the directory created by `scripts/08_linear_correction_2/verify_parameterization.py`
+
+***Training multiple models will be saved as a different "run" to be used in the next steps***
+
+#### Model Evaluation
+
+We can evaluate the trained model by running
+```
+python3 scripts/09_nn_training/evaluate_nn.py   -nn_dir <NN_dir_path> \
+                                                -run <run_to_use>
+```
+
+### Data Sampling and Visualization
+
+#### Sampling Data API
+After the model is trained, we have a highly efficient patient-specific Neural Twin that replaces traditional hemodynamic models. We can emulate a virtual simulation. Since there are countless ways to set up conditions and probabilities, we provide a prototype API in `scripts/10_probability_histograms/sample_data.py` that can manage the state of a virtual treatment with different probabilities of success as mentioned in the paper. The API allows for modifying sampling size, catheter uncertainty, individual repair probabilities, plotting, and more. Several basic examples are provided and can be run using
+
+```
+python3 scripts/10_probability_histograms/sample_data.py -model_dir <path_to_run>
+```
+
+#### Histogram Visualization
+For any point the Neural Twin is trained to output, we can plot histograms corresponding to the distribution of possible pressures and flows achievable at any point in the treatment procedure.
+
+```
+python3 scripts/10_probability_histograms/plot_histograms.py  -data <data_path>  \
+                                                              -outdir <output_dir_path> \
+                                                              [-prefix <prefix_for_labeling>] \
+                                                              [-kde]  \
+                                                              -points 0 1 2 ... k \
+                                                              [--p|--q]
+```
+where
+```
+-data <data_path>                 # path to data.npy file generated by sample_data.py
+-outdir <output_dir_path>         # output directory path (will be created)
+[-prefix <prefix_for_labeling>]   # an optional prefix
+[-kde]                            # Whether to use a kernel density function (likely to have some poor approximation)
+points 0 1 2 ... k                # A space separated list of points to plot. 
+[--p|--q]                         # flags to plot pressure and/or flows. Use both flags for both.
+```
+
+#### 3D Density Plot Visualization
+
+In the specific case of N=3, like in our paper, we can observe the behavior at a certain point as a 3D spacially distributed density plot. To do so, run
+```
+python3 scripts/10_probability_histograms/plot_density.py -data <data_path>  \
+                                                          -ofile <output_file> \
+                                                          -perc <lower_bound> <upper_bound> \
+                                                          -point <point_number> \
+                                                          -rat_points <ratio_of_points> \
+                                                          <-dp|-mp|-sp|-df|-mf|-sf>
+```
+where 
+`
 
 
 
