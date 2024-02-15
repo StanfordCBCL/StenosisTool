@@ -53,7 +53,7 @@ class LightningNN(pl.LightningModule):
         # training_step defines the train loop.
         x, y = batch
         y_hat = self.model(x)
-        loss = nn.functional.huber_loss(y_hat, y)
+        loss = nn.functional.mse_loss(y_hat, y)
         self.log("train_loss", loss)
         return loss
     
@@ -61,7 +61,7 @@ class LightningNN(pl.LightningModule):
         """ Validation """
         x, y = batch
         y_hat = self.model(x)
-        loss = nn.functional.huber_loss(y_hat, y)
+        loss = nn.functional.mse_loss(y_hat, y)
         self.log("val_loss", loss)
         return loss
     
@@ -69,7 +69,7 @@ class LightningNN(pl.LightningModule):
         """ Testing """
         x, y = batch
         y_hat = self.model(x)
-        loss = nn.functional.huber_loss(y_hat, y)
+        loss = nn.functional.mse_loss(y_hat, y)
         self.log("test_loss", loss)
         return loss
     
