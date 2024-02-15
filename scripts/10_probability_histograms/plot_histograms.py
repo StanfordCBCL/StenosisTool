@@ -59,7 +59,7 @@ if __name__ == '__main__':
         
         for pidx, point in enumerate(args.points):
             fig = dist.plot_single_histogram(hist[pidx], p=args.p, q=args.q, baseline_yhat=baseline_yhat[point*6:point*6+6])  
-            fig.savefig(str(outdir / f'{prefix}point_{point}{suffix}.pdf'))
+            fig.savefig(str(outdir / f'{prefix}point_{point}{suffix}.png'))
             fig.suptitle(f"Point {point}")
             
     else:

@@ -280,7 +280,7 @@ def get_checkpoint(ckpt_dir: Path):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description="Observe the results")
-    parser.add_argument("-train_dir", default = 'data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768', help = 'training data directory to use' )
+    parser.add_argument("-model_dir", dest='train_dir', default = 'data/diseased/AS1_SU0308_stent/results/AS1_SU0308_nonlinear/NN_DIR/training_results/run_32768', help = 'training data directory to use' )
     args = parser.parse_args()
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'

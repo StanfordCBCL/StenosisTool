@@ -13,26 +13,20 @@ def plot_dens(yhat, point, hist, meas, bins, rat):
     ax = plt.axes(projection='3d')
     point_idx = point*6 + meas
     # mPAP
-    yhat_col = np.array(yhat[:,])
-    X = yhat[:, point_idx][:, np.newaxis]
-    X_plot = np.linspace(X.min(), X.max(), 100)[:, np.newaxis]
-    kde = KernelDensity(kernel='gaussian', bandwidth=bandwiths[j]).fit(X)
-    log_dens = kde.score_samples(X_plot)
-    ax[j].axvline(x=baseline_yhat[point_idx], color = 'r', label = 'Baseline', zorder = 3)
-    x = X_plot[:, 0]
-    y = np.exp(log_dens)
-   
+    yhat_col = np.array(yhat[:, point_idx])
+
    
     colors = ['b','r', 'm']
     markers = ['o','>','D']
     
     
-    
-    
     for i in range(len(bins) - 1):
-        idx1 = np.argwhere((yhat_col > hist[point][meas][1][bins[i]]) & (yhat_col < hist[point][meas][1][bins[i + 1]])).squeeze()
+        pmf =(hist[point][meas][0] * np.diff(hist[point][meas][1])).cumsum()
+        a = np.argwhere( pmf >= bins[i])[0]
+        b = np.argwhere( pmf >= bins[i+1])[0]
+        idx1 = np.argwhere((yhat_col > hist[point][meas][1][a]) & (yhat_col < hist[point][meas][1][b])).squeeze()
         idx1 = np.random.choice(idx1, size=int(len(idx1) * rat ))
-        ax.scatter3D(x[idx1,0], x[idx1,1], x[idx1,2], alpha = .5, color=colors[i],marker = markers[i],edgecolor='black', linewidth = 0.01, label=f'[{hist[point][meas][1][bins[i]]:.2f}, {hist[point][meas][1][bins[i+1]]:.2f}] mmHg')
+        ax.scatter3D(x[idx1,0], x[idx1,1], x[idx1,2], alpha = .5, color=colors[i], marker = markers[i],edgecolor='black', linewidth = 0.01, label=f'[{hist[point][meas][1][a].item():.2f}, {hist[point][meas][1][b].item():.2f}] mmHg')
     ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.set_zlim(0, 1)
     ax.set_xlabel("LPA Proximal")
     ax.set_ylabel("RPA Proximal")
@@ -97,6 +91,6 @@ if __name__ == '__main__':
     ax.view_init(elev=45., azim=-45)
     if args.ofile:
         fig.savefig(args.ofile)
-    plt.set_
+    
     
     plt.show()
