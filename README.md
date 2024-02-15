@@ -276,7 +276,7 @@ python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> \
 
 where `<3D_inflow>` is the file containing the _negative_ inflow waveform directly used by svSolver to solve the 3D solution.
 
-### Linear Correction of Pre-stent LPN
+### Linear Correction of Pre-stent LPN (06)
 
 In our paper, we perform a linear correction based on mean pressures to optimize LPNs to the 3D solution. We described 4 progressively more accurate methods of correction - One-Step, Subdomains, Vessels, and Iterative.
 
@@ -346,6 +346,124 @@ With both 3D and 0D solutions projected onto 1D centerlines, we can perform a co
 
 ```
 python3 scripts/viz_script/plot_3D_vs_0D.py -i <config_file> \
+                                            -sim <sim_number> \ 
+                                            [-points]
+```
+where `-points` is an optional flag to also plot the entire waveform of each individual point on the centerline.
+
+### Computing 3D Poststent Ground Truth (05)
+
+To parameterize 0D LPNs, we also require 3D solutions of the post-stent scenario for each repair location. Thus, for N repair locations, we also require N 3D post-stent solutions. The procedure is largely similar to the pre-stent case but has some extra steps.
+
+#### Matching post-stent and pre-stent centerlines
+First, stented centerlines for each model should have been computed in Step 02. For each relevant point on the prestent centerline, there must be a corresponding point on the stented centerline. Therefore, we perform this matching by:
+
+```
+python3 scripts/07_poststent/centerline_match.py  -i <config_file> \
+                                                  -c <path_to_stented_centerline>
+```
+
+#### Converting 0D RCRs to 3D RCRs
+
+This step is very similar to Step (05)
+```
+python3 scripts/07_poststent/0D_rcrt_to_3D.py -rcrt <0D_rcrt_file_path> \
+                                                -o <3D_simulation_dir_path> \
+                                                [-rep <old_name> <new_name>]
+```
+
+except that in constructing post-stent 3D models, naming conventions for certain caps may have changed. `-rep` changes the old cap name for the new cap name.
+
+#### Mapping 3D solution onto 1D Centerlines
+
+This step is identical to Step (05). Please copy `scripts/05_3D_prestent/map_3D_centerlines.py` to the compute cluster and extract centerlines. Make sure the corresponding _stented_ centerlines is present, not the pre-stent centerlines.
+
+#### Mapping post-stent onto pre-stent centerlines
+
+After extracting to the post-stent centerlines, the results can be downloaded to the directory (please create an individual directory for each set of centerlines). These centerlines must be mapped onto the pre-stent centerlines in order to be comparable and used in linear correction. This is accomplished by running
+
+```
+python3 scripts/07_poststent/map_stented_3D_to_unstented.py -i <config_file> \
+                                                            -c <path_to_stented_centerlines>
+```
+The resulting centerline will be outputted to the same directory with a `.mapped` suffix
+
+#### Formatting 1D Mapped Solutions 
+
+Mapping solutions are identical for this step. However, __DO NOT__ add the `--s` flag as this will overwrite the pre-stent solution in the config file.
+
+```
+python3 scripts/05_3D_prestent/format_3D_centerlines.py -i <config_file> \
+                                                        -c <3D_centerline_solution_vtp> \
+                                                        -f <3D_inflow> \
+```
+
+### Parameterization of Post-Stent LPNs (through Linear Correction) (08)
+
+To determine the 0D LPN equivalent of the stented models, we perform a second linear correction on top of our original correction, this time optimizing for the stented pressures. There are two ways to accomplish this.
+
+First, we set up a parameterization directory by running
+```
+python3 scripts/08_linear_correction_2/setup_parameterization.py  -i <config_file> \
+                                                                  -s <base_lpn_simulation>
+```
+where `<base_lpn_simulation>` is the simulation number corresponding to the desired original corrected LPN.
+
+#### Global Split correction
+In principle, it is possible to reoptimize every single junction in the LPN. This is __NOT__ the method used in the paper, as it doesn't make significant physiological sense and zeros out some previously relevant junctions.
+
+```
+python3 scripts/08_linear_correction_2/linear_transform_global_split.py -i <config_file> \
+                                                                        -c <formatted_stented_centerline_path> \
+                                                                        -n <name_for_stented_lpn> \
+                                                                        --iter [5]
+```
+where `<formatted_stented_centerline_path>` is the final centerline generated from the prior step corresponding to the desired stent realization.
+
+#### Local Split Correction
+It is much more reasonable only to correct the points located in the relevant stenosed region. This is the method used in the paper. However, it becomes a much more involved task, as we need to verify which locations to optimize manually. This process has been simplified slightly with the following procedure.
+
+First, ensure that each 3D poststent centerline is located in its own directory (with 3 `.vtp` files corresponding to the extracted, mapped, and formatted versions). Then, create a new directory (recommended inside the parameterization directory) to store outputs. Then run
+
+```
+python scripts/08_linear_correction2/find_stenosis_regions.py -dir <dir_path_to_poststent_centerlines> \
+                                                              -max_points [10] \
+                                                              -outdir <output_dir_path> \
+                                                              -name <name_for_output>
+```
+This script determines the largest (`max_points`) points between the stented and pre-stented centerlines that have the largest euclidean distance between them. Typically 10 is more than sufficient for `max_points`. These are outputted into two parallel `.vtp` files which can be opened in a viewer such as [Paraview](https://www.paraview.org/). By steadily increasing the number of points, one can observe the threshold where new points are no longer in the stenosis region. This step must be repeated for each N configuration.
+
+After the threshold for the number of points to include has been determined, we can perform the actual local correction by running
+```
+python3 scripts/08_linear_correction_2/linear_transform_local_split.py  -i <config_file> \
+                                                                        -c <formatted_stented_centerline_path> \
+                                                                        -n <name_for_stented_lpn> \
+                                                                        -points <point_threshold>
+                                                                        --iter [5]
+```
+
+#### Visualization of correction results
+
+After performing the correction, we can visualize the results following a similar procedure to the pre-stent case, except that we use 'P' mode, and rather than simulation numbers, we provide the name for the simulation that corresponds to the name provided in the correction step.
+
+First, the post-stent LPN must be mapped to centerlines by 
+```
+python3 scripts/viz_script/map_0D_to_centerlines.py -i <config_file> \
+                                                    -mode 'P' \
+                                                    -sim <stented_lpn_name> \
+                                                    [--mmHg] [--s]
+```
+Then a comparison of the post-stent 3D solution can be compared to the post-stent 0D solution by
+```
+python3 scripts/viz_script/plot_3D_vs_0D.py -i <config_file> \
+                                            -mode 'P' \
+                                            -sim <stented_lpn_name> \
+                                            -3D <formatted_centerline_path> 
+                                            [-points]
+```
+where `<formatted_centerline_path>` is the path to the corresponding formatted 3D solution centerline.
+
+### 09_nn_training
             
 
 
