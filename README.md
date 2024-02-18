@@ -2,8 +2,7 @@
 
 ## Description
 
-The substantial computational cost of high-fidelity models in numerical hemodynamics has, so far, rel-
-egated their use mainly to offline treatment planning. New breakthroughs in data-driven architectures
+The substantial computational cost of high-fidelity models in numerical hemodynamics has, so far, relegated their use mainly to offline treatment planning. New breakthroughs in data-driven architectures
 and optimization techniques for fast surrogate modeling provide an exciting opportunity to overcome
 these limitations, enabling the use of such technology for time-critical decisions. We discuss an applica-
 tion to the repair of multiple stenosis in peripheral pulmonary artery disease through either transcatheter
