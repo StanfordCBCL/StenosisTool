@@ -4,14 +4,11 @@
 
 The substantial computational cost of high-fidelity models in numerical hemodynamics has, so far, relegated their use mainly to offline treatment planning. New breakthroughs in data-driven architectures
 and optimization techniques for fast surrogate modeling provide an exciting opportunity to overcome
-these limitations, enabling the use of such technology for time-critical decisions. We discuss an applica-
-tion to the repair of multiple stenosis in peripheral pulmonary artery disease through either transcatheter
+these limitations, enabling the use of such technology for time-critical decisions. We discuss an application to the repair of multiple stenosis in peripheral pulmonary artery disease through either transcatheter
 pulmonary artery rehabilitation or surgery, where it is of interest to achieve desired pressures and flows
-at specific locations in the pulmonary artery tree, while minimizing the risk for the patient. Since dif-
-ferent degrees of success can be achieved in practice during treatment, we formulate the problem in
+at specific locations in the pulmonary artery tree, while minimizing the risk for the patient. Since different degrees of success can be achieved in practice during treatment, we formulate the problem in
 probability, and solve it through a sample-based approach. We propose a new offline-online pipeline
-for probabilistic real-time treatment planning which combines offline assimilation of boundary condi-
-tions, model reduction, and training dataset generation with online estimation of marginal probabilities,
+for probabilistic real-time treatment planning which combines offline assimilation of boundary conditions, model reduction, and training dataset generation with online estimation of marginal probabilities,
 possibly conditioned on the degree of augmentation observed in already repaired lesions. Moreover, we
 propose a new approach for the parametrization of arbitrarily shaped vascular repairs through iterative
 corrections of a zero-dimensional approximant. 
