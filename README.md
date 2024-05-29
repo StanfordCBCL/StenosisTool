@@ -18,7 +18,7 @@ This Git Directory contains the source code and scripts for replicating our pipe
 ## [Paper](https://onlinelibrary.wiley.com/doi/10.1002/cnm.3820)
 
 ## Sample Data
-The sample dataset used in the paper can be downloaded [here](https://notredame.box.com/s/5r9pjhof2hme93ut8jeceasdsg77qvst). It corresponds to model AS1_SU0308_poststent in the [Vascular Model Repository](https://www.vascularmodel.com/).
+The sample dataset used in the paper can be downloaded [here](https://drive.google.com/drive/folders/0Bz09B6hXwS2kfmdkN3paOWNwTUg5dVUwbTdxWkdfb1FaNVJaZGMwV2dDWnJtODF4QkJ6MTg?resourcekey=0-sZjI-CJPwlUpfOHLjZML7g&usp=sharing). It corresponds to model AS1_SU0308_poststent in the [Vascular Model Repository](https://www.vascularmodel.com/).
 
 ## Installation
 
