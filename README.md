@@ -21,7 +21,7 @@ This Git Directory contains the source code and scripts for replicating our pipe
 
 ## Graphical Abstract
 
-![Graphical Abstract](/Stenosis-Tool-Graphical-Abstract.pdf)
+![Graphical Abstract](/images/Stenosis-Tool-Graphical-Abstract.png)
 
 
 ## Sample Data
