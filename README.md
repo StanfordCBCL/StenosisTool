@@ -15,7 +15,10 @@ corrections of a zero-dimensional approximant.
 
 This Git Directory contains the source code and scripts for replicating our pipeline.
 
-## [Paper](https://onlinelibrary.wiley.com/doi/10.1002/cnm.3820)
+## [Published Paper](https://onlinelibrary.wiley.com/doi/10.1002/cnm.3820)
+
+## [Arxiv](https://arxiv.org/abs/2312.00854)
+
 
 ## Sample Data
 The sample dataset used in the paper can be downloaded [here](https://drive.google.com/drive/folders/0Bz09B6hXwS2kfmdkN3paOWNwTUg5dVUwbTdxWkdfb1FaNVJaZGMwV2dDWnJtODF4QkJ6MTg?resourcekey=0-sZjI-CJPwlUpfOHLjZML7g&usp=sharing). It corresponds to model AS1_SU0308_poststent in the [Vascular Model Repository](https://www.vascularmodel.com/).
