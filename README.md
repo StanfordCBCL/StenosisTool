@@ -17,7 +17,11 @@ This Git Directory contains the source code and scripts for replicating our pipe
 
 ## [Published Paper](https://onlinelibrary.wiley.com/doi/10.1002/cnm.3820)
 
-## [Arxiv](https://arxiv.org/abs/2312.00854)
+## [Arxiv Paper](https://arxiv.org/abs/2312.00854)
+
+## Graphical Abstract
+
+![Graphical Abstract](Stenosis-Tool-Graphical-Abstract.pdf)
 
 
 ## Sample Data
