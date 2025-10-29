@@ -150,7 +150,7 @@ python3 scripts/02_centerline_gen/centerline_gen_diseased.py -i <path_to_config>
 Generating the post-stent centerlines for each model must be done manually. It is recommended to construct a directory along the lines of "poststent_centerlines" to save the centerlines. Use
 
 ```
-python3 scripts/02_centerline_gen/centerline_gen_diseased.py  -mdl <path_to_poststent_mdl> \
+python3 scripts/02_centerline_gen/centerline_gen_repaired.py  -mdl <path_to_poststent_mdl> \
                                                               -vtp <path_to_poststent_vtp> \
                                                               -inlet <name_of_inlet_cap>   \
                                                               -o <file_output_path>
